@@ -1,0 +1,24 @@
+使用方法
+
+1. 解压这个工具包
+2. 把里面的文件复制到你的项目根目录
+3. 右键项目目录，选择“在终端中打开”
+4. 运行：
+
+powershell -ExecutionPolicy Bypass -File .\connect-github.ps1 -Repo "你的GitHub用户名/仓库名"
+
+例如：
+
+powershell -ExecutionPolicy Bypass -File .\connect-github.ps1 -Repo "linsir1250/ai-language-sticker-app"
+
+如果你安装了 GitHub CLI，并希望自动创建私有仓库：
+
+powershell -ExecutionPolicy Bypass -File .\connect-github.ps1 -Repo "linsir1250/ai-language-sticker-app" -PrivateRepo
+
+日常同步：
+
+拉取远程：
+powershell -ExecutionPolicy Bypass -File .\auto-pull.ps1
+
+提交并推送：
+powershell -ExecutionPolicy Bypass -File .\auto-push.ps1 -Message "实现相机识别页面"
