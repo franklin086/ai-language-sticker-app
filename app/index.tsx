@@ -1,13 +1,45 @@
-import { StyleSheet, Text, Pressable, SafeAreaView, View } from 'react-native';
+import { useState } from 'react';
+import * as ImagePicker from 'expo-image-picker';
+import { Alert, Image, Platform, Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
 
 export default function HomeScreen() {
+  const [photoUri, setPhotoUri] = useState<string | null>(null);
+
+  const takePhoto = async () => {
+    try {
+      if (Platform.OS !== 'web') {
+        const permission = await ImagePicker.requestCameraPermissionsAsync();
+
+        if (!permission.granted) {
+          Alert.alert('Camera permission needed', 'Please allow camera access to take a photo.');
+          return;
+        }
+      }
+
+      const result = await ImagePicker.launchCameraAsync({
+        allowsEditing: false,
+        quality: 0.8,
+      });
+
+      if (!result.canceled) {
+        setPhotoUri(result.assets[0].uri);
+      }
+    } catch {
+      Alert.alert('Camera unavailable', 'The camera could not be opened on this device.');
+    }
+  };
+
   return (
     <SafeAreaView style={styles.screen}>
       <View style={styles.content}>
         <Text style={styles.title}>AI Language Sticker App</Text>
 
+        {photoUri ? (
+          <Image source={{ uri: photoUri }} style={styles.preview} />
+        ) : null}
+
         <View style={styles.actions}>
-          <Pressable style={styles.button}>
+          <Pressable style={styles.button} onPress={takePhoto}>
             <Text style={styles.buttonText}>Take photo</Text>
           </Pressable>
 
@@ -37,6 +69,13 @@ const styles = StyleSheet.create({
     lineHeight: 38,
     marginBottom: 40,
     textAlign: 'center',
+  },
+  preview: {
+    alignSelf: 'center',
+    aspectRatio: 1,
+    borderRadius: 24,
+    marginBottom: 28,
+    width: '100%',
   },
   actions: {
     gap: 14,
