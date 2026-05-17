@@ -1,0 +1,17 @@
+{
+  "expo": {
+    "name": "AI Language Sticker App",
+    "slug": "ai-language-sticker-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "ailanguagesticker",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "plugins": [
+      "expo-router"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

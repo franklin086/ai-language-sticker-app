@@ -1,4 +1,4 @@
-# 自动拉取远程更新
+﻿# 自动拉取远程更新
 # 用法：powershell -ExecutionPolicy Bypass -File .\auto-pull.ps1
 
 $ErrorActionPreference = "Stop"

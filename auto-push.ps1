@@ -1,4 +1,4 @@
-# 自动提交并推送
+﻿# 自动提交并推送
 # 用法：
 #   powershell -ExecutionPolicy Bypass -File .\auto-push.ps1
 #   powershell -ExecutionPolicy Bypass -File .\auto-push.ps1 -Message "实现相机识别页面"
