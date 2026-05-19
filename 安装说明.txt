@@ -9,7 +9,7 @@ powershell -ExecutionPolicy Bypass -File .\connect-github.ps1 -Repo "你的GitHu
 
 例如：
 
-powershell -ExecutionPolicy Bypass -File .\connect-github.ps1 -Repo "linsir1250/ai-language-sticker-app"
+powershell -ExecutionPolicy Bypass -File .\connect-github.ps1 -Repo "franklin086/ai-language-sticker-app"
 
 如果你安装了 GitHub CLI，并希望自动创建私有仓库：
 
