@@ -12,12 +12,12 @@ export default function HomeScreen() {
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [isRecognizing, setIsRecognizing] = useState(false);
   const [recognitionResult, setRecognitionResult] = useState<RecognitionResult | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState('');
 
   const recognizeImage = async (uri: string) => {
     setIsRecognizing(true);
     setRecognitionResult(null);
-    setErrorMessage(null);
+    setErrorMessage('');
 
     try {
       const formData = new FormData();
@@ -39,13 +39,15 @@ export default function HomeScreen() {
         body: formData,
       });
 
-      const data = (await response.json()) as RecognitionResult;
-      console.log('raw backend response', data);
-      setRecognitionResult(data);
-      setErrorMessage(null);
+      if (!response.ok) {
+        throw new Error('Recognition request failed.');
+      }
+
+      const parsed = (await response.json()) as RecognitionResult;
+      setRecognitionResult(parsed);
     } catch (error) {
       console.log('recognition failed', error);
-      setErrorMessage('Recognition failed');
+      setErrorMessage('Recognition failed. Please try again.');
     } finally {
       setIsRecognizing(false);
     }
@@ -53,7 +55,7 @@ export default function HomeScreen() {
 
   const takePhoto = async () => {
     setRecognitionResult(null);
-    setErrorMessage(null);
+    setErrorMessage('');
 
     try {
       if (Platform.OS !== 'web') {
@@ -79,13 +81,13 @@ export default function HomeScreen() {
       await recognizeImage(uri);
     } catch (error) {
       console.log('camera failed', error);
-      setErrorMessage('Recognition failed');
+      setErrorMessage('Could not take photo. Please try again.');
     }
   };
 
   const chooseFromAlbum = async () => {
     setRecognitionResult(null);
-    setErrorMessage(null);
+    setErrorMessage('');
 
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
@@ -99,12 +101,11 @@ export default function HomeScreen() {
       }
 
       const uri = result.assets[0].uri;
-      console.log('selected image uri', uri);
       setPhotoUri(uri);
       await recognizeImage(uri);
     } catch (error) {
       console.log('photo selection failed', error);
-      setErrorMessage('Recognition failed');
+      setErrorMessage('Could not choose image. Please try again.');
     }
   };
 
@@ -122,21 +123,17 @@ export default function HomeScreen() {
         <View style={styles.resultCard}>
           {isRecognizing ? (
             <Text style={styles.statusText}>Recognizing...</Text>
-          ) : null}
-
-          {recognitionResult ? (
+          ) : recognitionResult ? (
             <View style={styles.resultLines}>
               <Text style={styles.resultText}>English: {recognitionResult.object_en}</Text>
               <Text style={styles.resultText}>中文: {recognitionResult.object_zh}</Text>
               <Text style={styles.resultText}>Confidence: {recognitionResult.confidence}</Text>
             </View>
-          ) : (
-            <Text style={styles.resultText}>No recognition result</Text>
-          )}
-
-          {errorMessage ? (
+          ) : errorMessage ? (
             <Text style={styles.errorText}>{errorMessage}</Text>
-          ) : null}
+          ) : (
+            <Text style={styles.resultText}>Choose an image to start.</Text>
+          )}
         </View>
 
         <View style={styles.actions}>
@@ -215,7 +212,6 @@ const styles = StyleSheet.create({
     color: '#B91C1C',
     fontSize: 16,
     fontWeight: '700',
-    marginTop: 8,
     textAlign: 'center',
   },
   actions: {

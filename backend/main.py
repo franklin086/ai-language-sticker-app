@@ -6,6 +6,7 @@ from typing import Literal
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
 from google import genai
 from google.genai import types
 from pydantic import BaseModel
@@ -13,6 +14,17 @@ from pydantic import BaseModel
 load_dotenv(Path(__file__).with_name(".env"))
 
 app = FastAPI(title="AI Language Sticker Backend")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:8081",
+        "http://127.0.0.1:8081",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 class RecognitionResult(BaseModel):
