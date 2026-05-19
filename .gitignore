@@ -47,3 +47,6 @@ Thumbs.db
 
 expo-env.d.ts
 # @end expo-cli
+backend/.env
+backend/.env*
+!backend/.env.example
