@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import * as ImagePicker from 'expo-image-picker';
+import * as Speech from 'expo-speech';
 import {
   ActivityIndicator,
   Alert,
@@ -21,6 +22,11 @@ type RecognitionResult = {
   confidence: string;
 };
 
+type CollectionItem = RecognitionResult & {
+  discoveredAt: string;
+  emoji: string;
+};
+
 const COPY = {
   badge: '\u2728 Magic Word Camera',
   title: 'AI \u9b54\u6cd5\u8bc6\u5b57\u76f8\u673a',
@@ -33,7 +39,16 @@ const COPY = {
   found: '\u2728 AI\u53d1\u73b0\u4e86\uff01',
   celebrate: '\ud83c\udf89 \u592a\u68d2\u5566\uff01',
   ready: '\u653e\u4e00\u5f20\u56fe\u7247\u8fdb\u9b54\u6cd5\u7a97\uff0c\u9a6c\u4e0a\u53d8\u51fa\u5b66\u4e60\u8d34\u7eb8\u5361\u3002',
-  error: 'Oops, I could not see it clearly. Try another photo!',
+  error: '\u6211\u6ca1\u6709\u770b\u6e05\u695a',
+  errorTitle: '\ud83e\udd14 \u6211\u6ca1\u6709\u770b\u6e05\u695a',
+  errorHint: '\u518d\u7ed9\u6211\u770b\u770b\u5427 \u2728',
+  errorEncourage: '\ud83e\ude84 \u6362\u4e00\u5f20\u6e05\u695a\u7684\u7167\u7247\u8bd5\u8bd5',
+  collectionTitle: '\u2728 \u6211\u7684\u9b54\u6cd5\u56fe\u9274',
+  collectionCount: '\u5df2\u53d1\u73b0',
+  collectionNew: '\ud83c\udf89 \u65b0\u53d1\u73b0\u5df2\u52a0\u5165\u9b54\u6cd5\u56fe\u9274\uff01',
+  collectionKnown: '\u2728 \u4f60\u5df2\u7ecf\u8ba4\u8bc6\u5b83\u5566\uff01',
+  unlockNew: '\ud83c\udf89 NEW!',
+  unlockSticker: '\u2728 \u65b0\u9b54\u6cd5\u8d34\u7eb8\u89e3\u9501\uff01',
   english: '\u82f1\u6587',
   chinese: '\u4e2d\u6587',
   confidence: 'Confidence',
@@ -46,15 +61,31 @@ export default function HomeScreen() {
   const [isRecognizing, setIsRecognizing] = useState(false);
   const [recognitionResult, setRecognitionResult] = useState<RecognitionResult | null>(null);
   const [errorMessage, setErrorMessage] = useState('');
+  const [collection, setCollection] = useState<CollectionItem[]>([]);
+  const [collectionMessage, setCollectionMessage] = useState('');
+  const [collectionFeedback, setCollectionFeedback] = useState<'new' | 'known' | ''>('');
+  const [newestDiscoveryAt, setNewestDiscoveryAt] = useState('');
   const [hoveredButton, setHoveredButton] = useState<'camera' | 'album' | null>(null);
+  const [speakingLanguage, setSpeakingLanguage] = useState<'zh' | 'en' | null>(null);
   const floatValue = useRef(new Animated.Value(0));
   const buttonBreathValue = useRef(new Animated.Value(0));
   const buttonFlowValue = useRef(new Animated.Value(0));
   const resultAppearValue = useRef(new Animated.Value(0));
+  const errorAppearValue = useRef(new Animated.Value(0));
+  const unlockValue = useRef(new Animated.Value(0));
+  const countBounceValue = useRef(new Animated.Value(0));
+  const speakBounceValue = useRef(new Animated.Value(0));
   const starTwinkleValue = useRef(new Animated.Value(0));
   const scanValue = useRef(new Animated.Value(0));
   const pulseValue = useRef(new Animated.Value(0));
   const shimmerValue = useRef(new Animated.Value(0));
+  const previousCollectionCount = useRef(0);
+
+  useEffect(() => {
+    return () => {
+      Speech.stop();
+    };
+  }, []);
 
   useEffect(() => {
     const floatLoop = Animated.loop(
@@ -197,6 +228,59 @@ export default function HomeScreen() {
     }).start();
   }, [recognitionResult]);
 
+  useEffect(() => {
+    if (!errorMessage) {
+      errorAppearValue.current.setValue(0);
+      return;
+    }
+
+    errorAppearValue.current.setValue(0);
+    Animated.timing(errorAppearValue.current, {
+      toValue: 1,
+      duration: 520,
+      easing: Easing.out(Easing.quad),
+      useNativeDriver: true,
+    }).start();
+  }, [errorMessage]);
+
+  useEffect(() => {
+    if (collection.length === previousCollectionCount.current) {
+      return;
+    }
+
+    previousCollectionCount.current = collection.length;
+    countBounceValue.current.setValue(0);
+    Animated.sequence([
+      Animated.timing(countBounceValue.current, {
+        toValue: 1,
+        duration: 160,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      }),
+      Animated.timing(countBounceValue.current, {
+        toValue: 0,
+        duration: 280,
+        easing: Easing.out(Easing.back(1.6)),
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [collection.length]);
+
+  useEffect(() => {
+    if (collectionFeedback !== 'new') {
+      unlockValue.current.setValue(0);
+      return;
+    }
+
+    unlockValue.current.setValue(0);
+    Animated.timing(unlockValue.current, {
+      toValue: 1,
+      duration: 620,
+      easing: Easing.out(Easing.back(1.7)),
+      useNativeDriver: true,
+    }).start();
+  }, [collectionFeedback, newestDiscoveryAt]);
+
   const floatTranslateY = floatValue.current.interpolate({
     inputRange: [0, 1],
     outputRange: [0, -6],
@@ -237,6 +321,26 @@ export default function HomeScreen() {
     inputRange: [0, 0.72, 1],
     outputRange: [0.94, 1.035, 1],
   });
+  const speakButtonScale = speakBounceValue.current.interpolate({
+    inputRange: [0, 1],
+    outputRange: [1, 1.08],
+  });
+  const errorOpacity = errorAppearValue.current.interpolate({
+    inputRange: [0, 0.2, 1],
+    outputRange: [0, 1, 1],
+  });
+  const errorTranslateX = errorAppearValue.current.interpolate({
+    inputRange: [0, 0.16, 0.32, 0.48, 0.64, 1],
+    outputRange: [0, -5, 5, -3, 3, 0],
+  });
+  const errorScale = errorAppearValue.current.interpolate({
+    inputRange: [0, 0.55, 1],
+    outputRange: [0.97, 1.015, 1],
+  });
+  const errorEmojiTranslateY = errorAppearValue.current.interpolate({
+    inputRange: [0, 0.48, 1],
+    outputRange: [0, -8, 0],
+  });
   const scanTranslateY = scanValue.current.interpolate({
     inputRange: [0, 1],
     outputRange: [-28, 304],
@@ -253,11 +357,58 @@ export default function HomeScreen() {
     inputRange: [0, 1],
     outputRange: [-240, 280],
   });
+  const unlockOpacity = unlockValue.current.interpolate({
+    inputRange: [0, 0.22, 1],
+    outputRange: [0, 1, 1],
+  });
+  const unlockScale = unlockValue.current.interpolate({
+    inputRange: [0, 0.62, 1],
+    outputRange: [0.82, 1.08, 1],
+  });
+  const unlockTranslateY = unlockValue.current.interpolate({
+    inputRange: [0, 1],
+    outputRange: [12, 0],
+  });
+  const unlockGlowScale = unlockValue.current.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.7, 1.35],
+  });
+  const unlockGlowOpacity = unlockValue.current.interpolate({
+    inputRange: [0, 0.42, 1],
+    outputRange: [0, 0.5, 0.12],
+  });
+  const unlockSparkleScale = unlockValue.current.interpolate({
+    inputRange: [0, 0.5, 1],
+    outputRange: [0.7, 1.25, 1],
+  });
+  const unlockSparkleOpacity = unlockValue.current.interpolate({
+    inputRange: [0, 0.25, 1],
+    outputRange: [0, 1, 0.72],
+  });
+  const countScale = countBounceValue.current.interpolate({
+    inputRange: [0, 1],
+    outputRange: [1, 1.2],
+  });
+  const newItemOpacity = unlockValue.current.interpolate({
+    inputRange: [0, 0.25, 1],
+    outputRange: [0, 1, 1],
+  });
+  const newItemTranslateY = unlockValue.current.interpolate({
+    inputRange: [0, 1],
+    outputRange: [18, 0],
+  });
+  const newItemScale = unlockValue.current.interpolate({
+    inputRange: [0, 0.68, 1],
+    outputRange: [0.9, 1.06, 1],
+  });
 
   const recognizeImage = async (uri: string) => {
     setIsRecognizing(true);
     setRecognitionResult(null);
     setErrorMessage('');
+    setCollectionMessage('');
+    setCollectionFeedback('');
+    setNewestDiscoveryAt('');
 
     try {
       const formData = new FormData();
@@ -285,6 +436,32 @@ export default function HomeScreen() {
 
       const parsed = (await response.json()) as RecognitionResult;
       setRecognitionResult(parsed);
+      setCollection((currentCollection) => {
+        const normalizedName = parsed.object_en.trim().toLowerCase();
+        const alreadyDiscovered = currentCollection.some(
+          (item) => item.object_en.trim().toLowerCase() === normalizedName,
+        );
+
+        if (alreadyDiscovered) {
+          setCollectionMessage(COPY.collectionKnown);
+          setCollectionFeedback('known');
+          setNewestDiscoveryAt('');
+          return currentCollection;
+        }
+
+        const discoveredAt = new Date().toISOString();
+        setCollectionMessage(COPY.collectionNew);
+        setCollectionFeedback('new');
+        setNewestDiscoveryAt(discoveredAt);
+        return [
+          {
+            ...parsed,
+            discoveredAt,
+            emoji: getMagicEmoji(parsed),
+          },
+          ...currentCollection,
+        ];
+      });
     } catch (error) {
       console.log('recognition failed', error);
       setErrorMessage(COPY.error);
@@ -347,6 +524,35 @@ export default function HomeScreen() {
       console.log('photo selection failed', error);
       setErrorMessage(COPY.error);
     }
+  };
+
+  const speakWord = (text: string, language: 'zh' | 'en') => {
+    Speech.stop();
+    setSpeakingLanguage(language);
+    speakBounceValue.current.setValue(0);
+    Animated.sequence([
+      Animated.timing(speakBounceValue.current, {
+        toValue: 1,
+        duration: 130,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      }),
+      Animated.timing(speakBounceValue.current, {
+        toValue: 0,
+        duration: 220,
+        easing: Easing.out(Easing.back(1.5)),
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    Speech.speak(text, {
+      language: language === 'zh' ? 'zh-CN' : 'en-US',
+      pitch: 1.06,
+      rate: language === 'zh' ? 0.72 : 0.76,
+      onDone: () => setSpeakingLanguage(null),
+      onStopped: () => setSpeakingLanguage(null),
+      onError: () => setSpeakingLanguage(null),
+    });
   };
 
   return (
@@ -455,13 +661,42 @@ export default function HomeScreen() {
                 </View>
               </View>
             ) : recognitionResult ? (
-              <MagicWordCard result={recognitionResult} />
+              <MagicWordCard
+                result={recognitionResult}
+                onSpeakChinese={() => speakWord(recognitionResult.object_zh, 'zh')}
+                onSpeakEnglish={() => speakWord(recognitionResult.object_en, 'en')}
+                speakButtonScale={speakButtonScale}
+                speakingLanguage={speakingLanguage}
+              />
             ) : errorMessage ? (
-              <Text style={styles.errorText}>{errorMessage}</Text>
+              <FailureCard
+                emojiTranslateY={errorEmojiTranslateY}
+                opacity={errorOpacity}
+                scale={errorScale}
+                translateX={errorTranslateX}
+              />
             ) : (
               <Text style={styles.readyText}>{COPY.ready}</Text>
             )}
           </Animated.View>
+
+          <MagicCollection
+            collection={collection}
+            countScale={countScale}
+            feedback={collectionFeedback}
+            message={collectionMessage}
+            newestDiscoveryAt={newestDiscoveryAt}
+            newItemOpacity={newItemOpacity}
+            newItemScale={newItemScale}
+            newItemTranslateY={newItemTranslateY}
+            unlockGlowOpacity={unlockGlowOpacity}
+            unlockGlowScale={unlockGlowScale}
+            unlockOpacity={unlockOpacity}
+            unlockScale={unlockScale}
+            unlockSparkleOpacity={unlockSparkleOpacity}
+            unlockSparkleScale={unlockSparkleScale}
+            unlockTranslateY={unlockTranslateY}
+          />
 
           <View style={styles.actions}>
             <Animated.View style={{ transform: [{ scale: buttonBreathScale }] }}>
@@ -499,6 +734,169 @@ export default function HomeScreen() {
         </View>
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+function FailureCard({
+  emojiTranslateY,
+  opacity,
+  scale,
+  translateX,
+}: {
+  emojiTranslateY: Animated.AnimatedInterpolation<string | number>;
+  opacity: Animated.AnimatedInterpolation<string | number>;
+  scale: Animated.AnimatedInterpolation<string | number>;
+  translateX: Animated.AnimatedInterpolation<string | number>;
+}) {
+  return (
+    <Animated.View
+      style={[
+        styles.failureCard,
+        {
+          opacity,
+          transform: [{ translateX }, { scale }],
+        },
+      ]}
+    >
+      <Animated.Text style={[styles.failureEmoji, { transform: [{ translateY: emojiTranslateY }] }]}>
+        {'\ud83e\ude84'}
+      </Animated.Text>
+      <Text style={styles.failureTitle}>{COPY.errorTitle}</Text>
+      <Text style={styles.failureHint}>{COPY.errorHint}</Text>
+      <View style={styles.failureEncouragePill}>
+        <Text style={styles.failureEncourageText}>{COPY.errorEncourage}</Text>
+      </View>
+    </Animated.View>
+  );
+}
+
+function MagicCollection({
+  collection,
+  countScale,
+  feedback,
+  message,
+  newestDiscoveryAt,
+  newItemOpacity,
+  newItemScale,
+  newItemTranslateY,
+  unlockGlowOpacity,
+  unlockGlowScale,
+  unlockOpacity,
+  unlockScale,
+  unlockSparkleOpacity,
+  unlockSparkleScale,
+  unlockTranslateY,
+}: {
+  collection: CollectionItem[];
+  countScale: Animated.AnimatedInterpolation<string | number>;
+  feedback: 'new' | 'known' | '';
+  message: string;
+  newestDiscoveryAt: string;
+  newItemOpacity: Animated.AnimatedInterpolation<string | number>;
+  newItemScale: Animated.AnimatedInterpolation<string | number>;
+  newItemTranslateY: Animated.AnimatedInterpolation<string | number>;
+  unlockGlowOpacity: Animated.AnimatedInterpolation<string | number>;
+  unlockGlowScale: Animated.AnimatedInterpolation<string | number>;
+  unlockOpacity: Animated.AnimatedInterpolation<string | number>;
+  unlockScale: Animated.AnimatedInterpolation<string | number>;
+  unlockSparkleOpacity: Animated.AnimatedInterpolation<string | number>;
+  unlockSparkleScale: Animated.AnimatedInterpolation<string | number>;
+  unlockTranslateY: Animated.AnimatedInterpolation<string | number>;
+}) {
+  if (collection.length === 0) {
+    return null;
+  }
+
+  return (
+    <View style={styles.collectionPanel}>
+      <View style={styles.collectionHeader}>
+        <View>
+          <Text style={styles.collectionTitle}>{COPY.collectionTitle}</Text>
+          <View style={styles.collectionCountRow}>
+            <Text style={styles.collectionCount}>{COPY.collectionCount}: </Text>
+            <Animated.Text style={[styles.collectionCountNumber, { transform: [{ scale: countScale }] }]}>
+              {collection.length}
+            </Animated.Text>
+            <Text style={styles.collectionCount}> \u4e2a</Text>
+          </View>
+        </View>
+      </View>
+
+      {feedback === 'new' ? (
+        <Animated.View
+          style={[
+            styles.unlockBanner,
+            {
+              opacity: unlockOpacity,
+              transform: [{ translateY: unlockTranslateY }, { scale: unlockScale }],
+            },
+          ]}
+        >
+          <Animated.View
+            pointerEvents="none"
+            style={[
+              styles.unlockGlow,
+              {
+                opacity: unlockGlowOpacity,
+                transform: [{ scale: unlockGlowScale }],
+              },
+            ]}
+          />
+          <Animated.Text
+            style={[
+              styles.unlockSpark,
+              styles.unlockSparkLeft,
+              { opacity: unlockSparkleOpacity, transform: [{ scale: unlockSparkleScale }] },
+            ]}
+          >
+            {'\u2728'}
+          </Animated.Text>
+          <Animated.Text
+            style={[
+              styles.unlockSpark,
+              styles.unlockSparkRight,
+              { opacity: unlockSparkleOpacity, transform: [{ scale: unlockSparkleScale }] },
+            ]}
+          >
+            {'\u2726'}
+          </Animated.Text>
+          <Text style={styles.unlockNewText}>{COPY.unlockNew}</Text>
+          <Text style={styles.unlockStickerText}>{COPY.unlockSticker}</Text>
+        </Animated.View>
+      ) : message ? (
+        <View style={styles.collectionMessagePill}>
+          <Text style={styles.collectionMessageText}>{message}</Text>
+        </View>
+      ) : null}
+
+      <ScrollView
+        contentContainerStyle={styles.collectionList}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+      >
+        {collection.map((item) => (
+          <Animated.View
+            key={`${item.object_en}-${item.discoveredAt}`}
+            style={[
+              styles.collectionItem,
+              item.discoveredAt === newestDiscoveryAt && styles.collectionItemNew,
+              item.discoveredAt === newestDiscoveryAt && {
+                opacity: newItemOpacity,
+                transform: [{ translateY: newItemTranslateY }, { scale: newItemScale }],
+              },
+            ]}
+          >
+            <Text style={styles.collectionEmoji}>{item.emoji}</Text>
+            <Text numberOfLines={1} style={styles.collectionZh}>
+              {item.object_zh}
+            </Text>
+            <Text numberOfLines={1} style={styles.collectionEn}>
+              {item.object_en}
+            </Text>
+          </Animated.View>
+        ))}
+      </ScrollView>
+    </View>
   );
 }
 
@@ -551,7 +949,19 @@ function getMagicEmoji(result: RecognitionResult) {
   return found ? found[1] : '\u2728';
 }
 
-function MagicWordCard({ result }: { result: RecognitionResult }) {
+function MagicWordCard({
+  result,
+  onSpeakChinese,
+  onSpeakEnglish,
+  speakButtonScale,
+  speakingLanguage,
+}: {
+  result: RecognitionResult;
+  onSpeakChinese: () => void;
+  onSpeakEnglish: () => void;
+  speakButtonScale: Animated.AnimatedInterpolation<string | number>;
+  speakingLanguage: 'zh' | 'en' | null;
+}) {
   return (
     <View style={styles.wordCard}>
       <View style={styles.wordCardTop}>
@@ -568,7 +978,49 @@ function MagicWordCard({ result }: { result: RecognitionResult }) {
       <Text style={styles.confidenceLine}>
         {COPY.confidence}: {formatConfidence(result.confidence)}
       </Text>
+
+      <View style={styles.speechActions}>
+        <SpeechButton
+          active={speakingLanguage === 'zh'}
+          label={'\ud83d\udd0a \u4e2d\u6587\u53d1\u97f3'}
+          onPress={onSpeakChinese}
+          scale={speakButtonScale}
+        />
+        <SpeechButton
+          active={speakingLanguage === 'en'}
+          label={'\ud83d\udd0a English'}
+          onPress={onSpeakEnglish}
+          scale={speakButtonScale}
+        />
+      </View>
     </View>
+  );
+}
+
+function SpeechButton({
+  active,
+  label,
+  onPress,
+  scale,
+}: {
+  active: boolean;
+  label: string;
+  onPress: () => void;
+  scale: Animated.AnimatedInterpolation<string | number>;
+}) {
+  return (
+    <Animated.View style={active ? { transform: [{ scale }] } : undefined}>
+      <Pressable
+        style={({ pressed }) => [
+          styles.speechButton,
+          active && styles.speechButtonActive,
+          pressed && styles.speechButtonPressed,
+        ]}
+        onPress={onPress}
+      >
+        <Text style={styles.speechButtonText}>{label}</Text>
+      </Pressable>
+    </Animated.View>
   );
 }
 
@@ -866,6 +1318,44 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     textAlign: 'center',
   },
+  speechActions: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 18,
+    width: '100%',
+  },
+  speechButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 46,
+    minWidth: 124,
+    flex: 1,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: '#E9D5FF',
+    backgroundColor: '#F5EDFF',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    shadowColor: '#A855F7',
+    shadowOffset: { width: 0, height: 7 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+  },
+  speechButtonActive: {
+    borderColor: '#C084FC',
+    backgroundColor: '#EFE0FF',
+    shadowOpacity: 0.28,
+  },
+  speechButtonPressed: {
+    opacity: 0.9,
+    transform: [{ scale: 0.98 }],
+  },
+  speechButtonText: {
+    color: '#6D28D9',
+    fontSize: 14,
+    fontWeight: '900',
+    textAlign: 'center',
+  },
   readyText: {
     color: '#8A6B9F',
     fontSize: 16,
@@ -873,12 +1363,215 @@ const styles = StyleSheet.create({
     lineHeight: 23,
     textAlign: 'center',
   },
-  errorText: {
-    color: '#B45309',
-    fontSize: 16,
-    fontWeight: '800',
-    lineHeight: 24,
+  failureCard: {
+    alignItems: 'center',
+    borderRadius: 28,
+    borderWidth: 1,
+    borderColor: '#F8D58D',
+    backgroundColor: '#FFF8E8',
+    paddingHorizontal: 18,
+    paddingVertical: 20,
+    shadowColor: '#F59E0B',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.13,
+    shadowRadius: 20,
+  },
+  failureEmoji: {
+    fontSize: 48,
+    lineHeight: 58,
+    marginBottom: 6,
+  },
+  failureTitle: {
+    color: '#4C2D6F',
+    fontSize: 21,
+    fontWeight: '900',
+    lineHeight: 28,
     textAlign: 'center',
+  },
+  failureHint: {
+    color: '#8A5E22',
+    fontSize: 16,
+    fontWeight: '900',
+    lineHeight: 23,
+    marginTop: 6,
+    textAlign: 'center',
+  },
+  failureEncouragePill: {
+    borderRadius: 999,
+    backgroundColor: '#F5E8FF',
+    borderWidth: 1,
+    borderColor: '#E9D5FF',
+    marginTop: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+  },
+  failureEncourageText: {
+    color: '#7C3AED',
+    fontSize: 13,
+    fontWeight: '900',
+    lineHeight: 18,
+    textAlign: 'center',
+  },
+  collectionPanel: {
+    borderRadius: 28,
+    borderWidth: 1,
+    borderColor: '#E9D5FF',
+    backgroundColor: '#FFF9EB',
+    marginTop: 16,
+    overflow: 'hidden',
+    paddingBottom: 16,
+    paddingTop: 18,
+    shadowColor: '#A855F7',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.12,
+    shadowRadius: 24,
+  },
+  collectionHeader: {
+    paddingHorizontal: 18,
+  },
+  collectionTitle: {
+    color: '#4C2D6F',
+    fontSize: 20,
+    fontWeight: '900',
+    lineHeight: 26,
+  },
+  collectionCountRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    marginTop: 2,
+  },
+  collectionCount: {
+    color: '#9A6A19',
+    fontSize: 13,
+    fontWeight: '900',
+    lineHeight: 19,
+  },
+  collectionCountNumber: {
+    color: '#7C3AED',
+    fontSize: 17,
+    fontWeight: '900',
+    lineHeight: 22,
+  },
+  unlockBanner: {
+    alignItems: 'center',
+    alignSelf: 'stretch',
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: '#F7C948',
+    backgroundColor: '#FFF1B8',
+    marginHorizontal: 18,
+    marginTop: 12,
+    overflow: 'hidden',
+    paddingHorizontal: 14,
+    paddingVertical: 13,
+    shadowColor: '#F59E0B',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.18,
+    shadowRadius: 20,
+  },
+  unlockGlow: {
+    position: 'absolute',
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    backgroundColor: '#FFFFFF',
+  },
+  unlockSpark: {
+    position: 'absolute',
+    color: '#A855F7',
+    fontSize: 23,
+    fontWeight: '900',
+  },
+  unlockSparkLeft: {
+    left: 24,
+    top: 16,
+  },
+  unlockSparkRight: {
+    right: 26,
+    bottom: 16,
+    color: '#EC4899',
+  },
+  unlockNewText: {
+    color: '#C2410C',
+    fontSize: 20,
+    fontWeight: '900',
+    lineHeight: 26,
+    textAlign: 'center',
+  },
+  unlockStickerText: {
+    color: '#4C2D6F',
+    fontSize: 16,
+    fontWeight: '900',
+    lineHeight: 22,
+    marginTop: 2,
+    textAlign: 'center',
+  },
+  collectionMessagePill: {
+    alignSelf: 'flex-start',
+    borderRadius: 999,
+    backgroundColor: '#F5E8FF',
+    borderWidth: 1,
+    borderColor: '#E9D5FF',
+    marginHorizontal: 18,
+    marginTop: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+  },
+  collectionMessageText: {
+    color: '#7C3AED',
+    fontSize: 13,
+    fontWeight: '900',
+    lineHeight: 18,
+  },
+  collectionList: {
+    gap: 10,
+    paddingHorizontal: 18,
+    paddingTop: 14,
+  },
+  collectionItem: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 94,
+    minHeight: 118,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: '#F8D58D',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 10,
+    paddingVertical: 12,
+    shadowColor: '#F59E0B',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.1,
+    shadowRadius: 14,
+  },
+  collectionItemNew: {
+    borderColor: '#F7C948',
+    backgroundColor: '#FFFBEB',
+    shadowColor: '#F59E0B',
+    shadowOpacity: 0.22,
+    shadowRadius: 18,
+  },
+  collectionEmoji: {
+    fontSize: 38,
+    lineHeight: 46,
+    marginBottom: 6,
+  },
+  collectionZh: {
+    color: '#3B245F',
+    fontSize: 14,
+    fontWeight: '900',
+    lineHeight: 20,
+    textAlign: 'center',
+    width: '100%',
+  },
+  collectionEn: {
+    color: '#7C3AED',
+    fontSize: 12,
+    fontWeight: '900',
+    lineHeight: 17,
+    marginTop: 2,
+    textAlign: 'center',
+    width: '100%',
   },
   actions: {
     gap: 12,
