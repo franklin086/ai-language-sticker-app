@@ -27,6 +27,29 @@ type CollectionItem = RecognitionResult & {
   emoji: string;
 };
 
+type MagicLevel = {
+  badge: string;
+  max: number | null;
+  min: number;
+  rank: number;
+  title: string;
+};
+
+type MagicQuest = {
+  emoji: string;
+  id: string;
+  keywords: string[];
+  title: string;
+};
+
+type RarityKey = 'common' | 'rare' | 'epic' | 'legendary';
+
+type MagicRarity = {
+  badge: string;
+  key: RarityKey;
+  label: string;
+};
+
 const COPY = {
   badge: '\u2728 Magic Word Camera',
   title: 'AI \u9b54\u6cd5\u8bc6\u5b57\u76f8\u673a',
@@ -45,8 +68,29 @@ const COPY = {
   errorEncourage: '\ud83e\ude84 \u6362\u4e00\u5f20\u6e05\u695a\u7684\u7167\u7247\u8bd5\u8bd5',
   collectionTitle: '\u2728 \u6211\u7684\u9b54\u6cd5\u56fe\u9274',
   collectionCount: '\u5df2\u53d1\u73b0',
+  collectionWords: '\u4e2a\u9b54\u6cd5\u8bcd\u8bed',
   collectionNew: '\ud83c\udf89 \u65b0\u53d1\u73b0\u5df2\u52a0\u5165\u9b54\u6cd5\u56fe\u9274\uff01',
   collectionKnown: '\u2728 \u4f60\u5df2\u7ecf\u8ba4\u8bc6\u5b83\u5566\uff01',
+  levelUp: '\u2728 LEVEL UP!',
+  levelBecome: '\ud83c\udf89 \u4f60\u6210\u4e3a\u4e86\uff1a',
+  questTitle: '\u2728 \u4eca\u65e5\u9b54\u6cd5\u4efb\u52a1',
+  questDone: '\ud83c\udf89 \u4eca\u65e5\u4efb\u52a1\u5b8c\u6210\uff01',
+  questReward: '\ud83c\udf81 \u795e\u79d8\u9b54\u6cd5\u5956\u52b1\u5df2\u89e3\u9501\uff01',
+  legendaryTitle: '\ud83c\udf08 LEGENDARY!',
+  legendaryFound: '\u2728 \u4f20\u5947\u53d1\u73b0\uff01',
+  companionName: '\ud83e\udd89 \u5c0f\u732b\u5934\u9e70',
+  companionReady: '\u6211\u4f1a\u966a\u4f60\u4e00\u8d77\u627e\u9b54\u6cd5\u8bcd\u8bed\uff01',
+  companionThinking: '\u6211\u6b63\u5728\u5e2e\u4f60\u770b\u8fd9\u662f\u4ec0\u4e48...',
+  companionSuccess: '\u54c7\uff01\u4f60\u53d1\u73b0\u4e86\u65b0\u4e1c\u897f\uff01',
+  companionLegendary: '\u8fd9\u53ef\u662f\u8d85\u7ea7\u7a00\u6709\u7684\u53d1\u73b0\uff01',
+  companionQuestDone: '\u4eca\u5929\u7684\u9b54\u6cd5\u4efb\u52a1\u5b8c\u6210\u5566\uff01',
+  companionLevelUp: '\u4f60\u8d8a\u6765\u8d8a\u5389\u5bb3\u4e86\uff01',
+  streakTitle: '\ud83d\udd25 \u8fde\u7eed\u63a2\u7d22',
+  streakDays: '\u5929',
+  chestTitle: '\ud83c\udf81 \u9b54\u6cd5\u5b9d\u7bb1',
+  chestNeedOne: '\u518d\u53d1\u73b0 1 \u4e2a\u65b0\u7269\u4f53\u5373\u53ef\u5f00\u542f\uff01',
+  chestOpened: '\u2728 \u5b9d\u7bb1\u5f00\u542f\uff01',
+  chestReward: '\ud83c\udf89 \u83b7\u5f97\u795e\u79d8\u5956\u52b1\uff01',
   unlockNew: '\ud83c\udf89 NEW!',
   unlockSticker: '\u2728 \u65b0\u9b54\u6cd5\u8d34\u7eb8\u89e3\u9501\uff01',
   english: '\u82f1\u6587',
@@ -55,6 +99,138 @@ const COPY = {
   camera: '\ud83d\udcf7 \u62cd\u7167\u8bc6\u522b',
   album: '\ud83d\uddbc\ufe0f \u4ece\u76f8\u518c\u9009\u62e9',
 };
+
+const MAGIC_LEVELS: MagicLevel[] = [
+  { badge: '\u2728', min: 0, max: 4, rank: 0, title: '\u9b54\u6cd5\u5b66\u5f92' },
+  { badge: '\ud83c\udf1f', min: 5, max: 14, rank: 1, title: '\u9b54\u6cd5\u63a2\u7d22\u5bb6' },
+  { badge: '\ud83e\ude84', min: 15, max: 29, rank: 2, title: '\u9b54\u6cd5\u5927\u5e08' },
+  { badge: '\ud83d\udc51', min: 30, max: null, rank: 3, title: '\u4f20\u5947\u9b54\u5bfc\u5e08' },
+];
+
+const MAGIC_RARITIES: Record<RarityKey, MagicRarity> = {
+  common: { badge: '\u26aa', key: 'common', label: '\u666e\u901a' },
+  rare: { badge: '\ud83d\udd35', key: 'rare', label: '\u7a00\u6709' },
+  epic: { badge: '\ud83d\udfe3', key: 'epic', label: '\u53f2\u8bd7' },
+  legendary: { badge: '\ud83c\udf08', key: 'legendary', label: '\u4f20\u5947' },
+};
+
+const CHEST_REWARDS = [
+  '\ud83c\udf1f \u661f\u661f\u5fbd\u7ae0',
+  '\ud83d\udc51 \u65b0\u79f0\u53f7',
+  '\ud83e\ude84 \u9b54\u6cd5\u80fd\u91cf',
+  '\u2728 \u5e78\u8fd0\u6c34\u6676',
+  '\ud83e\udd89 \u5c0f\u732b\u5934\u9e70\u795d\u798f',
+];
+
+const STREAK_STORAGE_KEY = 'ai-magic-camera-streak';
+
+const MAGIC_QUEST_POOL: MagicQuest[] = [
+  {
+    emoji: '\ud83d\udc36',
+    id: 'animal',
+    keywords: ['animal', 'dog', 'cat', 'bird', 'fish', 'panda', 'rabbit', 'bear', '\u52a8\u7269', '\u72d7', '\u732b', '\u9e1f', '\u9c7c', '\u718a\u732b', '\u5154', '\u718a'],
+    title: '\u627e\u5230\u52a8\u7269',
+  },
+  {
+    emoji: '\ud83d\ude97',
+    id: 'vehicle',
+    keywords: ['vehicle', 'car', 'bus', 'train', 'plane', 'airplane', 'ship', 'boat', '\u4ea4\u901a', '\u8f66', '\u6c7d\u8f66', '\u516c\u4ea4', '\u706b\u8f66', '\u98de\u673a', '\u8239'],
+    title: '\u627e\u5230\u4ea4\u901a\u5de5\u5177',
+  },
+  {
+    emoji: '\ud83c\udf4e',
+    id: 'food',
+    keywords: ['food', 'apple', 'banana', 'orange', 'bread', 'cake', 'milk', 'cup', '\u98df\u7269', '\u82f9\u679c', '\u9999\u8549', '\u6a59', '\u9762\u5305', '\u86cb\u7cd5', '\u725b\u5976', '\u676f'],
+    title: '\u627e\u5230\u98df\u7269',
+  },
+  {
+    emoji: '\ud83c\udf38',
+    id: 'nature',
+    keywords: ['nature', 'tree', 'flower', 'leaf', 'plant', 'grass', '\u81ea\u7136', '\u6811', '\u82b1', '\u53f6', '\u690d\u7269', '\u8349'],
+    title: '\u627e\u5230\u81ea\u7136\u9b54\u6cd5',
+  },
+  {
+    emoji: '\ud83d\udcd6',
+    id: 'learning',
+    keywords: ['book', 'pen', 'pencil', 'paper', 'computer', 'phone', '\u4e66', '\u7b14', '\u94c5\u7b14', '\u7eb8', '\u7535\u8111', '\u624b\u673a'],
+    title: '\u627e\u5230\u5b66\u4e60\u9053\u5177',
+  },
+  {
+    emoji: '\u26bd',
+    id: 'toy',
+    keywords: ['toy', 'ball', 'doll', 'game', 'shoe', '\u73a9\u5177', '\u7403', '\u5a03\u5a03', '\u6e38\u620f', '\u978b'],
+    title: '\u627e\u5230\u73a9\u5177\u6216\u8fd0\u52a8\u7269',
+  },
+];
+
+function pickTodayQuests() {
+  const daySeed = Math.floor(Date.now() / 86400000);
+  return [...MAGIC_QUEST_POOL]
+    .map((quest, index) => ({ quest, score: (daySeed * 17 + index * 31) % 97 }))
+    .sort((a, b) => a.score - b.score)
+    .slice(0, 3)
+    .map((item) => item.quest);
+}
+
+function getMatchedQuestIds(result: RecognitionResult, quests: MagicQuest[]) {
+  const text = `${result.object_en} ${result.object_zh}`.toLowerCase();
+  return quests
+    .filter((quest) => quest.keywords.some((keyword) => text.includes(keyword.toLowerCase())))
+    .map((quest) => quest.id);
+}
+
+function getMagicLevel(discoveredCount: number) {
+  return (
+    MAGIC_LEVELS.find((level) => {
+      const underMax = level.max === null || discoveredCount <= level.max;
+      return discoveredCount >= level.min && underMax;
+    }) ?? MAGIC_LEVELS[0]
+  );
+}
+
+function getDateKey(date: Date) {
+  return date.toISOString().slice(0, 10);
+}
+
+function getOffsetDate(offsetDays: number) {
+  const date = new Date();
+  date.setDate(date.getDate() + offsetDays);
+  return date;
+}
+
+function readStoredStreak() {
+  if (Platform.OS !== 'web' || typeof window === 'undefined') {
+    return null;
+  }
+
+  try {
+    const rawValue = window.localStorage.getItem(STREAK_STORAGE_KEY);
+    if (!rawValue) {
+      return null;
+    }
+
+    const parsed = JSON.parse(rawValue) as { days?: number; lastDate?: string };
+    if (typeof parsed.days !== 'number' || typeof parsed.lastDate !== 'string') {
+      return null;
+    }
+
+    return { days: parsed.days, lastDate: parsed.lastDate };
+  } catch {
+    return null;
+  }
+}
+
+function saveStoredStreak(streak: { days: number; lastDate: string }) {
+  if (Platform.OS !== 'web' || typeof window === 'undefined') {
+    return;
+  }
+
+  try {
+    window.localStorage.setItem(STREAK_STORAGE_KEY, JSON.stringify(streak));
+  } catch {
+    // Streak saving is a bonus reward cue; recognition should keep working if storage is blocked.
+  }
+}
 
 export default function HomeScreen() {
   const [photoUri, setPhotoUri] = useState<string | null>(null);
@@ -65,6 +241,14 @@ export default function HomeScreen() {
   const [collectionMessage, setCollectionMessage] = useState('');
   const [collectionFeedback, setCollectionFeedback] = useState<'new' | 'known' | ''>('');
   const [newestDiscoveryAt, setNewestDiscoveryAt] = useState('');
+  const [levelUpLevel, setLevelUpLevel] = useState<MagicLevel | null>(null);
+  const [todayQuests] = useState<MagicQuest[]>(() => pickTodayQuests());
+  const [completedQuestIds, setCompletedQuestIds] = useState<string[]>([]);
+  const [questRewardUnlocked, setQuestRewardUnlocked] = useState(false);
+  const [streakDays, setStreakDays] = useState(0);
+  const [lastStreakDate, setLastStreakDate] = useState('');
+  const [chestOpened, setChestOpened] = useState(false);
+  const [chestReward, setChestReward] = useState('');
   const [hoveredButton, setHoveredButton] = useState<'camera' | 'album' | null>(null);
   const [speakingLanguage, setSpeakingLanguage] = useState<'zh' | 'en' | null>(null);
   const floatValue = useRef(new Animated.Value(0));
@@ -79,9 +263,21 @@ export default function HomeScreen() {
   const scanValue = useRef(new Animated.Value(0));
   const pulseValue = useRef(new Animated.Value(0));
   const shimmerValue = useRef(new Animated.Value(0));
+  const levelUpValue = useRef(new Animated.Value(0));
+  const questPopValue = useRef(new Animated.Value(0));
+  const legendaryValue = useRef(new Animated.Value(0));
+  const companionValue = useRef(new Animated.Value(1));
+  const chestValue = useRef(new Animated.Value(0));
   const previousCollectionCount = useRef(0);
+  const previousLevelRank = useRef(getMagicLevel(0).rank);
 
   useEffect(() => {
+    const storedStreak = readStoredStreak();
+    if (storedStreak) {
+      setStreakDays(storedStreak.days);
+      setLastStreakDate(storedStreak.lastDate);
+    }
+
     return () => {
       Speech.stop();
     };
@@ -216,6 +412,7 @@ export default function HomeScreen() {
   useEffect(() => {
     if (!recognitionResult) {
       resultAppearValue.current.setValue(0);
+      legendaryValue.current.setValue(0);
       return;
     }
 
@@ -226,6 +423,27 @@ export default function HomeScreen() {
       easing: Easing.out(Easing.back(1.6)),
       useNativeDriver: true,
     }).start();
+
+    if (getRarity(recognitionResult).key !== 'legendary') {
+      legendaryValue.current.setValue(0);
+      return;
+    }
+
+    legendaryValue.current.setValue(0);
+    Animated.sequence([
+      Animated.timing(legendaryValue.current, {
+        toValue: 1,
+        duration: 620,
+        easing: Easing.out(Easing.back(1.9)),
+        useNativeDriver: true,
+      }),
+      Animated.timing(legendaryValue.current, {
+        toValue: 0.92,
+        duration: 900,
+        easing: Easing.inOut(Easing.quad),
+        useNativeDriver: true,
+      }),
+    ]).start();
   }, [recognitionResult]);
 
   useEffect(() => {
@@ -249,6 +467,27 @@ export default function HomeScreen() {
     }
 
     previousCollectionCount.current = collection.length;
+    const nextLevel = getMagicLevel(collection.length);
+    if (collection.length > 0 && nextLevel.rank > previousLevelRank.current) {
+      setLevelUpLevel(nextLevel);
+      levelUpValue.current.setValue(0);
+      Animated.sequence([
+        Animated.timing(levelUpValue.current, {
+          toValue: 1,
+          duration: 620,
+          easing: Easing.out(Easing.back(1.9)),
+          useNativeDriver: true,
+        }),
+        Animated.timing(levelUpValue.current, {
+          toValue: 0.92,
+          duration: 900,
+          easing: Easing.inOut(Easing.quad),
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }
+    previousLevelRank.current = nextLevel.rank;
+
     countBounceValue.current.setValue(0);
     Animated.sequence([
       Animated.timing(countBounceValue.current, {
@@ -280,6 +519,47 @@ export default function HomeScreen() {
       useNativeDriver: true,
     }).start();
   }, [collectionFeedback, newestDiscoveryAt]);
+
+  const levelJustUp = Boolean(levelUpLevel && collection.length === levelUpLevel.min);
+  const companionMessage = getCompanionMessage({
+    isRecognizing,
+    levelJustUp,
+    questRewardUnlocked,
+    recognitionResult,
+  });
+
+  useEffect(() => {
+    companionValue.current.setValue(0);
+    Animated.timing(companionValue.current, {
+      toValue: 1,
+      duration: 380,
+      easing: Easing.out(Easing.quad),
+      useNativeDriver: true,
+    }).start();
+  }, [companionMessage]);
+
+  useEffect(() => {
+    if (!chestOpened) {
+      chestValue.current.setValue(0);
+      return;
+    }
+
+    chestValue.current.setValue(0);
+    Animated.sequence([
+      Animated.timing(chestValue.current, {
+        toValue: 1,
+        duration: 620,
+        easing: Easing.out(Easing.back(1.9)),
+        useNativeDriver: true,
+      }),
+      Animated.timing(chestValue.current, {
+        toValue: 0.92,
+        duration: 900,
+        easing: Easing.inOut(Easing.quad),
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [chestOpened, chestReward]);
 
   const floatTranslateY = floatValue.current.interpolate({
     inputRange: [0, 1],
@@ -401,6 +681,97 @@ export default function HomeScreen() {
     inputRange: [0, 0.68, 1],
     outputRange: [0.9, 1.06, 1],
   });
+  const levelUpOpacity = levelUpValue.current.interpolate({
+    inputRange: [0, 0.18, 0.92, 1],
+    outputRange: [0, 1, 1, 0],
+  });
+  const levelUpScale = levelUpValue.current.interpolate({
+    inputRange: [0, 0.58, 1],
+    outputRange: [0.78, 1.08, 1],
+  });
+  const levelUpTranslateY = levelUpValue.current.interpolate({
+    inputRange: [0, 1],
+    outputRange: [18, 0],
+  });
+  const levelUpGlowScale = levelUpValue.current.interpolate({
+    inputRange: [0, 0.7, 1],
+    outputRange: [0.65, 1.35, 1.18],
+  });
+  const levelUpGlowOpacity = levelUpValue.current.interpolate({
+    inputRange: [0, 0.35, 1],
+    outputRange: [0, 0.58, 0.18],
+  });
+  const levelUpStarScale = levelUpValue.current.interpolate({
+    inputRange: [0, 0.46, 1],
+    outputRange: [0.65, 1.35, 1],
+  });
+  const questPopOpacity = questPopValue.current.interpolate({
+    inputRange: [0, 0.22, 1],
+    outputRange: [0.28, 1, 0.82],
+  });
+  const questPopScale = questPopValue.current.interpolate({
+    inputRange: [0, 0.5, 1],
+    outputRange: [0.96, 1.08, 1],
+  });
+  const questGlowScale = questPopValue.current.interpolate({
+    inputRange: [0, 0.7, 1],
+    outputRange: [0.72, 1.28, 1.08],
+  });
+  const legendaryOpacity = legendaryValue.current.interpolate({
+    inputRange: [0, 0.18, 1],
+    outputRange: [0, 1, 1],
+  });
+  const legendaryScale = legendaryValue.current.interpolate({
+    inputRange: [0, 0.55, 1],
+    outputRange: [0.78, 1.1, 1],
+  });
+  const legendaryGlowScale = legendaryValue.current.interpolate({
+    inputRange: [0, 0.72, 1],
+    outputRange: [0.6, 1.45, 1.18],
+  });
+  const legendaryStarScale = legendaryValue.current.interpolate({
+    inputRange: [0, 0.48, 1],
+    outputRange: [0.62, 1.42, 1],
+  });
+  const companionOpacity = companionValue.current.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 1],
+  });
+  const companionScale = companionValue.current.interpolate({
+    inputRange: [0, 0.72, 1],
+    outputRange: [0.96, 1.025, 1],
+  });
+  const chestOpacity = chestValue.current.interpolate({
+    inputRange: [0, 0.22, 1],
+    outputRange: [0, 1, 1],
+  });
+  const chestScale = chestValue.current.interpolate({
+    inputRange: [0, 0.58, 1],
+    outputRange: [0.82, 1.08, 1],
+  });
+  const chestGlowScale = chestValue.current.interpolate({
+    inputRange: [0, 0.72, 1],
+    outputRange: [0.65, 1.42, 1.16],
+  });
+
+  const updateStreakForToday = () => {
+    const today = getDateKey(new Date());
+    if (lastStreakDate === today) {
+      return;
+    }
+
+    const yesterday = getDateKey(getOffsetDate(-1));
+    const nextDays = lastStreakDate === yesterday ? streakDays + 1 : 1;
+    setStreakDays(nextDays);
+    setLastStreakDate(today);
+    saveStoredStreak({ days: nextDays, lastDate: today });
+  };
+
+  const openMagicChest = () => {
+    const reward = CHEST_REWARDS[(Date.now() + collection.length) % CHEST_REWARDS.length];
+    setChestReward(reward);
+    setChestOpened(true);
+  };
 
   const recognizeImage = async (uri: string) => {
     setIsRecognizing(true);
@@ -436,6 +807,36 @@ export default function HomeScreen() {
 
       const parsed = (await response.json()) as RecognitionResult;
       setRecognitionResult(parsed);
+      updateStreakForToday();
+      const matchedQuestIds = getMatchedQuestIds(parsed, todayQuests);
+      if (matchedQuestIds.length > 0) {
+        setCompletedQuestIds((currentIds) => {
+          const nextIds = Array.from(new Set([...currentIds, ...matchedQuestIds]));
+          if (nextIds.length !== currentIds.length) {
+            questPopValue.current.setValue(0);
+            Animated.sequence([
+              Animated.timing(questPopValue.current, {
+                toValue: 1,
+                duration: 420,
+                easing: Easing.out(Easing.back(1.8)),
+                useNativeDriver: true,
+              }),
+              Animated.timing(questPopValue.current, {
+                toValue: 0.92,
+                duration: 620,
+                easing: Easing.inOut(Easing.quad),
+                useNativeDriver: true,
+              }),
+            ]).start();
+          }
+
+          if (nextIds.length === todayQuests.length && currentIds.length !== todayQuests.length) {
+            setQuestRewardUnlocked(true);
+          }
+
+          return nextIds;
+        });
+      }
       setCollection((currentCollection) => {
         const normalizedName = parsed.object_en.trim().toLowerCase();
         const alreadyDiscovered = currentCollection.some(
@@ -453,6 +854,7 @@ export default function HomeScreen() {
         setCollectionMessage(COPY.collectionNew);
         setCollectionFeedback('new');
         setNewestDiscoveryAt(discoveredAt);
+        openMagicChest();
         return [
           {
             ...parsed,
@@ -567,6 +969,16 @@ export default function HomeScreen() {
             <Text style={styles.subtitle}>{COPY.subtitle}</Text>
           </View>
 
+          <MagicCompanion
+            floatOpacity={floatOpacity}
+            floatTranslateY={floatTranslateY}
+            message={companionMessage}
+            messageOpacity={companionOpacity}
+            messageScale={companionScale}
+            starTwinkleOpacity={starTwinkleOpacity}
+            starTwinkleScale={starTwinkleScale}
+          />
+
           <Animated.View
             style={[
               styles.photoGlowFrame,
@@ -662,11 +1074,18 @@ export default function HomeScreen() {
               </View>
             ) : recognitionResult ? (
               <MagicWordCard
+                legendaryGlowScale={legendaryGlowScale}
+                legendaryOpacity={legendaryOpacity}
+                legendaryScale={legendaryScale}
+                legendaryStarScale={legendaryStarScale}
+                rarity={getRarity(recognitionResult)}
                 result={recognitionResult}
                 onSpeakChinese={() => speakWord(recognitionResult.object_zh, 'zh')}
                 onSpeakEnglish={() => speakWord(recognitionResult.object_en, 'en')}
                 speakButtonScale={speakButtonScale}
                 speakingLanguage={speakingLanguage}
+                starTwinkleOpacity={starTwinkleOpacity}
+                starTwinkleScale={starTwinkleScale}
               />
             ) : errorMessage ? (
               <FailureCard
@@ -681,14 +1100,36 @@ export default function HomeScreen() {
           </Animated.View>
 
           <MagicCollection
+            chestGlowScale={chestGlowScale}
+            chestOpened={chestOpened}
+            chestOpacity={chestOpacity}
+            chestReward={chestReward}
+            chestScale={chestScale}
             collection={collection}
+            completedQuestIds={completedQuestIds}
             countScale={countScale}
             feedback={collectionFeedback}
+            level={getMagicLevel(collection.length)}
+            levelUpGlowOpacity={levelUpGlowOpacity}
+            levelUpGlowScale={levelUpGlowScale}
+            levelUpLevel={levelUpLevel}
+            levelUpOpacity={levelUpOpacity}
+            levelUpScale={levelUpScale}
+            levelUpStarScale={levelUpStarScale}
+            levelUpTranslateY={levelUpTranslateY}
             message={collectionMessage}
             newestDiscoveryAt={newestDiscoveryAt}
             newItemOpacity={newItemOpacity}
             newItemScale={newItemScale}
             newItemTranslateY={newItemTranslateY}
+            questGlowScale={questGlowScale}
+            questPopOpacity={questPopOpacity}
+            questPopScale={questPopScale}
+            questRewardUnlocked={questRewardUnlocked}
+            quests={todayQuests}
+            streakDays={streakDays}
+            starTwinkleOpacity={starTwinkleOpacity}
+            starTwinkleScale={starTwinkleScale}
             unlockGlowOpacity={unlockGlowOpacity}
             unlockGlowScale={unlockGlowScale}
             unlockOpacity={unlockOpacity}
@@ -737,6 +1178,105 @@ export default function HomeScreen() {
   );
 }
 
+function getCompanionMessage({
+  isRecognizing,
+  levelJustUp,
+  questRewardUnlocked,
+  recognitionResult,
+}: {
+  isRecognizing: boolean;
+  levelJustUp: boolean;
+  questRewardUnlocked: boolean;
+  recognitionResult: RecognitionResult | null;
+}) {
+  if (levelJustUp) {
+    return COPY.companionLevelUp;
+  }
+
+  if (questRewardUnlocked) {
+    return COPY.companionQuestDone;
+  }
+
+  if (recognitionResult && getRarity(recognitionResult).key === 'legendary') {
+    return COPY.companionLegendary;
+  }
+
+  if (recognitionResult) {
+    return COPY.companionSuccess;
+  }
+
+  if (isRecognizing) {
+    return COPY.companionThinking;
+  }
+
+  return COPY.companionReady;
+}
+
+function MagicCompanion({
+  floatOpacity,
+  floatTranslateY,
+  message,
+  messageOpacity,
+  messageScale,
+  starTwinkleOpacity,
+  starTwinkleScale,
+}: {
+  floatOpacity: Animated.AnimatedInterpolation<string | number>;
+  floatTranslateY: Animated.AnimatedInterpolation<string | number>;
+  message: string;
+  messageOpacity: Animated.AnimatedInterpolation<string | number>;
+  messageScale: Animated.AnimatedInterpolation<string | number>;
+  starTwinkleOpacity: Animated.AnimatedInterpolation<string | number>;
+  starTwinkleScale: Animated.AnimatedInterpolation<string | number>;
+}) {
+  return (
+    <Animated.View
+      style={[
+        styles.companionPanel,
+        {
+          opacity: floatOpacity,
+          transform: [{ translateY: floatTranslateY }],
+        },
+      ]}
+    >
+      <View style={styles.companionAvatarWrap}>
+        <Animated.Text
+          style={[
+            styles.companionSparkle,
+            styles.companionSparkleOne,
+            { opacity: starTwinkleOpacity, transform: [{ scale: starTwinkleScale }] },
+          ]}
+        >
+          {'\u2728'}
+        </Animated.Text>
+        <Animated.Text
+          style={[
+            styles.companionSparkle,
+            styles.companionSparkleTwo,
+            { opacity: starTwinkleOpacity, transform: [{ scale: starTwinkleScale }] },
+          ]}
+        >
+          {'\u2726'}
+        </Animated.Text>
+        <Text style={styles.companionAvatar}>{'\ud83e\udd89'}</Text>
+      </View>
+
+      <Animated.View
+        style={[
+          styles.companionBubble,
+          {
+            opacity: messageOpacity,
+            transform: [{ scale: messageScale }],
+          },
+        ]}
+      >
+        <Text style={styles.companionName}>{COPY.companionName}</Text>
+        <Text style={styles.companionMessage}>{message}</Text>
+      </Animated.View>
+    </Animated.View>
+  );
+}
+
 function FailureCard({
   emojiTranslateY,
   opacity,
@@ -771,14 +1311,36 @@ function FailureCard({
 }
 
 function MagicCollection({
+  chestGlowScale,
+  chestOpened,
+  chestOpacity,
+  chestReward,
+  chestScale,
   collection,
+  completedQuestIds,
   countScale,
   feedback,
+  level,
+  levelUpGlowOpacity,
+  levelUpGlowScale,
+  levelUpLevel,
+  levelUpOpacity,
+  levelUpScale,
+  levelUpStarScale,
+  levelUpTranslateY,
   message,
   newestDiscoveryAt,
   newItemOpacity,
   newItemScale,
   newItemTranslateY,
+  questGlowScale,
+  questPopOpacity,
+  questPopScale,
+  questRewardUnlocked,
+  quests,
+  streakDays,
+  starTwinkleOpacity,
+  starTwinkleScale,
   unlockGlowOpacity,
   unlockGlowScale,
   unlockOpacity,
@@ -787,14 +1349,36 @@ function MagicCollection({
   unlockSparkleScale,
   unlockTranslateY,
 }: {
+  chestGlowScale: Animated.AnimatedInterpolation<string | number>;
+  chestOpened: boolean;
+  chestOpacity: Animated.AnimatedInterpolation<string | number>;
+  chestReward: string;
+  chestScale: Animated.AnimatedInterpolation<string | number>;
   collection: CollectionItem[];
+  completedQuestIds: string[];
   countScale: Animated.AnimatedInterpolation<string | number>;
   feedback: 'new' | 'known' | '';
+  level: MagicLevel;
+  levelUpGlowOpacity: Animated.AnimatedInterpolation<string | number>;
+  levelUpGlowScale: Animated.AnimatedInterpolation<string | number>;
+  levelUpLevel: MagicLevel | null;
+  levelUpOpacity: Animated.AnimatedInterpolation<string | number>;
+  levelUpScale: Animated.AnimatedInterpolation<string | number>;
+  levelUpStarScale: Animated.AnimatedInterpolation<string | number>;
+  levelUpTranslateY: Animated.AnimatedInterpolation<string | number>;
   message: string;
   newestDiscoveryAt: string;
   newItemOpacity: Animated.AnimatedInterpolation<string | number>;
   newItemScale: Animated.AnimatedInterpolation<string | number>;
   newItemTranslateY: Animated.AnimatedInterpolation<string | number>;
+  questGlowScale: Animated.AnimatedInterpolation<string | number>;
+  questPopOpacity: Animated.AnimatedInterpolation<string | number>;
+  questPopScale: Animated.AnimatedInterpolation<string | number>;
+  questRewardUnlocked: boolean;
+  quests: MagicQuest[];
+  streakDays: number;
+  starTwinkleOpacity: Animated.AnimatedInterpolation<string | number>;
+  starTwinkleScale: Animated.AnimatedInterpolation<string | number>;
   unlockGlowOpacity: Animated.AnimatedInterpolation<string | number>;
   unlockGlowScale: Animated.AnimatedInterpolation<string | number>;
   unlockOpacity: Animated.AnimatedInterpolation<string | number>;
@@ -803,24 +1387,97 @@ function MagicCollection({
   unlockSparkleScale: Animated.AnimatedInterpolation<string | number>;
   unlockTranslateY: Animated.AnimatedInterpolation<string | number>;
 }) {
-  if (collection.length === 0) {
-    return null;
-  }
-
   return (
     <View style={styles.collectionPanel}>
+      <MagicRewardPanel
+        chestGlowScale={chestGlowScale}
+        chestOpened={chestOpened}
+        chestOpacity={chestOpacity}
+        chestReward={chestReward}
+        chestScale={chestScale}
+        starTwinkleOpacity={starTwinkleOpacity}
+        starTwinkleScale={starTwinkleScale}
+        streakDays={streakDays}
+      />
+
+      <MagicQuestPanel
+        completedQuestIds={completedQuestIds}
+        questGlowScale={questGlowScale}
+        questPopOpacity={questPopOpacity}
+        questPopScale={questPopScale}
+        questRewardUnlocked={questRewardUnlocked}
+        quests={quests}
+      />
+
       <View style={styles.collectionHeader}>
-        <View>
-          <Text style={styles.collectionTitle}>{COPY.collectionTitle}</Text>
-          <View style={styles.collectionCountRow}>
-            <Text style={styles.collectionCount}>{COPY.collectionCount}: </Text>
-            <Animated.Text style={[styles.collectionCountNumber, { transform: [{ scale: countScale }] }]}>
-              {collection.length}
-            </Animated.Text>
-            <Text style={styles.collectionCount}> \u4e2a</Text>
+        <View style={styles.levelHeaderCard}>
+          <View style={styles.levelBadgeCircle}>
+            <Text style={styles.levelBadgeText}>{level.badge}</Text>
+          </View>
+          <View style={styles.levelHeaderText}>
+            <Text style={styles.levelTitle}>
+              {level.badge} {level.title}
+            </Text>
+            <View style={styles.collectionCountRow}>
+              <Text style={styles.collectionCount}>已发现：</Text>
+              <Animated.Text style={[styles.collectionCountNumber, { transform: [{ scale: countScale }] }]}>
+                {collection.length}
+              </Animated.Text>
+              <Text style={styles.collectionCount}> {COPY.collectionWords}</Text>
+            </View>
           </View>
         </View>
+
+        <View style={styles.collectionTitleBlock}>
+          <Text style={styles.collectionTitle}>{COPY.collectionTitle}</Text>
+        </View>
       </View>
+
+      {levelUpLevel ? (
+        <Animated.View
+          style={[
+            styles.levelUpBanner,
+            {
+              opacity: levelUpOpacity,
+              transform: [{ translateY: levelUpTranslateY }, { scale: levelUpScale }],
+            },
+          ]}
+        >
+          <Animated.View
+            pointerEvents="none"
+            style={[
+              styles.levelUpGlow,
+              {
+                opacity: levelUpGlowOpacity,
+                transform: [{ scale: levelUpGlowScale }],
+              },
+            ]}
+          />
+          <Animated.Text
+            style={[
+              styles.levelUpStar,
+              styles.levelUpStarLeft,
+              { opacity: levelUpOpacity, transform: [{ scale: levelUpStarScale }] },
+            ]}
+          >
+            {'\u2728'}
+          </Animated.Text>
+          <Animated.Text
+            style={[
+              styles.levelUpStar,
+              styles.levelUpStarRight,
+              { opacity: levelUpOpacity, transform: [{ scale: levelUpStarScale }] },
+            ]}
+          >
+            {'\u2726'}
+          </Animated.Text>
+          <Text style={styles.levelUpTitle}>{COPY.levelUp}</Text>
+          <Text style={styles.levelUpBecome}>{COPY.levelBecome}</Text>
+          <Text style={styles.levelUpName}>
+            {levelUpLevel.badge} {levelUpLevel.title}！
+          </Text>
+        </Animated.View>
+      ) : null}
 
       {feedback === 'new' ? (
         <Animated.View
@@ -900,6 +1557,172 @@ function MagicCollection({
   );
 }
 
+function MagicRewardPanel({
+  chestGlowScale,
+  chestOpened,
+  chestOpacity,
+  chestReward,
+  chestScale,
+  starTwinkleOpacity,
+  starTwinkleScale,
+  streakDays,
+}: {
+  chestGlowScale: Animated.AnimatedInterpolation<string | number>;
+  chestOpened: boolean;
+  chestOpacity: Animated.AnimatedInterpolation<string | number>;
+  chestReward: string;
+  chestScale: Animated.AnimatedInterpolation<string | number>;
+  starTwinkleOpacity: Animated.AnimatedInterpolation<string | number>;
+  starTwinkleScale: Animated.AnimatedInterpolation<string | number>;
+  streakDays: number;
+}) {
+  return (
+    <View style={styles.rewardPanel}>
+      <View style={styles.streakCard}>
+        <Text style={styles.streakTitle}>{COPY.streakTitle}</Text>
+        <Text style={styles.streakCount}>
+          {streakDays} {COPY.streakDays}
+        </Text>
+      </View>
+
+      <Animated.View
+        style={[
+          styles.chestCard,
+          chestOpened && styles.chestCardOpen,
+          chestOpened && {
+            opacity: chestOpacity,
+            transform: [{ scale: chestScale }],
+          },
+        ]}
+      >
+        {chestOpened ? (
+          <>
+            <Animated.View
+              pointerEvents="none"
+              style={[styles.chestGlow, { transform: [{ scale: chestGlowScale }] }]}
+            />
+            <View pointerEvents="none" style={styles.chestConfettiLayer}>
+              <Animated.Text
+                style={[
+                  styles.chestConfetti,
+                  styles.chestConfettiOne,
+                  { opacity: starTwinkleOpacity, transform: [{ scale: starTwinkleScale }] },
+                ]}
+              >
+                {'\ud83c\udf8a'}
+              </Animated.Text>
+              <Animated.Text
+                style={[
+                  styles.chestConfetti,
+                  styles.chestConfettiTwo,
+                  { opacity: starTwinkleOpacity, transform: [{ scale: starTwinkleScale }] },
+                ]}
+              >
+                {'\u2728'}
+              </Animated.Text>
+              <Animated.Text
+                style={[
+                  styles.chestConfetti,
+                  styles.chestConfettiThree,
+                  { opacity: starTwinkleOpacity, transform: [{ scale: starTwinkleScale }] },
+                ]}
+              >
+                {'\ud83c\udf89'}
+              </Animated.Text>
+            </View>
+            <Text style={styles.chestEmoji}>{'\ud83c\udf81'}</Text>
+            <Text style={styles.chestOpenTitle}>{COPY.chestOpened}</Text>
+            <Text style={styles.chestOpenText}>{COPY.chestReward}</Text>
+            <Text style={styles.chestRewardText}>{chestReward}</Text>
+          </>
+        ) : (
+          <>
+            <Text style={styles.chestEmoji}>{'\ud83c\udf81'}</Text>
+            <Text style={styles.chestTitle}>{COPY.chestTitle}</Text>
+            <Text style={styles.chestHint}>{COPY.chestNeedOne}</Text>
+          </>
+        )}
+      </Animated.View>
+    </View>
+  );
+}
+
+function MagicQuestPanel({
+  completedQuestIds,
+  questGlowScale,
+  questPopOpacity,
+  questPopScale,
+  questRewardUnlocked,
+  quests,
+}: {
+  completedQuestIds: string[];
+  questGlowScale: Animated.AnimatedInterpolation<string | number>;
+  questPopOpacity: Animated.AnimatedInterpolation<string | number>;
+  questPopScale: Animated.AnimatedInterpolation<string | number>;
+  questRewardUnlocked: boolean;
+  quests: MagicQuest[];
+}) {
+  return (
+    <View style={styles.questPanel}>
+      <View style={styles.questHeader}>
+        <Text style={styles.questTitle}>{COPY.questTitle}</Text>
+        <Text style={styles.questProgress}>
+          {completedQuestIds.length}/{quests.length}
+        </Text>
+      </View>
+
+      <View style={styles.questList}>
+        {quests.map((quest) => {
+          const isDone = completedQuestIds.includes(quest.id);
+          return (
+            <Animated.View
+              key={quest.id}
+              style={[
+                styles.questItem,
+                isDone && styles.questItemDone,
+                isDone && {
+                  opacity: questPopOpacity,
+                  transform: [{ scale: questPopScale }],
+                },
+              ]}
+            >
+              {isDone ? (
+                <Animated.View
+                  pointerEvents="none"
+                  style={[styles.questGlow, { transform: [{ scale: questGlowScale }] }]}
+                />
+              ) : null}
+              <Text style={styles.questEmoji}>{isDone ? '\u2705' : quest.emoji}</Text>
+              <Text style={styles.questText}>{quest.title}</Text>
+              {isDone ? <Text style={styles.questSparkle}>{'\u2728'}</Text> : null}
+            </Animated.View>
+          );
+        })}
+      </View>
+
+      {questRewardUnlocked ? (
+        <Animated.View
+          style={[
+            styles.questReward,
+            {
+              opacity: questPopOpacity,
+              transform: [{ scale: questPopScale }],
+            },
+          ]}
+        >
+          <View pointerEvents="none" style={styles.confettiLayer}>
+            <Text style={[styles.confetti, styles.confettiOne]}>{'\ud83c\udf8a'}</Text>
+            <Text style={[styles.confetti, styles.confettiTwo]}>{'\u2728'}</Text>
+            <Text style={[styles.confetti, styles.confettiThree]}>{'\ud83c\udf89'}</Text>
+          </View>
+          <Text style={styles.questRewardTitle}>{COPY.questDone}</Text>
+          <Text style={styles.questRewardText}>{COPY.questReward}</Text>
+        </Animated.View>
+      ) : null}
+    </View>
+  );
+}
+
 function formatConfidence(confidence: string) {
   const value = confidence.toLowerCase().trim();
 
@@ -920,7 +1743,7 @@ function formatConfidence(confidence: string) {
 
 function getMagicEmoji(result: RecognitionResult) {
   const text = `${result.object_en} ${result.object_zh}`.toLowerCase();
-  const matchers: Array<[string[], string]> = [
+  const matchers: [string[], string][] = [
     [['apple', '\u82f9\u679c'], '\ud83c\udf4e'],
     [['banana', '\u9999\u8549'], '\ud83c\udf4c'],
     [['orange', '\u6a59', '\u6a58'], '\ud83c\udf4a'],
@@ -949,27 +1772,130 @@ function getMagicEmoji(result: RecognitionResult) {
   return found ? found[1] : '\u2728';
 }
 
+function getRarity(result: RecognitionResult) {
+  const text = `${result.object_en} ${result.object_zh}`.toLowerCase();
+  const matchers: [RarityKey, string[]][] = [
+    ['legendary', ['panda', 'rocket', 'castle', 'dinosaur', '\u718a\u732b', '\u706b\u7bad', '\u57ce\u5821', '\u6050\u9f99']],
+    ['epic', ['fighter', 'airplane', 'plane', 'jet', 'robot', '\u6218\u6597\u673a', '\u98de\u673a', '\u673a\u5668\u4eba']],
+    ['rare', ['car', 'vehicle', 'train', 'ship', 'boat', '\u6c7d\u8f66', '\u706b\u8f66', '\u8f6e\u8239', '\u8239']],
+    ['common', ['apple', 'cup', 'book', '\u82f9\u679c', '\u676f', '\u4e66']],
+  ];
+  const found = matchers.find(([, keywords]) => keywords.some((keyword) => text.includes(keyword)));
+  return found ? MAGIC_RARITIES[found[0]] : MAGIC_RARITIES.common;
+}
+
 function MagicWordCard({
+  legendaryGlowScale,
+  legendaryOpacity,
+  legendaryScale,
+  legendaryStarScale,
+  rarity,
   result,
   onSpeakChinese,
   onSpeakEnglish,
   speakButtonScale,
   speakingLanguage,
+  starTwinkleOpacity,
+  starTwinkleScale,
 }: {
+  legendaryGlowScale: Animated.AnimatedInterpolation<string | number>;
+  legendaryOpacity: Animated.AnimatedInterpolation<string | number>;
+  legendaryScale: Animated.AnimatedInterpolation<string | number>;
+  legendaryStarScale: Animated.AnimatedInterpolation<string | number>;
+  rarity: MagicRarity;
   result: RecognitionResult;
   onSpeakChinese: () => void;
   onSpeakEnglish: () => void;
   speakButtonScale: Animated.AnimatedInterpolation<string | number>;
   speakingLanguage: 'zh' | 'en' | null;
+  starTwinkleOpacity: Animated.AnimatedInterpolation<string | number>;
+  starTwinkleScale: Animated.AnimatedInterpolation<string | number>;
 }) {
   return (
-    <View style={styles.wordCard}>
+    <View
+      style={[
+        styles.wordCard,
+        rarity.key === 'common' && styles.wordCardCommon,
+        rarity.key === 'rare' && styles.wordCardRare,
+        rarity.key === 'epic' && styles.wordCardEpic,
+        rarity.key === 'legendary' && styles.wordCardLegendary,
+      ]}
+    >
       <View style={styles.wordCardTop}>
         <Text style={styles.foundTitle}>{COPY.found}</Text>
         <Text style={styles.celebrateText}>{COPY.celebrate}</Text>
       </View>
 
-      <View style={styles.emojiStage}>
+      {rarity.key === 'legendary' ? (
+        <Animated.View
+          style={[
+            styles.legendaryBanner,
+            { opacity: legendaryOpacity, transform: [{ scale: legendaryScale }] },
+          ]}
+        >
+          <Animated.View style={[styles.legendaryGlow, { transform: [{ scale: legendaryGlowScale }] }]} />
+          <Animated.Text
+            style={[
+              styles.legendaryBurst,
+              styles.legendaryBurstOne,
+              { opacity: starTwinkleOpacity, transform: [{ scale: legendaryStarScale }] },
+            ]}
+          >
+            {'\u2728'}
+          </Animated.Text>
+          <Animated.Text
+            style={[
+              styles.legendaryBurst,
+              styles.legendaryBurstTwo,
+              { opacity: starTwinkleOpacity, transform: [{ scale: starTwinkleScale }] },
+            ]}
+          >
+            {'\u2726'}
+          </Animated.Text>
+          <Animated.Text
+            style={[
+              styles.legendaryBurst,
+              styles.legendaryBurstThree,
+              { opacity: starTwinkleOpacity, transform: [{ scale: legendaryStarScale }] },
+            ]}
+          >
+            {'\u2728'}
+          </Animated.Text>
+          <Text style={styles.legendaryTitle}>{COPY.legendaryTitle}</Text>
+          <Text style={styles.legendarySubtitle}>{COPY.legendaryFound}</Text>
+        </Animated.View>
+      ) : null}
+
+      <View
+        style={[
+          styles.rarityPill,
+          rarity.key === 'common' && styles.rarityPillCommon,
+          rarity.key === 'rare' && styles.rarityPillRare,
+          rarity.key === 'epic' && styles.rarityPillEpic,
+          rarity.key === 'legendary' && styles.rarityPillLegendary,
+        ]}
+      >
+        <Text
+          style={[
+            styles.rarityText,
+            rarity.key === 'rare' && styles.rarityTextRare,
+            rarity.key === 'epic' && styles.rarityTextEpic,
+            rarity.key === 'legendary' && styles.rarityTextLegendary,
+          ]}
+        >
+          {rarity.badge} {rarity.label}
+          {'\u53d1\u73b0'}
+        </Text>
+      </View>
+
+      <View
+        style={[
+          styles.emojiStage,
+          rarity.key === 'rare' && styles.emojiStageRare,
+          rarity.key === 'epic' && styles.emojiStageEpic,
+          rarity.key === 'legendary' && styles.emojiStageLegendary,
+        ]}
+      >
         <Text style={styles.magicEmoji}>{getMagicEmoji(result)}</Text>
       </View>
 
@@ -1079,6 +2005,71 @@ const styles = StyleSheet.create({
     marginTop: 10,
     maxWidth: 330,
     textAlign: 'center',
+  },
+  companionPanel: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 14,
+  },
+  companionAvatarWrap: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 72,
+    height: 72,
+    borderRadius: 28,
+    borderWidth: 2,
+    borderColor: '#F7C948',
+    backgroundColor: '#FFF1B8',
+    shadowColor: '#F59E0B',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.2,
+    shadowRadius: 18,
+  },
+  companionAvatar: {
+    fontSize: 42,
+    lineHeight: 50,
+  },
+  companionSparkle: {
+    position: 'absolute',
+    color: '#A855F7',
+    fontSize: 18,
+    fontWeight: '900',
+  },
+  companionSparkleOne: {
+    right: 4,
+    top: 4,
+  },
+  companionSparkleTwo: {
+    bottom: 4,
+    left: 6,
+    color: '#F59E0B',
+  },
+  companionBubble: {
+    flex: 1,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: '#E9D5FF',
+    backgroundColor: '#FFFDF7',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    shadowColor: '#A855F7',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.14,
+    shadowRadius: 20,
+  },
+  companionName: {
+    color: '#7C3AED',
+    fontSize: 12,
+    fontWeight: '900',
+    lineHeight: 17,
+    marginBottom: 3,
+  },
+  companionMessage: {
+    color: '#3B245F',
+    fontSize: 15,
+    fontWeight: '900',
+    lineHeight: 21,
   },
   photoGlowFrame: {
     width: '100%',
@@ -1274,8 +2265,140 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.13,
     shadowRadius: 20,
   },
+  wordCardCommon: {
+    borderColor: '#F8FAFC',
+    shadowColor: '#FFFFFF',
+    shadowOpacity: 0.3,
+  },
+  wordCardRare: {
+    borderColor: '#93C5FD',
+    backgroundColor: '#F0F8FF',
+    shadowColor: '#3B82F6',
+    shadowOpacity: 0.22,
+  },
+  wordCardEpic: {
+    borderColor: '#C084FC',
+    backgroundColor: '#FFF8DC',
+    shadowColor: '#A855F7',
+    shadowOpacity: 0.26,
+  },
+  wordCardLegendary: {
+    borderColor: '#F7C948',
+    backgroundColor: '#FFF7D6',
+    shadowColor: '#EC4899',
+    shadowOpacity: 0.34,
+    shadowRadius: 30,
+  },
   wordCardTop: {
     marginBottom: 14,
+  },
+  legendaryBanner: {
+    alignItems: 'center',
+    alignSelf: 'stretch',
+    borderRadius: 26,
+    borderWidth: 2,
+    borderColor: '#F7C948',
+    backgroundColor: '#FFF1B8',
+    marginBottom: 14,
+    overflow: 'hidden',
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    shadowColor: '#EC4899',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.28,
+    shadowRadius: 24,
+  },
+  legendaryGlow: {
+    position: 'absolute',
+    width: 190,
+    height: 190,
+    borderRadius: 95,
+    backgroundColor: '#FFFFFF',
+    opacity: 0.46,
+  },
+  legendaryBurst: {
+    position: 'absolute',
+    color: '#A855F7',
+    fontSize: 24,
+    fontWeight: '900',
+  },
+  legendaryBurstOne: {
+    left: 18,
+    top: 12,
+  },
+  legendaryBurstTwo: {
+    right: 24,
+    top: 18,
+    color: '#2563EB',
+  },
+  legendaryBurstThree: {
+    bottom: 10,
+    right: 72,
+    color: '#EC4899',
+  },
+  legendaryTitle: {
+    color: '#7C2D12',
+    fontSize: 22,
+    fontWeight: '900',
+    lineHeight: 28,
+    textAlign: 'center',
+  },
+  legendarySubtitle: {
+    color: '#7C3AED',
+    fontSize: 17,
+    fontWeight: '900',
+    lineHeight: 23,
+    marginTop: 2,
+    textAlign: 'center',
+  },
+  rarityPill: {
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    backgroundColor: '#FFFFFF',
+    marginBottom: 14,
+    paddingHorizontal: 13,
+    paddingVertical: 7,
+    shadowColor: '#FFFFFF',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.22,
+    shadowRadius: 12,
+  },
+  rarityPillCommon: {
+    borderColor: '#E2E8F0',
+    backgroundColor: '#FFFFFF',
+  },
+  rarityPillRare: {
+    borderColor: '#93C5FD',
+    backgroundColor: '#DBEAFE',
+    shadowColor: '#3B82F6',
+  },
+  rarityPillEpic: {
+    borderColor: '#C084FC',
+    backgroundColor: '#F5E8FF',
+    shadowColor: '#A855F7',
+  },
+  rarityPillLegendary: {
+    borderColor: '#F7C948',
+    backgroundColor: '#FFF1B8',
+    shadowColor: '#EC4899',
+    shadowOpacity: 0.32,
+  },
+  rarityText: {
+    color: '#475569',
+    fontSize: 14,
+    fontWeight: '900',
+    lineHeight: 19,
+    textAlign: 'center',
+  },
+  rarityTextRare: {
+    color: '#1D4ED8',
+  },
+  rarityTextEpic: {
+    color: '#7C3AED',
+  },
+  rarityTextLegendary: {
+    color: '#C2410C',
   },
   emojiStage: {
     alignItems: 'center',
@@ -1291,6 +2414,25 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.14,
     shadowRadius: 14,
+  },
+  emojiStageRare: {
+    borderColor: '#93C5FD',
+    backgroundColor: '#DBEAFE',
+    shadowColor: '#3B82F6',
+    shadowOpacity: 0.24,
+  },
+  emojiStageEpic: {
+    borderColor: '#C084FC',
+    backgroundColor: '#F5E8FF',
+    shadowColor: '#A855F7',
+    shadowOpacity: 0.28,
+  },
+  emojiStageLegendary: {
+    borderColor: '#F7C948',
+    backgroundColor: '#FFF1B8',
+    shadowColor: '#EC4899',
+    shadowOpacity: 0.34,
+    shadowRadius: 24,
   },
   magicEmoji: {
     fontSize: 62,
@@ -1426,8 +2568,310 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.12,
     shadowRadius: 24,
   },
-  collectionHeader: {
+  rewardPanel: {
+    borderBottomWidth: 1,
+    borderColor: '#F3D8A6',
+    gap: 10,
+    paddingBottom: 16,
     paddingHorizontal: 18,
+  },
+  streakCard: {
+    alignItems: 'center',
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: '#FDBA74',
+    backgroundColor: '#FFF7ED',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    minHeight: 52,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    shadowColor: '#F97316',
+    shadowOffset: { width: 0, height: 7 },
+    shadowOpacity: 0.12,
+    shadowRadius: 14,
+  },
+  streakTitle: {
+    color: '#9A3412',
+    fontSize: 15,
+    fontWeight: '900',
+    lineHeight: 21,
+  },
+  streakCount: {
+    color: '#7C2D12',
+    fontSize: 18,
+    fontWeight: '900',
+    lineHeight: 24,
+  },
+  chestCard: {
+    alignItems: 'center',
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: '#F7C948',
+    backgroundColor: '#FFF1B8',
+    overflow: 'hidden',
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    shadowColor: '#F59E0B',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.16,
+    shadowRadius: 20,
+  },
+  chestCardOpen: {
+    borderColor: '#C084FC',
+    backgroundColor: '#FFF7D6',
+    shadowColor: '#A855F7',
+    shadowOpacity: 0.28,
+    shadowRadius: 26,
+  },
+  chestGlow: {
+    position: 'absolute',
+    width: 190,
+    height: 190,
+    borderRadius: 95,
+    backgroundColor: '#FFFFFF',
+    opacity: 0.48,
+  },
+  chestConfettiLayer: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  chestConfetti: {
+    position: 'absolute',
+    color: '#A855F7',
+    fontSize: 23,
+    fontWeight: '900',
+  },
+  chestConfettiOne: {
+    left: 22,
+    top: 10,
+  },
+  chestConfettiTwo: {
+    right: 30,
+    top: 16,
+  },
+  chestConfettiThree: {
+    bottom: 12,
+    right: 68,
+  },
+  chestEmoji: {
+    fontSize: 34,
+    lineHeight: 42,
+    marginBottom: 4,
+  },
+  chestTitle: {
+    color: '#4C2D6F',
+    fontSize: 18,
+    fontWeight: '900',
+    lineHeight: 24,
+    textAlign: 'center',
+  },
+  chestHint: {
+    color: '#9A6A19',
+    fontSize: 14,
+    fontWeight: '900',
+    lineHeight: 20,
+    marginTop: 3,
+    textAlign: 'center',
+  },
+  chestOpenTitle: {
+    color: '#C2410C',
+    fontSize: 20,
+    fontWeight: '900',
+    lineHeight: 26,
+    textAlign: 'center',
+  },
+  chestOpenText: {
+    color: '#7C3AED',
+    fontSize: 15,
+    fontWeight: '900',
+    lineHeight: 21,
+    marginTop: 2,
+    textAlign: 'center',
+  },
+  chestRewardText: {
+    color: '#3B245F',
+    fontSize: 17,
+    fontWeight: '900',
+    lineHeight: 23,
+    marginTop: 7,
+    textAlign: 'center',
+  },
+  questPanel: {
+    borderBottomWidth: 1,
+    borderColor: '#F3D8A6',
+    paddingTop: 16,
+    paddingBottom: 16,
+    paddingHorizontal: 18,
+  },
+  questHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  questTitle: {
+    color: '#4C2D6F',
+    fontSize: 20,
+    fontWeight: '900',
+    lineHeight: 26,
+  },
+  questProgress: {
+    color: '#7C3AED',
+    fontSize: 14,
+    fontWeight: '900',
+    lineHeight: 20,
+  },
+  questList: {
+    gap: 9,
+  },
+  questItem: {
+    alignItems: 'center',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#F8D58D',
+    backgroundColor: '#FFFFFF',
+    flexDirection: 'row',
+    gap: 9,
+    minHeight: 48,
+    overflow: 'hidden',
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    shadowColor: '#F59E0B',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+  },
+  questItemDone: {
+    borderColor: '#C084FC',
+    backgroundColor: '#F8EEFF',
+    shadowColor: '#A855F7',
+    shadowOpacity: 0.18,
+    shadowRadius: 18,
+  },
+  questGlow: {
+    position: 'absolute',
+    right: -16,
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    backgroundColor: '#FFFFFF',
+    opacity: 0.42,
+  },
+  questEmoji: {
+    fontSize: 24,
+    lineHeight: 30,
+  },
+  questText: {
+    color: '#4C2D6F',
+    flex: 1,
+    fontSize: 15,
+    fontWeight: '900',
+    lineHeight: 21,
+  },
+  questSparkle: {
+    color: '#A855F7',
+    fontSize: 20,
+    fontWeight: '900',
+    lineHeight: 24,
+  },
+  questReward: {
+    alignItems: 'center',
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: '#F7C948',
+    backgroundColor: '#FFF1B8',
+    marginTop: 12,
+    overflow: 'hidden',
+    paddingHorizontal: 14,
+    paddingVertical: 13,
+    shadowColor: '#F59E0B',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.2,
+    shadowRadius: 20,
+  },
+  confettiLayer: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  confetti: {
+    position: 'absolute',
+    fontSize: 22,
+  },
+  confettiOne: {
+    left: 18,
+    top: 10,
+  },
+  confettiTwo: {
+    right: 28,
+    top: 16,
+  },
+  confettiThree: {
+    bottom: 10,
+    right: 62,
+  },
+  questRewardTitle: {
+    color: '#C2410C',
+    fontSize: 19,
+    fontWeight: '900',
+    lineHeight: 25,
+    textAlign: 'center',
+  },
+  questRewardText: {
+    color: '#4C2D6F',
+    fontSize: 15,
+    fontWeight: '900',
+    lineHeight: 21,
+    marginTop: 3,
+    textAlign: 'center',
+  },
+  collectionHeader: {
+    paddingTop: 16,
+    paddingHorizontal: 18,
+  },
+  levelHeaderCard: {
+    alignItems: 'center',
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: '#F7C948',
+    backgroundColor: '#FFF1B8',
+    flexDirection: 'row',
+    gap: 12,
+    overflow: 'hidden',
+    paddingHorizontal: 14,
+    paddingVertical: 13,
+    shadowColor: '#F59E0B',
+    shadowOffset: { width: 0, height: 9 },
+    shadowOpacity: 0.15,
+    shadowRadius: 18,
+  },
+  levelBadgeCircle: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    borderWidth: 1,
+    borderColor: '#E9D5FF',
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#A855F7',
+    shadowOffset: { width: 0, height: 7 },
+    shadowOpacity: 0.14,
+    shadowRadius: 14,
+  },
+  levelBadgeText: {
+    fontSize: 28,
+    lineHeight: 34,
+  },
+  levelHeaderText: {
+    flex: 1,
+  },
+  levelTitle: {
+    color: '#4C2D6F',
+    fontSize: 18,
+    fontWeight: '900',
+    lineHeight: 24,
+  },
+  collectionTitleBlock: {
+    marginTop: 14,
   },
   collectionTitle: {
     color: '#4C2D6F',
@@ -1451,6 +2895,68 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: '900',
     lineHeight: 22,
+  },
+  levelUpBanner: {
+    alignItems: 'center',
+    alignSelf: 'stretch',
+    borderRadius: 28,
+    borderWidth: 2,
+    borderColor: '#F7C948',
+    backgroundColor: '#FFF7C2',
+    marginHorizontal: 18,
+    marginTop: 14,
+    overflow: 'hidden',
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    shadowColor: '#F59E0B',
+    shadowOffset: { width: 0, height: 14 },
+    shadowOpacity: 0.28,
+    shadowRadius: 28,
+  },
+  levelUpGlow: {
+    position: 'absolute',
+    width: 190,
+    height: 190,
+    borderRadius: 95,
+    backgroundColor: '#FFFFFF',
+  },
+  levelUpStar: {
+    position: 'absolute',
+    color: '#A855F7',
+    fontSize: 28,
+    fontWeight: '900',
+  },
+  levelUpStarLeft: {
+    left: 24,
+    top: 18,
+  },
+  levelUpStarRight: {
+    right: 24,
+    bottom: 18,
+    color: '#EC4899',
+  },
+  levelUpTitle: {
+    color: '#C2410C',
+    fontSize: 24,
+    fontWeight: '900',
+    lineHeight: 30,
+    textAlign: 'center',
+  },
+  levelUpBecome: {
+    color: '#7C3AED',
+    fontSize: 15,
+    fontWeight: '900',
+    lineHeight: 21,
+    marginTop: 4,
+    textAlign: 'center',
+  },
+  levelUpName: {
+    color: '#3B245F',
+    fontSize: 20,
+    fontWeight: '900',
+    lineHeight: 27,
+    marginTop: 2,
+    textAlign: 'center',
   },
   unlockBanner: {
     alignItems: 'center',
