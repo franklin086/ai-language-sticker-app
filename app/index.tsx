@@ -28,8 +28,8 @@ const COPY = {
   uploadIcon: '\ud83d\udcf8',
   placeholderTitle: '\u7ed9\u6211\u770b\u770b\u8fd9\u662f\u4ec0\u4e48 \ud83d\udc40',
   placeholderText: 'AI\u4f1a\u731c\u51fa\u5b83\u7684\u540d\u5b57\uff01',
-  loading: '\ud83e\ude84 AI\u6b63\u5728\u65bd\u5c55\u9b54\u6cd5...',
-  loadingHint: '\u5c0fAI\u4f19\u4f34\u6b63\u5728\u4ed4\u7ec6\u770b\u54e6',
+  loading: '\u2728 AI\u6b63\u5728\u65bd\u5c55\u9b54\u6cd5...',
+  loadingHint: '\ud83e\ude84 \u6b63\u5728\u731c\u5b83\u53eb\u4ec0\u4e48...',
   found: '\u2728 AI\u53d1\u73b0\u4e86\uff01',
   celebrate: '\ud83c\udf89 \u592a\u68d2\u5566\uff01',
   ready: '\u653e\u4e00\u5f20\u56fe\u7247\u8fdb\u9b54\u6cd5\u7a97\uff0c\u9a6c\u4e0a\u53d8\u51fa\u5b66\u4e60\u8d34\u7eb8\u5361\u3002',
@@ -49,7 +49,9 @@ export default function HomeScreen() {
   const [hoveredButton, setHoveredButton] = useState<'camera' | 'album' | null>(null);
   const floatValue = useRef(new Animated.Value(0));
   const buttonBreathValue = useRef(new Animated.Value(0));
+  const buttonFlowValue = useRef(new Animated.Value(0));
   const resultAppearValue = useRef(new Animated.Value(0));
+  const starTwinkleValue = useRef(new Animated.Value(0));
   const scanValue = useRef(new Animated.Value(0));
   const pulseValue = useRef(new Animated.Value(0));
   const shimmerValue = useRef(new Animated.Value(0));
@@ -87,13 +89,41 @@ export default function HomeScreen() {
         }),
       ]),
     );
+    const buttonFlowLoop = Animated.loop(
+      Animated.timing(buttonFlowValue.current, {
+        toValue: 1,
+        duration: 1900,
+        easing: Easing.inOut(Easing.cubic),
+        useNativeDriver: true,
+      }),
+    );
+    const starLoop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(starTwinkleValue.current, {
+          toValue: 1,
+          duration: 1250,
+          easing: Easing.inOut(Easing.quad),
+          useNativeDriver: true,
+        }),
+        Animated.timing(starTwinkleValue.current, {
+          toValue: 0,
+          duration: 1250,
+          easing: Easing.inOut(Easing.quad),
+          useNativeDriver: true,
+        }),
+      ]),
+    );
 
     floatLoop.start();
     buttonLoop.start();
+    buttonFlowLoop.start();
+    starLoop.start();
 
     return () => {
       floatLoop.stop();
       buttonLoop.stop();
+      buttonFlowLoop.stop();
+      starLoop.stop();
     };
   }, []);
 
@@ -182,6 +212,22 @@ export default function HomeScreen() {
   const buttonGlowOpacity = buttonBreathValue.current.interpolate({
     inputRange: [0, 1],
     outputRange: [0.12, 0.34],
+  });
+  const buttonFlowTranslateX = buttonFlowValue.current.interpolate({
+    inputRange: [0, 1],
+    outputRange: [-190, 260],
+  });
+  const starTwinkleOpacity = starTwinkleValue.current.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.42, 1],
+  });
+  const starTwinkleScale = starTwinkleValue.current.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.86, 1.16],
+  });
+  const magicEmojiTranslateY = pulseValue.current.interpolate({
+    inputRange: [0, 1],
+    outputRange: [1, -5],
   });
   const resultOpacity = resultAppearValue.current.interpolate({
     inputRange: [0, 0.35, 1],
@@ -332,9 +378,33 @@ export default function HomeScreen() {
               <View pointerEvents="none" style={styles.portalGlow}>
                 <View style={styles.portalOrbLarge} />
                 <View style={styles.portalOrbSmall} />
-                <Text style={[styles.star, styles.starOne]}>{'\u2728'}</Text>
-                <Text style={[styles.star, styles.starTwo]}>{'\u2726'}</Text>
-                <Text style={[styles.star, styles.starThree]}>{'\u2728'}</Text>
+                <Animated.Text
+                  style={[
+                    styles.star,
+                    styles.starOne,
+                    { opacity: starTwinkleOpacity, transform: [{ scale: starTwinkleScale }] },
+                  ]}
+                >
+                  {'\u2728'}
+                </Animated.Text>
+                <Animated.Text
+                  style={[
+                    styles.star,
+                    styles.starTwo,
+                    { opacity: starTwinkleOpacity, transform: [{ scale: starTwinkleScale }] },
+                  ]}
+                >
+                  {'\u2726'}
+                </Animated.Text>
+                <Animated.Text
+                  style={[
+                    styles.star,
+                    styles.starThree,
+                    { opacity: starTwinkleOpacity, transform: [{ scale: starTwinkleScale }] },
+                  ]}
+                >
+                  {'\u2728'}
+                </Animated.Text>
               </View>
 
               {photoUri ? (
@@ -369,6 +439,16 @@ export default function HomeScreen() {
             {isRecognizing ? (
               <View style={styles.loadingState}>
                 <ActivityIndicator color="#8B5CF6" />
+                <Animated.Text
+                  style={[
+                    styles.loadingMagicIcon,
+                    {
+                      transform: [{ translateY: magicEmojiTranslateY }, { scale: pulseScale }],
+                    },
+                  ]}
+                >
+                  {'\ud83e\ude84'}
+                </Animated.Text>
                 <View>
                   <Text style={styles.statusText}>{COPY.loading}</Text>
                   <Text style={styles.statusHint}>{COPY.loadingHint}</Text>
@@ -396,6 +476,9 @@ export default function HomeScreen() {
                 onPress={takePhoto}
               >
                 <Animated.View style={[styles.buttonGlow, { opacity: buttonGlowOpacity }]} />
+                <Animated.View
+                  style={[styles.buttonFlow, { transform: [{ translateX: buttonFlowTranslateX }, { rotate: '16deg' }] }]}
+                />
                 <Text style={styles.buttonText}>{COPY.camera}</Text>
               </Pressable>
             </Animated.View>
@@ -695,7 +778,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 13,
+    gap: 10,
+  },
+  loadingMagicIcon: {
+    fontSize: 25,
+    lineHeight: 30,
   },
   statusText: {
     color: '#6D28D9',
@@ -828,6 +915,14 @@ const styles = StyleSheet.create({
     borderRadius: 60,
     backgroundColor: '#FDE68A',
     transform: [{ rotate: '-16deg' }],
+  },
+  buttonFlow: {
+    position: 'absolute',
+    top: -34,
+    bottom: -34,
+    width: 62,
+    backgroundColor: '#FFFFFF',
+    opacity: 0.2,
   },
   buttonText: {
     color: '#FFFFFF',
