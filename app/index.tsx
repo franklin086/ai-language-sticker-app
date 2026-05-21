@@ -13,6 +13,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 
@@ -27,175 +28,281 @@ type CollectionItem = RecognitionResult & {
   emoji: string;
 };
 
-type MagicLevel = {
-  badge: string;
-  max: number | null;
-  min: number;
-  rank: number;
+type StickerCategoryKey = 'common' | 'rare' | 'epic' | 'legendary';
+
+type StickerCategory = {
+  key: StickerCategoryKey;
+  label: string;
+  total: number;
+};
+
+type XpState = {
+  currentXp: number;
+  level: number;
+};
+
+type AchievementId =
+  | 'first_scan'
+  | 'five_items'
+  | 'ten_items'
+  | 'three_day_streak'
+  | 'pilot_apprentice'
+  | 'traffic_expert'
+  | 'animal_friend'
+  | 'twenty_items';
+
+type AchievementDefinition = {
+  emoji: string;
+  id: AchievementId;
   title: string;
 };
 
-type MagicQuest = {
+type MuseumExhibit = {
   emoji: string;
   id: string;
   keywords: string[];
+  object_en: string;
+  object_zh: string;
+};
+
+type MagicMuseum = {
+  emoji: string;
+  exhibits: MuseumExhibit[];
+  id: string;
   title: string;
 };
 
-type RarityKey = 'common' | 'rare' | 'epic' | 'legendary';
-
-type MagicRarity = {
-  badge: string;
-  key: RarityKey;
-  label: string;
+type MuseumBadge = {
+  emoji: string;
+  id: string;
+  museumId: string | null;
+  title: string;
 };
 
-const COPY = {
-  badge: '\u2728 Magic Word Camera',
-  title: 'AI \u9b54\u6cd5\u8bc6\u5b57\u76f8\u673a',
-  subtitle: '\u62cd\u4e00\u4e0b\uff0cAI\u9a6c\u4e0a\u544a\u8bc9\u4f60\u5b83\u53eb\u4ec0\u4e48 \u2728',
-  uploadIcon: '\ud83d\udcf8',
-  placeholderTitle: '\u7ed9\u6211\u770b\u770b\u8fd9\u662f\u4ec0\u4e48 \ud83d\udc40',
-  placeholderText: 'AI\u4f1a\u731c\u51fa\u5b83\u7684\u540d\u5b57\uff01',
-  loading: '\u2728 AI\u6b63\u5728\u65bd\u5c55\u9b54\u6cd5...',
-  loadingHint: '\ud83e\ude84 \u6b63\u5728\u731c\u5b83\u53eb\u4ec0\u4e48...',
-  found: '\u2728 AI\u53d1\u73b0\u4e86\uff01',
-  celebrate: '\ud83c\udf89 \u592a\u68d2\u5566\uff01',
-  ready: '\u653e\u4e00\u5f20\u56fe\u7247\u8fdb\u9b54\u6cd5\u7a97\uff0c\u9a6c\u4e0a\u53d8\u51fa\u5b66\u4e60\u8d34\u7eb8\u5361\u3002',
-  error: '\u6211\u6ca1\u6709\u770b\u6e05\u695a',
-  errorTitle: '\ud83e\udd14 \u6211\u6ca1\u6709\u770b\u6e05\u695a',
-  errorHint: '\u518d\u7ed9\u6211\u770b\u770b\u5427 \u2728',
-  errorEncourage: '\ud83e\ude84 \u6362\u4e00\u5f20\u6e05\u695a\u7684\u7167\u7247\u8bd5\u8bd5',
-  collectionTitle: '\u2728 \u6211\u7684\u9b54\u6cd5\u56fe\u9274',
-  collectionCount: '\u5df2\u53d1\u73b0',
-  collectionWords: '\u4e2a\u9b54\u6cd5\u8bcd\u8bed',
-  collectionNew: '\ud83c\udf89 \u65b0\u53d1\u73b0\u5df2\u52a0\u5165\u9b54\u6cd5\u56fe\u9274\uff01',
-  collectionKnown: '\u2728 \u4f60\u5df2\u7ecf\u8ba4\u8bc6\u5b83\u5566\uff01',
-  levelUp: '\u2728 LEVEL UP!',
-  levelBecome: '\ud83c\udf89 \u4f60\u6210\u4e3a\u4e86\uff1a',
-  questTitle: '\u2728 \u4eca\u65e5\u9b54\u6cd5\u4efb\u52a1',
-  questDone: '\ud83c\udf89 \u4eca\u65e5\u4efb\u52a1\u5b8c\u6210\uff01',
-  questReward: '\ud83c\udf81 \u795e\u79d8\u9b54\u6cd5\u5956\u52b1\u5df2\u89e3\u9501\uff01',
-  legendaryTitle: '\ud83c\udf08 LEGENDARY!',
-  legendaryFound: '\u2728 \u4f20\u5947\u53d1\u73b0\uff01',
-  companionName: '\ud83e\udd89 \u5c0f\u732b\u5934\u9e70',
-  companionReady: '\u6211\u4f1a\u966a\u4f60\u4e00\u8d77\u627e\u9b54\u6cd5\u8bcd\u8bed\uff01',
-  companionThinking: '\u6211\u6b63\u5728\u5e2e\u4f60\u770b\u8fd9\u662f\u4ec0\u4e48...',
-  companionSuccess: '\u54c7\uff01\u4f60\u53d1\u73b0\u4e86\u65b0\u4e1c\u897f\uff01',
-  companionLegendary: '\u8fd9\u53ef\u662f\u8d85\u7ea7\u7a00\u6709\u7684\u53d1\u73b0\uff01',
-  companionQuestDone: '\u4eca\u5929\u7684\u9b54\u6cd5\u4efb\u52a1\u5b8c\u6210\u5566\uff01',
-  companionLevelUp: '\u4f60\u8d8a\u6765\u8d8a\u5389\u5bb3\u4e86\uff01',
-  streakTitle: '\ud83d\udd25 \u8fde\u7eed\u63a2\u7d22',
-  streakDays: '\u5929',
-  chestTitle: '\ud83c\udf81 \u9b54\u6cd5\u5b9d\u7bb1',
-  chestNeedOne: '\u518d\u53d1\u73b0 1 \u4e2a\u65b0\u7269\u4f53\u5373\u53ef\u5f00\u542f\uff01',
-  chestOpened: '\u2728 \u5b9d\u7bb1\u5f00\u542f\uff01',
-  chestReward: '\ud83c\udf89 \u83b7\u5f97\u795e\u79d8\u5956\u52b1\uff01',
-  unlockNew: '\ud83c\udf89 NEW!',
-  unlockSticker: '\u2728 \u65b0\u9b54\u6cd5\u8d34\u7eb8\u89e3\u9501\uff01',
-  english: '\u82f1\u6587',
-  chinese: '\u4e2d\u6587',
-  confidence: 'Confidence',
-  camera: '\ud83d\udcf7 \u62cd\u7167\u8bc6\u522b',
-  album: '\ud83d\uddbc\ufe0f \u4ece\u76f8\u518c\u9009\u62e9',
+type CustomMuseumItem = CollectionItem & {
+  addedAt: string;
+  id: string;
 };
 
-const MAGIC_LEVELS: MagicLevel[] = [
-  { badge: '\u2728', min: 0, max: 4, rank: 0, title: '\u9b54\u6cd5\u5b66\u5f92' },
-  { badge: '\ud83c\udf1f', min: 5, max: 14, rank: 1, title: '\u9b54\u6cd5\u63a2\u7d22\u5bb6' },
-  { badge: '\ud83e\ude84', min: 15, max: 29, rank: 2, title: '\u9b54\u6cd5\u5927\u5e08' },
-  { badge: '\ud83d\udc51', min: 30, max: null, rank: 3, title: '\u4f20\u5947\u9b54\u5bfc\u5e08' },
+type CustomMuseum = {
+  emoji: string;
+  id: string;
+  items: CustomMuseumItem[];
+  name: string;
+};
+
+type MovingCustomItem = {
+  itemId: string;
+  museumId: string;
+} | null;
+
+type CuratorProfile = {
+  avatar: string;
+  name: string;
+  title: string;
+};
+
+const API_URL = 'http://localhost:8000/api/recognize';
+const STREAK_STORAGE_KEY = 'ai-magic-camera-streak';
+const XP_STORAGE_KEY = 'ai-magic-camera-xp';
+const ACHIEVEMENTS_STORAGE_KEY = 'ai-magic-camera-achievements';
+const MUSEUM_STORAGE_KEY = 'ai-magic-camera-museum';
+const MUSEUM_BADGES_STORAGE_KEY = 'ai-magic-camera-museum-badges';
+const CUSTOM_MUSEUMS_STORAGE_KEY = 'ai-magic-camera-custom-museums';
+const CURATOR_STORAGE_KEY = 'ai-magic-camera-curator';
+const STICKER_TOTAL = 120;
+const XP_PER_LEVEL = 100;
+
+const XP_REWARDS: Record<StickerCategoryKey, number> = {
+  common: 10,
+  rare: 20,
+  epic: 35,
+  legendary: 50,
+};
+
+const STICKER_CATEGORIES: StickerCategory[] = [
+  { key: 'common', label: '普通 Common', total: 50 },
+  { key: 'rare', label: '稀有 Rare', total: 30 },
+  { key: 'epic', label: '史诗 Epic', total: 20 },
+  { key: 'legendary', label: '传奇 Legendary', total: 20 },
 ];
 
-const MAGIC_RARITIES: Record<RarityKey, MagicRarity> = {
-  common: { badge: '\u26aa', key: 'common', label: '\u666e\u901a' },
-  rare: { badge: '\ud83d\udd35', key: 'rare', label: '\u7a00\u6709' },
-  epic: { badge: '\ud83d\udfe3', key: 'epic', label: '\u53f2\u8bd7' },
-  legendary: { badge: '\ud83c\udf08', key: 'legendary', label: '\u4f20\u5947' },
+const COPY = {
+  badge: '✨ Magic Word Camera',
+  title: 'AI 魔法识字相机',
+  subtitle: '拍一下，AI马上告诉你它叫什么 ✨',
+  placeholderTitle: '给我看看这是什么 👀',
+  placeholderText: 'AI会猜出它的名字！',
+  loading: '✨ AI正在施展魔法...',
+  loadingHint: '🪄 正在猜它叫什么...',
+  ready: '放一张图片进魔法窗，马上变出学习贴纸卡。',
+  found: '✨ AI发现了！',
+  celebrate: '🎉 太棒啦！',
+  error: '我没有看清楚',
+  errorTitle: '🤔 我没有看清楚',
+  errorHint: '再给我看看吧 ✨',
+  errorEncourage: '🪄 换一张清楚的照片试试',
+  collectionTitle: '✨ 我的魔法图鉴',
+  collectionCount: '已发现',
+  collectionWords: '个魔法词语',
+  collectionNew: '🎉 新发现已加入魔法图鉴！',
+  collectionKnown: '✨ 你已经认识它啦！',
+  unlockNew: '🎉 NEW!',
+  unlockSticker: '✨ 新魔法贴纸解锁！',
+  streakTitle: '🔥 连续探索',
+  streakDays: '天',
+  chestTitle: '🎁 魔法宝箱',
+  chestNeedOne: '再发现 1 个新物体即可开启！',
+  chestOpened: '✨ 宝箱开启！',
+  chestReward: '🎉 获得神秘奖励！',
+  levelUp: '✨ LEVEL UP!',
+  confidence: 'Confidence',
+  camera: '📷 拍照识别',
+  album: '🖼️ 从相册选择',
 };
 
 const CHEST_REWARDS = [
-  '\ud83c\udf1f \u661f\u661f\u5fbd\u7ae0',
-  '\ud83d\udc51 \u65b0\u79f0\u53f7',
-  '\ud83e\ude84 \u9b54\u6cd5\u80fd\u91cf',
-  '\u2728 \u5e78\u8fd0\u6c34\u6676',
-  '\ud83e\udd89 \u5c0f\u732b\u5934\u9e70\u795d\u798f',
+  '🌟 星星徽章',
+  '👑 新称号',
+  '🪄 魔法能量',
+  '✨ 幸运水晶',
+  '🦉 小猫头鹰祝福',
 ];
 
-const STREAK_STORAGE_KEY = 'ai-magic-camera-streak';
+const ACHIEVEMENTS: AchievementDefinition[] = [
+  { emoji: '🌟', id: 'first_scan', title: '初次探索者' },
+  { emoji: '🔎', id: 'five_items', title: '小小发现家' },
+  { emoji: '🪄', id: 'ten_items', title: '魔法探索家' },
+  { emoji: '🔥', id: 'three_day_streak', title: '探险达人' },
+  { emoji: '✈️', id: 'pilot_apprentice', title: '飞行员学徒' },
+  { emoji: '🚗', id: 'traffic_expert', title: '交通专家' },
+  { emoji: '🐾', id: 'animal_friend', title: '动物朋友' },
+  { emoji: '🏅', id: 'twenty_items', title: '魔法收藏家' },
+];
 
-const MAGIC_QUEST_POOL: MagicQuest[] = [
+const MAGIC_MUSEUMS: MagicMuseum[] = [
   {
-    emoji: '\ud83d\udc36',
+    emoji: '🏠',
+    id: 'life',
+    title: '生活发现馆',
+    exhibits: [
+      { emoji: '🥤', id: 'life-cup', keywords: ['cup', 'mug', '杯', '杯子'], object_en: 'cup', object_zh: '杯子' },
+      { emoji: '🪑', id: 'life-chair', keywords: ['chair', 'seat', '椅', '椅子'], object_en: 'chair', object_zh: '椅子' },
+      { emoji: '📖', id: 'life-book', keywords: ['book', '书'], object_en: 'book', object_zh: '书' },
+      { emoji: '👟', id: 'life-shoe', keywords: ['shoe', 'shoes', '鞋'], object_en: 'shoe', object_zh: '鞋子' },
+      { emoji: '🧸', id: 'life-toy', keywords: ['toy', '玩具'], object_en: 'toy', object_zh: '玩具' },
+      { emoji: '🛏️', id: 'life-bed', keywords: ['bed', '床'], object_en: 'bed', object_zh: '床' },
+      { emoji: '👜', id: 'life-bag', keywords: ['bag', 'backpack', '包', '书包'], object_en: 'bag', object_zh: '包' },
+      { emoji: '⏰', id: 'life-clock', keywords: ['clock', 'watch', '钟', '表'], object_en: 'clock', object_zh: '钟表' },
+      { emoji: '💡', id: 'life-lamp', keywords: ['lamp', 'light', '灯'], object_en: 'lamp', object_zh: '灯' },
+      { emoji: '🔑', id: 'life-key', keywords: ['key', '钥匙'], object_en: 'key', object_zh: '钥匙' },
+    ],
+  },
+  {
+    emoji: '🚗',
+    id: 'traffic',
+    title: '交通博物馆',
+    exhibits: [
+      { emoji: '🚗', id: 'traffic-car', keywords: ['car', 'vehicle', '汽车', '小汽车'], object_en: 'car', object_zh: '汽车' },
+      { emoji: '🚌', id: 'traffic-bus', keywords: ['bus', '公交', '公交车'], object_en: 'bus', object_zh: '公交车' },
+      { emoji: '🚆', id: 'traffic-train', keywords: ['train', '火车'], object_en: 'train', object_zh: '火车' },
+      { emoji: '✈️', id: 'traffic-airplane', keywords: ['airplane', 'plane', 'jet', '飞机', '战斗机'], object_en: 'airplane', object_zh: '飞机' },
+      { emoji: '🚁', id: 'traffic-helicopter', keywords: ['helicopter', '直升机'], object_en: 'helicopter', object_zh: '直升机' },
+      { emoji: '🚢', id: 'traffic-ship', keywords: ['ship', 'boat', '轮船', '船'], object_en: 'ship', object_zh: '轮船' },
+      { emoji: '🚲', id: 'traffic-bicycle', keywords: ['bicycle', 'bike', '自行车'], object_en: 'bicycle', object_zh: '自行车' },
+      { emoji: '🏍️', id: 'traffic-motorcycle', keywords: ['motorcycle', 'motorbike', '摩托车'], object_en: 'motorcycle', object_zh: '摩托车' },
+      { emoji: '🚕', id: 'traffic-taxi', keywords: ['taxi', '出租车'], object_en: 'taxi', object_zh: '出租车' },
+      { emoji: '🚚', id: 'traffic-truck', keywords: ['truck', '货车', '卡车'], object_en: 'truck', object_zh: '货车' },
+    ],
+  },
+  {
+    emoji: '🦁',
     id: 'animal',
-    keywords: ['animal', 'dog', 'cat', 'bird', 'fish', 'panda', 'rabbit', 'bear', '\u52a8\u7269', '\u72d7', '\u732b', '\u9e1f', '\u9c7c', '\u718a\u732b', '\u5154', '\u718a'],
-    title: '\u627e\u5230\u52a8\u7269',
+    title: '动物博物馆',
+    exhibits: [
+      { emoji: '🐱', id: 'animal-cat', keywords: ['cat', '猫'], object_en: 'cat', object_zh: '猫' },
+      { emoji: '🐶', id: 'animal-dog', keywords: ['dog', 'puppy', '狗', '小狗'], object_en: 'dog', object_zh: '狗' },
+      { emoji: '🐦', id: 'animal-bird', keywords: ['bird', '鸟'], object_en: 'bird', object_zh: '鸟' },
+      { emoji: '🐠', id: 'animal-fish', keywords: ['fish', '鱼'], object_en: 'fish', object_zh: '鱼' },
+      { emoji: '🐰', id: 'animal-rabbit', keywords: ['rabbit', 'bunny', '兔', '兔子'], object_en: 'rabbit', object_zh: '兔子' },
+      { emoji: '🐼', id: 'animal-panda', keywords: ['panda', '熊猫'], object_en: 'panda', object_zh: '熊猫' },
+      { emoji: '🦁', id: 'animal-lion', keywords: ['lion', '狮子'], object_en: 'lion', object_zh: '狮子' },
+      { emoji: '🐘', id: 'animal-elephant', keywords: ['elephant', '大象'], object_en: 'elephant', object_zh: '大象' },
+      { emoji: '🦋', id: 'animal-butterfly', keywords: ['butterfly', '蝴蝶'], object_en: 'butterfly', object_zh: '蝴蝶' },
+      { emoji: '🐢', id: 'animal-turtle', keywords: ['turtle', '乌龟'], object_en: 'turtle', object_zh: '乌龟' },
+    ],
   },
   {
-    emoji: '\ud83d\ude97',
-    id: 'vehicle',
-    keywords: ['vehicle', 'car', 'bus', 'train', 'plane', 'airplane', 'ship', 'boat', '\u4ea4\u901a', '\u8f66', '\u6c7d\u8f66', '\u516c\u4ea4', '\u706b\u8f66', '\u98de\u673a', '\u8239'],
-    title: '\u627e\u5230\u4ea4\u901a\u5de5\u5177',
-  },
-  {
-    emoji: '\ud83c\udf4e',
-    id: 'food',
-    keywords: ['food', 'apple', 'banana', 'orange', 'bread', 'cake', 'milk', 'cup', '\u98df\u7269', '\u82f9\u679c', '\u9999\u8549', '\u6a59', '\u9762\u5305', '\u86cb\u7cd5', '\u725b\u5976', '\u676f'],
-    title: '\u627e\u5230\u98df\u7269',
-  },
-  {
-    emoji: '\ud83c\udf38',
+    emoji: '🌳',
     id: 'nature',
-    keywords: ['nature', 'tree', 'flower', 'leaf', 'plant', 'grass', '\u81ea\u7136', '\u6811', '\u82b1', '\u53f6', '\u690d\u7269', '\u8349'],
-    title: '\u627e\u5230\u81ea\u7136\u9b54\u6cd5',
+    title: '自然博物馆',
+    exhibits: [
+      { emoji: '🌳', id: 'nature-tree', keywords: ['tree', '树'], object_en: 'tree', object_zh: '树' },
+      { emoji: '🌸', id: 'nature-flower', keywords: ['flower', '花'], object_en: 'flower', object_zh: '花' },
+      { emoji: '🍃', id: 'nature-leaf', keywords: ['leaf', 'leaves', '叶', '叶子'], object_en: 'leaf', object_zh: '叶子' },
+      { emoji: '🌿', id: 'nature-grass', keywords: ['grass', '草'], object_en: 'grass', object_zh: '草' },
+      { emoji: '🪨', id: 'nature-rock', keywords: ['rock', 'stone', '石头'], object_en: 'rock', object_zh: '石头' },
+      { emoji: '🌊', id: 'nature-water', keywords: ['water', 'river', 'lake', '水', '河', '湖'], object_en: 'water', object_zh: '水' },
+      { emoji: '☁️', id: 'nature-cloud', keywords: ['cloud', '云'], object_en: 'cloud', object_zh: '云' },
+      { emoji: '☀️', id: 'nature-sun', keywords: ['sun', '太阳'], object_en: 'sun', object_zh: '太阳' },
+      { emoji: '🌙', id: 'nature-moon', keywords: ['moon', '月亮'], object_en: 'moon', object_zh: '月亮' },
+      { emoji: '⭐', id: 'nature-star', keywords: ['star', '星星'], object_en: 'star', object_zh: '星星' },
+    ],
   },
   {
-    emoji: '\ud83d\udcd6',
-    id: 'learning',
-    keywords: ['book', 'pen', 'pencil', 'paper', 'computer', 'phone', '\u4e66', '\u7b14', '\u94c5\u7b14', '\u7eb8', '\u7535\u8111', '\u624b\u673a'],
-    title: '\u627e\u5230\u5b66\u4e60\u9053\u5177',
+    emoji: '🚀',
+    id: 'technology',
+    title: '科技博物馆',
+    exhibits: [
+      { emoji: '📱', id: 'tech-phone', keywords: ['phone', 'mobile', '手机'], object_en: 'phone', object_zh: '手机' },
+      { emoji: '💻', id: 'tech-computer', keywords: ['computer', 'laptop', '电脑'], object_en: 'computer', object_zh: '电脑' },
+      { emoji: '📷', id: 'tech-camera', keywords: ['camera', '相机'], object_en: 'camera', object_zh: '相机' },
+      { emoji: '🤖', id: 'tech-robot', keywords: ['robot', '机器人'], object_en: 'robot', object_zh: '机器人' },
+      { emoji: '🚀', id: 'tech-rocket', keywords: ['rocket', '火箭'], object_en: 'rocket', object_zh: '火箭' },
+      { emoji: '🎧', id: 'tech-headphones', keywords: ['headphones', 'earphones', '耳机'], object_en: 'headphones', object_zh: '耳机' },
+      { emoji: '⌨️', id: 'tech-keyboard', keywords: ['keyboard', '键盘'], object_en: 'keyboard', object_zh: '键盘' },
+      { emoji: '🖱️', id: 'tech-mouse', keywords: ['mouse', '鼠标'], object_en: 'mouse', object_zh: '鼠标' },
+      { emoji: '📺', id: 'tech-tv', keywords: ['tv', 'television', '电视'], object_en: 'television', object_zh: '电视' },
+      { emoji: '🎮', id: 'tech-gamepad', keywords: ['gamepad', 'controller', '游戏机', '手柄'], object_en: 'game controller', object_zh: '游戏手柄' },
+    ],
   },
   {
-    emoji: '\u26bd',
-    id: 'toy',
-    keywords: ['toy', 'ball', 'doll', 'game', 'shoe', '\u73a9\u5177', '\u7403', '\u5a03\u5a03', '\u6e38\u620f', '\u978b'],
-    title: '\u627e\u5230\u73a9\u5177\u6216\u8fd0\u52a8\u7269',
+    emoji: '🏺',
+    id: 'culture',
+    title: '世界文化馆',
+    exhibits: [
+      { emoji: '🏺', id: 'culture-vase', keywords: ['vase', 'pottery', '花瓶', '陶器'], object_en: 'vase', object_zh: '花瓶' },
+      { emoji: '🖼️', id: 'culture-painting', keywords: ['painting', 'picture', '画', '绘画'], object_en: 'painting', object_zh: '绘画' },
+      { emoji: '🎭', id: 'culture-mask', keywords: ['mask', '面具'], object_en: 'mask', object_zh: '面具' },
+      { emoji: '📜', id: 'culture-scroll', keywords: ['scroll', 'paper', '卷轴', '纸'], object_en: 'scroll', object_zh: '卷轴' },
+      { emoji: '🪘', id: 'culture-drum', keywords: ['drum', '鼓'], object_en: 'drum', object_zh: '鼓' },
+      { emoji: '🎻', id: 'culture-violin', keywords: ['violin', '小提琴'], object_en: 'violin', object_zh: '小提琴' },
+      { emoji: '🏯', id: 'culture-temple', keywords: ['temple', 'pagoda', '寺庙', '宝塔'], object_en: 'temple', object_zh: '寺庙' },
+      { emoji: '🗿', id: 'culture-statue', keywords: ['statue', 'sculpture', '雕像', '雕塑'], object_en: 'statue', object_zh: '雕像' },
+      { emoji: '🧭', id: 'culture-compass', keywords: ['compass', '指南针'], object_en: 'compass', object_zh: '指南针' },
+      { emoji: '🪙', id: 'culture-coin', keywords: ['coin', 'money', '硬币', '钱币'], object_en: 'coin', object_zh: '硬币' },
+    ],
   },
 ];
 
-function pickTodayQuests() {
-  const daySeed = Math.floor(Date.now() / 86400000);
-  return [...MAGIC_QUEST_POOL]
-    .map((quest, index) => ({ quest, score: (daySeed * 17 + index * 31) % 97 }))
-    .sort((a, b) => a.score - b.score)
-    .slice(0, 3)
-    .map((item) => item.quest);
-}
-
-function getMatchedQuestIds(result: RecognitionResult, quests: MagicQuest[]) {
-  const text = `${result.object_en} ${result.object_zh}`.toLowerCase();
-  return quests
-    .filter((quest) => quest.keywords.some((keyword) => text.includes(keyword.toLowerCase())))
-    .map((quest) => quest.id);
-}
-
-function getMagicLevel(discoveredCount: number) {
-  return (
-    MAGIC_LEVELS.find((level) => {
-      const underMax = level.max === null || discoveredCount <= level.max;
-      return discoveredCount >= level.min && underMax;
-    }) ?? MAGIC_LEVELS[0]
-  );
-}
+const MUSEUM_BADGES: MuseumBadge[] = [
+  { emoji: '🔍', id: 'badge-life', museumId: 'life', title: '小小观察家' },
+  { emoji: '✈️', id: 'badge-traffic', museumId: 'traffic', title: '飞行探索家' },
+  { emoji: '🦁', id: 'badge-animal', museumId: 'animal', title: '动物守护者' },
+  { emoji: '🌿', id: 'badge-nature', museumId: 'nature', title: '自然观察家' },
+  { emoji: '🚀', id: 'badge-technology', museumId: 'technology', title: '科技探险家' },
+  { emoji: '🏺', id: 'badge-culture', museumId: 'culture', title: '文明探索者' },
+  { emoji: '👑', id: 'badge-master', museumId: null, title: '博物馆大师' },
+];
 
 function getDateKey(date: Date) {
   return date.toISOString().slice(0, 10);
 }
 
-function getOffsetDate(offsetDays: number) {
+function getYesterdayKey() {
   const date = new Date();
-  date.setDate(date.getDate() + offsetDays);
-  return date;
+  date.setDate(date.getDate() - 1);
+  return getDateKey(date);
 }
 
 function readStoredStreak() {
@@ -228,8 +335,548 @@ function saveStoredStreak(streak: { days: number; lastDate: string }) {
   try {
     window.localStorage.setItem(STREAK_STORAGE_KEY, JSON.stringify(streak));
   } catch {
-    // Streak saving is a bonus reward cue; recognition should keep working if storage is blocked.
+    // Streak is a reward cue. Recognition should continue even if storage is blocked.
   }
+}
+
+function readStoredXp(): XpState | null {
+  if (Platform.OS !== 'web' || typeof window === 'undefined') {
+    return null;
+  }
+
+  try {
+    const rawValue = window.localStorage.getItem(XP_STORAGE_KEY);
+    if (!rawValue) {
+      return null;
+    }
+
+    const parsed = JSON.parse(rawValue) as { currentXp?: number; level?: number };
+    if (typeof parsed.currentXp !== 'number' || typeof parsed.level !== 'number') {
+      return null;
+    }
+
+    return {
+      currentXp: Math.max(0, Math.min(XP_PER_LEVEL - 1, parsed.currentXp)),
+      level: Math.max(1, parsed.level),
+    };
+  } catch {
+    return null;
+  }
+}
+
+function saveStoredXp(xpState: XpState) {
+  if (Platform.OS !== 'web' || typeof window === 'undefined') {
+    return;
+  }
+
+  try {
+    window.localStorage.setItem(XP_STORAGE_KEY, JSON.stringify(xpState));
+  } catch {
+    // XP is local encouragement. Recognition should continue even if storage is blocked.
+  }
+}
+
+function readStoredAchievements(): AchievementId[] {
+  if (Platform.OS !== 'web' || typeof window === 'undefined') {
+    return [];
+  }
+
+  try {
+    const rawValue = window.localStorage.getItem(ACHIEVEMENTS_STORAGE_KEY);
+    if (!rawValue) {
+      return [];
+    }
+
+    const parsed = JSON.parse(rawValue) as string[];
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+
+    const validIds = new Set(ACHIEVEMENTS.map((achievement) => achievement.id));
+    return parsed.filter((id): id is AchievementId => validIds.has(id as AchievementId));
+  } catch {
+    return [];
+  }
+}
+
+function saveStoredAchievements(achievementIds: AchievementId[]) {
+  if (Platform.OS !== 'web' || typeof window === 'undefined') {
+    return;
+  }
+
+  try {
+    window.localStorage.setItem(ACHIEVEMENTS_STORAGE_KEY, JSON.stringify(achievementIds));
+  } catch {
+    // Achievements are local encouragement. Recognition should continue if storage is blocked.
+  }
+}
+
+function getAllMuseumExhibits() {
+  return MAGIC_MUSEUMS.flatMap((museum) => museum.exhibits);
+}
+
+function readStoredMuseumIds(): string[] {
+  if (Platform.OS !== 'web' || typeof window === 'undefined') {
+    return [];
+  }
+
+  try {
+    const rawValue = window.localStorage.getItem(MUSEUM_STORAGE_KEY);
+    if (!rawValue) {
+      return [];
+    }
+
+    const parsed = JSON.parse(rawValue) as string[];
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+
+    const validIds = new Set(getAllMuseumExhibits().map((exhibit) => exhibit.id));
+    return parsed.filter((id) => validIds.has(id));
+  } catch {
+    return [];
+  }
+}
+
+function saveStoredMuseumIds(exhibitIds: string[]) {
+  if (Platform.OS !== 'web' || typeof window === 'undefined') {
+    return;
+  }
+
+  try {
+    window.localStorage.setItem(MUSEUM_STORAGE_KEY, JSON.stringify(exhibitIds));
+  } catch {
+    // Museum progress is local encouragement. Recognition should continue if storage is blocked.
+  }
+}
+
+function readStoredMuseumBadgeIds(): string[] {
+  if (Platform.OS !== 'web' || typeof window === 'undefined') {
+    return [];
+  }
+
+  try {
+    const rawValue = window.localStorage.getItem(MUSEUM_BADGES_STORAGE_KEY);
+    if (!rawValue) {
+      return [];
+    }
+
+    const parsed = JSON.parse(rawValue) as string[];
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+
+    const validIds = new Set(MUSEUM_BADGES.map((badge) => badge.id));
+    return parsed.filter((id) => validIds.has(id));
+  } catch {
+    return [];
+  }
+}
+
+function saveStoredMuseumBadgeIds(badgeIds: string[]) {
+  if (Platform.OS !== 'web' || typeof window === 'undefined') {
+    return;
+  }
+
+  try {
+    window.localStorage.setItem(MUSEUM_BADGES_STORAGE_KEY, JSON.stringify(badgeIds));
+  } catch {
+    // Badge progress is local encouragement. Recognition should continue if storage is blocked.
+  }
+}
+
+function readStoredCustomMuseums(): CustomMuseum[] {
+  if (Platform.OS !== 'web' || typeof window === 'undefined') {
+    return [];
+  }
+
+  try {
+    const rawValue = window.localStorage.getItem(CUSTOM_MUSEUMS_STORAGE_KEY);
+    if (!rawValue) {
+      return [];
+    }
+
+    const parsed = JSON.parse(rawValue) as CustomMuseum[];
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+
+    return parsed
+      .filter((museum) => museum && typeof museum.id === 'string' && typeof museum.name === 'string')
+      .map((museum) => ({
+        emoji: typeof museum.emoji === 'string' && museum.emoji.trim() ? museum.emoji : '🏛',
+        id: museum.id,
+        items: Array.isArray(museum.items) ? museum.items : [],
+        name: museum.name,
+      }));
+  } catch {
+    return [];
+  }
+}
+
+function saveStoredCustomMuseums(customMuseums: CustomMuseum[]) {
+  if (Platform.OS !== 'web' || typeof window === 'undefined') {
+    return;
+  }
+
+  try {
+    window.localStorage.setItem(CUSTOM_MUSEUMS_STORAGE_KEY, JSON.stringify(customMuseums));
+  } catch {
+    // Custom museums are local play data. Recognition should continue if storage is blocked.
+  }
+}
+
+function getCuratorTitle(level: number) {
+  if (level >= 20) {
+    return '👑 传奇馆长';
+  }
+
+  if (level >= 10) {
+    return '🏛 博物馆大师';
+  }
+
+  if (level >= 5) {
+    return '🔍 探索馆长';
+  }
+
+  return '✨ 见习馆长';
+}
+
+function readStoredCurator(): CuratorProfile | null {
+  if (Platform.OS !== 'web' || typeof window === 'undefined') {
+    return null;
+  }
+
+  try {
+    const rawValue = window.localStorage.getItem(CURATOR_STORAGE_KEY);
+    if (!rawValue) {
+      return null;
+    }
+
+    const parsed = JSON.parse(rawValue) as { avatar?: string; name?: string; title?: string };
+    if (typeof parsed.avatar !== 'string' || typeof parsed.name !== 'string') {
+      return null;
+    }
+
+    return {
+      avatar: parsed.avatar.trim() || '🧙',
+      name: parsed.name.trim() || '小小馆长',
+      title: typeof parsed.title === 'string' ? parsed.title : getCuratorTitle(1),
+    };
+  } catch {
+    return null;
+  }
+}
+
+function saveStoredCurator(profile: CuratorProfile, xpState: XpState) {
+  if (Platform.OS !== 'web' || typeof window === 'undefined') {
+    return;
+  }
+
+  try {
+    window.localStorage.setItem(
+      CURATOR_STORAGE_KEY,
+      JSON.stringify({
+        avatar: profile.avatar,
+        currentXp: xpState.currentXp,
+        level: xpState.level,
+        name: profile.name,
+        title: getCuratorTitle(xpState.level),
+      }),
+    );
+  } catch {
+    // Curator profile is local play data. Recognition should continue if storage is blocked.
+  }
+}
+
+function formatConfidence(confidence: string) {
+  const value = confidence.toLowerCase().trim();
+
+  if (value === 'high') {
+    return 'High';
+  }
+
+  if (value === 'medium') {
+    return 'Medium';
+  }
+
+  if (value === 'low') {
+    return 'Low';
+  }
+
+  return confidence;
+}
+
+function getMagicEmoji(result: RecognitionResult) {
+  const text = `${result.object_en} ${result.object_zh}`.toLowerCase();
+  const matchers: [string[], string][] = [
+    [['apple', '苹果'], '🍎'],
+    [['banana', '香蕉'], '🍌'],
+    [['orange', '橙', '橘'], '🍊'],
+    [['cat', '猫'], '🐱'],
+    [['dog', '狗', '小狗'], '🐶'],
+    [['bird', '鸟'], '🐦'],
+    [['fish', '鱼'], '🐠'],
+    [['airplane', 'plane', 'jet', 'fighter', '飞机', '战斗机'], '✈️'],
+    [['car', 'vehicle', '汽车', '车'], '🚗'],
+    [['bus', '公交'], '🚌'],
+    [['train', '火车'], '🚆'],
+    [['ship', 'boat', '船'], '⛵'],
+    [['ball', '球'], '⚽'],
+    [['book', '书'], '📖'],
+    [['flower', '花'], '🌸'],
+    [['tree', '树'], '🌳'],
+    [['cup', '杯'], '🥤'],
+    [['phone', '手机'], '📱'],
+    [['computer', '电脑'], '💻'],
+    [['shoe', '鞋'], '👟'],
+    [['chair', '椅'], '🪑'],
+    [['toy', '玩具'], '🧸'],
+  ];
+
+  const found = matchers.find(([keywords]) => keywords.some((keyword) => text.includes(keyword)));
+  return found ? found[1] : '✨';
+}
+
+function getStickerCategory(item: RecognitionResult): StickerCategoryKey {
+  const text = `${item.object_en} ${item.object_zh}`.toLowerCase();
+  const legendaryKeywords = ['panda', 'rocket', 'castle', 'dinosaur', 'dragon', 'unicorn', '熊猫', '火箭', '城堡', '恐龙', '龙'];
+  const epicKeywords = ['fighter', 'airplane', 'plane', 'jet', 'robot', 'train', 'ship', '战斗机', '飞机', '机器人', '火车', '轮船'];
+  const rareKeywords = ['car', 'vehicle', 'computer', 'phone', 'camera', '汽车', '手机', '电脑', '相机'];
+
+  if (legendaryKeywords.some((keyword) => text.includes(keyword))) {
+    return 'legendary';
+  }
+
+  if (epicKeywords.some((keyword) => text.includes(keyword))) {
+    return 'epic';
+  }
+
+  if (rareKeywords.some((keyword) => text.includes(keyword))) {
+    return 'rare';
+  }
+
+  return 'common';
+}
+
+function getCategoryItems(collection: CollectionItem[], categoryKey: StickerCategoryKey) {
+  return collection.filter((item) => getStickerCategory(item) === categoryKey);
+}
+
+function collectionHasKeyword(collection: CollectionItem[], keywords: string[]) {
+  return collection.some((item) => {
+    const text = `${item.object_en} ${item.object_zh}`.toLowerCase();
+    return keywords.some((keyword) => text.includes(keyword.toLowerCase()));
+  });
+}
+
+function getUnlockedAchievementIds(collection: CollectionItem[], streakDays: number): AchievementId[] {
+  const unlockedIds: AchievementId[] = ['first_scan'];
+
+  if (collection.length >= 5) {
+    unlockedIds.push('five_items');
+  }
+
+  if (collection.length >= 10) {
+    unlockedIds.push('ten_items');
+  }
+
+  if (streakDays >= 3) {
+    unlockedIds.push('three_day_streak');
+  }
+
+  if (collectionHasKeyword(collection, ['airplane', 'plane', 'jet', 'fighter', '飞机', '战斗机'])) {
+    unlockedIds.push('pilot_apprentice');
+  }
+
+  if (collectionHasKeyword(collection, ['car', 'vehicle', '汽车', '车'])) {
+    unlockedIds.push('traffic_expert');
+  }
+
+  if (collectionHasKeyword(collection, ['animal', 'dog', 'cat', 'bird', 'fish', 'panda', 'rabbit', '动物', '狗', '猫', '鸟', '鱼', '熊猫', '兔'])) {
+    unlockedIds.push('animal_friend');
+  }
+
+  if (collection.length >= 20) {
+    unlockedIds.push('twenty_items');
+  }
+
+  return unlockedIds;
+}
+
+function getAchievement(id: AchievementId) {
+  return ACHIEVEMENTS.find((achievement) => achievement.id === id) ?? ACHIEVEMENTS[0];
+}
+
+function getMatchedMuseumExhibitIds(result: RecognitionResult) {
+  const text = `${result.object_en} ${result.object_zh}`.toLowerCase();
+
+  return getAllMuseumExhibits()
+    .filter((exhibit) => exhibit.keywords.some((keyword) => text.includes(keyword.toLowerCase())))
+    .map((exhibit) => exhibit.id);
+}
+
+function getMuseumCollectedCount(museum: MagicMuseum, collectedIds: string[]) {
+  return museum.exhibits.filter((exhibit) => collectedIds.includes(exhibit.id)).length;
+}
+
+function getUnlockedMuseumBadgeIds(collectedIds: string[]) {
+  const completedMuseumIds = MAGIC_MUSEUMS
+    .filter((museum) => getMuseumCollectedCount(museum, collectedIds) === museum.exhibits.length)
+    .map((museum) => museum.id);
+  const badgeIds = MUSEUM_BADGES
+    .filter((badge) => badge.museumId !== null && completedMuseumIds.includes(badge.museumId))
+    .map((badge) => badge.id);
+
+  if (completedMuseumIds.length === MAGIC_MUSEUMS.length) {
+    badgeIds.push('badge-master');
+  }
+
+  return badgeIds;
+}
+
+function getMuseumBadge(id: string) {
+  return MUSEUM_BADGES.find((badge) => badge.id === id) ?? MUSEUM_BADGES[0];
+}
+
+function buildCustomMuseumItem(result: RecognitionResult): CustomMuseumItem {
+  const normalizedName = result.object_en.trim().toLowerCase() || result.object_zh.trim();
+  return {
+    ...result,
+    addedAt: new Date().toISOString(),
+    discoveredAt: new Date().toISOString(),
+    emoji: getMagicEmoji(result),
+    id: normalizedName,
+  };
+}
+
+function CuratorProfileCard({
+  badgeCount,
+  completedMuseumCount,
+  glowScale,
+  itemCount,
+  levelUpOpacity,
+  levelUpScale,
+  onChangeProfile,
+  profile,
+  showLevelUp,
+  streakDays,
+  xpState,
+}: {
+  badgeCount: number;
+  completedMuseumCount: number;
+  glowScale: Animated.AnimatedInterpolation<string | number>;
+  itemCount: number;
+  levelUpOpacity: Animated.AnimatedInterpolation<string | number>;
+  levelUpScale: Animated.AnimatedInterpolation<string | number>;
+  onChangeProfile: (nextProfile: CuratorProfile) => void;
+  profile: CuratorProfile;
+  showLevelUp: boolean;
+  streakDays: number;
+  xpState: XpState;
+}) {
+  const [draftAvatar, setDraftAvatar] = useState(profile.avatar);
+  const [draftName, setDraftName] = useState(profile.name);
+  const [isEditing, setIsEditing] = useState(false);
+  const xpProgressPercent = `${Math.min(100, (xpState.currentXp / XP_PER_LEVEL) * 100)}%` as `${number}%`;
+  const title = getCuratorTitle(xpState.level);
+
+  useEffect(() => {
+    setDraftAvatar(profile.avatar);
+    setDraftName(profile.name);
+  }, [profile.avatar, profile.name]);
+
+  const saveProfile = () => {
+    onChangeProfile({
+      avatar: draftAvatar,
+      name: draftName,
+      title,
+    });
+    setIsEditing(false);
+  };
+
+  return (
+    <View style={styles.curatorCard}>
+      {showLevelUp ? (
+        <Animated.View
+          style={[
+            styles.curatorLevelToast,
+            {
+              opacity: levelUpOpacity,
+              transform: [{ scale: levelUpScale }],
+            },
+          ]}
+        >
+          <Animated.View pointerEvents="none" style={[styles.curatorLevelGlow, { transform: [{ scale: glowScale }] }]} />
+          <View pointerEvents="none" style={styles.curatorConfettiLayer}>
+            <Text style={[styles.curatorConfetti, styles.curatorConfettiOne]}>🎊</Text>
+            <Text style={[styles.curatorConfetti, styles.curatorConfettiTwo]}>✨</Text>
+            <Text style={[styles.curatorConfetti, styles.curatorConfettiThree]}>🎉</Text>
+          </View>
+          <Text style={styles.curatorLevelTitle}>🎉 LEVEL UP!</Text>
+          <Text style={styles.curatorLevelLabel}>恭喜成为：</Text>
+          <Text style={styles.curatorLevelName}>{title}</Text>
+        </Animated.View>
+      ) : null}
+
+      <View style={styles.curatorHeader}>
+        <Text style={styles.curatorAvatar}>{profile.avatar}</Text>
+        <View style={styles.curatorHeaderText}>
+          <Text style={styles.curatorCardTitle}>👑 馆长档案卡</Text>
+          <Text style={styles.curatorName}>{profile.name}</Text>
+          <Text style={styles.curatorTitle}>{title}</Text>
+        </View>
+        <Pressable style={styles.iconTextButton} onPress={() => setIsEditing((currentValue) => !currentValue)}>
+          <Text style={styles.iconTextButtonText}>{isEditing ? '收起' : '编辑'}</Text>
+        </Pressable>
+      </View>
+
+      {isEditing ? (
+        <View style={styles.curatorEditBox}>
+          <View style={styles.customMuseumForm}>
+            <TextInput
+              style={[styles.customMuseumInput, styles.customMuseumEmojiInput]}
+              onChangeText={setDraftAvatar}
+              value={draftAvatar}
+            />
+            <TextInput style={styles.customMuseumInput} onChangeText={setDraftName} value={draftName} />
+          </View>
+          <Pressable style={styles.smallMuseumButton} onPress={saveProfile}>
+            <Text style={styles.smallMuseumButtonText}>保存馆长档案</Text>
+          </Pressable>
+        </View>
+      ) : null}
+
+      <View style={styles.curatorXpRow}>
+        <Text style={styles.curatorLevelText}>LV {xpState.level}</Text>
+        <Text style={styles.curatorXpText}>
+          {xpState.currentXp} / {XP_PER_LEVEL} XP
+        </Text>
+      </View>
+      <View style={styles.xpTrack}>
+        <View style={[styles.xpFill, { width: xpProgressPercent }]} />
+      </View>
+
+      <View style={styles.curatorStatsGrid}>
+        <View style={styles.curatorStatCard}>
+          <Text style={styles.curatorStatValue}>{streakDays}</Text>
+          <Text style={styles.curatorStatLabel}>连续探索天数</Text>
+        </View>
+        <View style={styles.curatorStatCard}>
+          <Text style={styles.curatorStatValue}>{completedMuseumCount}</Text>
+          <Text style={styles.curatorStatLabel}>完成博物馆</Text>
+        </View>
+        <View style={styles.curatorStatCard}>
+          <Text style={styles.curatorStatValue}>{itemCount}</Text>
+          <Text style={styles.curatorStatLabel}>总藏品数量</Text>
+        </View>
+        <View style={styles.curatorStatCard}>
+          <Text style={styles.curatorStatValue}>{badgeCount}</Text>
+          <Text style={styles.curatorStatLabel}>已获得徽章</Text>
+        </View>
+      </View>
+    </View>
+  );
 }
 
 export default function HomeScreen() {
@@ -241,35 +888,43 @@ export default function HomeScreen() {
   const [collectionMessage, setCollectionMessage] = useState('');
   const [collectionFeedback, setCollectionFeedback] = useState<'new' | 'known' | ''>('');
   const [newestDiscoveryAt, setNewestDiscoveryAt] = useState('');
-  const [levelUpLevel, setLevelUpLevel] = useState<MagicLevel | null>(null);
-  const [todayQuests] = useState<MagicQuest[]>(() => pickTodayQuests());
-  const [completedQuestIds, setCompletedQuestIds] = useState<string[]>([]);
-  const [questRewardUnlocked, setQuestRewardUnlocked] = useState(false);
   const [streakDays, setStreakDays] = useState(0);
   const [lastStreakDate, setLastStreakDate] = useState('');
   const [chestOpened, setChestOpened] = useState(false);
   const [chestReward, setChestReward] = useState('');
+  const [xpState, setXpState] = useState<XpState>({ currentXp: 0, level: 1 });
+  const [showLevelUp, setShowLevelUp] = useState(false);
+  const [unlockedAchievementIds, setUnlockedAchievementIds] = useState<AchievementId[]>([]);
+  const [latestAchievement, setLatestAchievement] = useState<AchievementDefinition | null>(null);
+  const [museumCollectedIds, setMuseumCollectedIds] = useState<string[]>([]);
+  const [museumBadgeIds, setMuseumBadgeIds] = useState<string[]>([]);
+  const [latestMuseumBadge, setLatestMuseumBadge] = useState<MuseumBadge | null>(null);
+  const [customMuseums, setCustomMuseums] = useState<CustomMuseum[]>([]);
+  const [curatorProfile, setCuratorProfile] = useState<CuratorProfile>({
+    avatar: '🧙',
+    name: '小小馆长',
+    title: getCuratorTitle(1),
+  });
   const [hoveredButton, setHoveredButton] = useState<'camera' | 'album' | null>(null);
   const [speakingLanguage, setSpeakingLanguage] = useState<'zh' | 'en' | null>(null);
+
   const floatValue = useRef(new Animated.Value(0));
-  const buttonBreathValue = useRef(new Animated.Value(0));
-  const buttonFlowValue = useRef(new Animated.Value(0));
-  const resultAppearValue = useRef(new Animated.Value(0));
-  const errorAppearValue = useRef(new Animated.Value(0));
-  const unlockValue = useRef(new Animated.Value(0));
-  const countBounceValue = useRef(new Animated.Value(0));
-  const speakBounceValue = useRef(new Animated.Value(0));
-  const starTwinkleValue = useRef(new Animated.Value(0));
   const scanValue = useRef(new Animated.Value(0));
   const pulseValue = useRef(new Animated.Value(0));
   const shimmerValue = useRef(new Animated.Value(0));
-  const levelUpValue = useRef(new Animated.Value(0));
-  const questPopValue = useRef(new Animated.Value(0));
-  const legendaryValue = useRef(new Animated.Value(0));
-  const companionValue = useRef(new Animated.Value(1));
+  const resultAppearValue = useRef(new Animated.Value(0));
+  const errorAppearValue = useRef(new Animated.Value(0));
+  const unlockValue = useRef(new Animated.Value(0));
   const chestValue = useRef(new Animated.Value(0));
-  const previousCollectionCount = useRef(0);
-  const previousLevelRank = useRef(getMagicLevel(0).rank);
+  const xpLevelUpValue = useRef(new Animated.Value(0));
+  const achievementValue = useRef(new Animated.Value(0));
+  const museumBadgeValue = useRef(new Animated.Value(0));
+  const countBounceValue = useRef(new Animated.Value(0));
+  const streakBounceValue = useRef(new Animated.Value(0));
+  const speakBounceValue = useRef(new Animated.Value(0));
+  const starTwinkleValue = useRef(new Animated.Value(0));
+  const buttonBreathValue = useRef(new Animated.Value(0));
+  const buttonFlowValue = useRef(new Animated.Value(0));
 
   useEffect(() => {
     const storedStreak = readStoredStreak();
@@ -278,10 +933,36 @@ export default function HomeScreen() {
       setLastStreakDate(storedStreak.lastDate);
     }
 
+    const storedXp = readStoredXp();
+    if (storedXp) {
+      setXpState(storedXp);
+    }
+
+    setUnlockedAchievementIds(readStoredAchievements());
+    setMuseumCollectedIds(readStoredMuseumIds());
+    setMuseumBadgeIds(readStoredMuseumBadgeIds());
+    setCustomMuseums(readStoredCustomMuseums());
+    const storedCurator = readStoredCurator();
+    if (storedCurator) {
+      setCuratorProfile(storedCurator);
+    }
+
     return () => {
       Speech.stop();
     };
   }, []);
+
+  useEffect(() => {
+    const nextProfile = {
+      ...curatorProfile,
+      title: getCuratorTitle(xpState.level),
+    };
+    saveStoredCurator(nextProfile, xpState);
+
+    if (nextProfile.title !== curatorProfile.title) {
+      setCuratorProfile(nextProfile);
+    }
+  }, [curatorProfile, xpState]);
 
   useEffect(() => {
     const floatLoop = Animated.loop(
@@ -295,6 +976,22 @@ export default function HomeScreen() {
         Animated.timing(floatValue.current, {
           toValue: 0,
           duration: 1800,
+          easing: Easing.inOut(Easing.quad),
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+    const starLoop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(starTwinkleValue.current, {
+          toValue: 1,
+          duration: 1250,
+          easing: Easing.inOut(Easing.quad),
+          useNativeDriver: true,
+        }),
+        Animated.timing(starTwinkleValue.current, {
+          toValue: 0,
+          duration: 1250,
           easing: Easing.inOut(Easing.quad),
           useNativeDriver: true,
         }),
@@ -324,33 +1021,17 @@ export default function HomeScreen() {
         useNativeDriver: true,
       }),
     );
-    const starLoop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(starTwinkleValue.current, {
-          toValue: 1,
-          duration: 1250,
-          easing: Easing.inOut(Easing.quad),
-          useNativeDriver: true,
-        }),
-        Animated.timing(starTwinkleValue.current, {
-          toValue: 0,
-          duration: 1250,
-          easing: Easing.inOut(Easing.quad),
-          useNativeDriver: true,
-        }),
-      ]),
-    );
 
     floatLoop.start();
+    starLoop.start();
     buttonLoop.start();
     buttonFlowLoop.start();
-    starLoop.start();
 
     return () => {
       floatLoop.stop();
+      starLoop.stop();
       buttonLoop.stop();
       buttonFlowLoop.stop();
-      starLoop.stop();
     };
   }, []);
 
@@ -412,7 +1093,6 @@ export default function HomeScreen() {
   useEffect(() => {
     if (!recognitionResult) {
       resultAppearValue.current.setValue(0);
-      legendaryValue.current.setValue(0);
       return;
     }
 
@@ -423,27 +1103,6 @@ export default function HomeScreen() {
       easing: Easing.out(Easing.back(1.6)),
       useNativeDriver: true,
     }).start();
-
-    if (getRarity(recognitionResult).key !== 'legendary') {
-      legendaryValue.current.setValue(0);
-      return;
-    }
-
-    legendaryValue.current.setValue(0);
-    Animated.sequence([
-      Animated.timing(legendaryValue.current, {
-        toValue: 1,
-        duration: 620,
-        easing: Easing.out(Easing.back(1.9)),
-        useNativeDriver: true,
-      }),
-      Animated.timing(legendaryValue.current, {
-        toValue: 0.92,
-        duration: 900,
-        easing: Easing.inOut(Easing.quad),
-        useNativeDriver: true,
-      }),
-    ]).start();
   }, [recognitionResult]);
 
   useEffect(() => {
@@ -462,50 +1121,6 @@ export default function HomeScreen() {
   }, [errorMessage]);
 
   useEffect(() => {
-    if (collection.length === previousCollectionCount.current) {
-      return;
-    }
-
-    previousCollectionCount.current = collection.length;
-    const nextLevel = getMagicLevel(collection.length);
-    if (collection.length > 0 && nextLevel.rank > previousLevelRank.current) {
-      setLevelUpLevel(nextLevel);
-      levelUpValue.current.setValue(0);
-      Animated.sequence([
-        Animated.timing(levelUpValue.current, {
-          toValue: 1,
-          duration: 620,
-          easing: Easing.out(Easing.back(1.9)),
-          useNativeDriver: true,
-        }),
-        Animated.timing(levelUpValue.current, {
-          toValue: 0.92,
-          duration: 900,
-          easing: Easing.inOut(Easing.quad),
-          useNativeDriver: true,
-        }),
-      ]).start();
-    }
-    previousLevelRank.current = nextLevel.rank;
-
-    countBounceValue.current.setValue(0);
-    Animated.sequence([
-      Animated.timing(countBounceValue.current, {
-        toValue: 1,
-        duration: 160,
-        easing: Easing.out(Easing.quad),
-        useNativeDriver: true,
-      }),
-      Animated.timing(countBounceValue.current, {
-        toValue: 0,
-        duration: 280,
-        easing: Easing.out(Easing.back(1.6)),
-        useNativeDriver: true,
-      }),
-    ]).start();
-  }, [collection.length]);
-
-  useEffect(() => {
     if (collectionFeedback !== 'new') {
       unlockValue.current.setValue(0);
       return;
@@ -519,24 +1134,6 @@ export default function HomeScreen() {
       useNativeDriver: true,
     }).start();
   }, [collectionFeedback, newestDiscoveryAt]);
-
-  const levelJustUp = Boolean(levelUpLevel && collection.length === levelUpLevel.min);
-  const companionMessage = getCompanionMessage({
-    isRecognizing,
-    levelJustUp,
-    questRewardUnlocked,
-    recognitionResult,
-  });
-
-  useEffect(() => {
-    companionValue.current.setValue(0);
-    Animated.timing(companionValue.current, {
-      toValue: 1,
-      duration: 380,
-      easing: Easing.out(Easing.quad),
-      useNativeDriver: true,
-    }).start();
-  }, [companionMessage]);
 
   useEffect(() => {
     if (!chestOpened) {
@@ -561,6 +1158,75 @@ export default function HomeScreen() {
     ]).start();
   }, [chestOpened, chestReward]);
 
+  useEffect(() => {
+    if (!showLevelUp) {
+      xpLevelUpValue.current.setValue(0);
+      return;
+    }
+
+    xpLevelUpValue.current.setValue(0);
+    Animated.sequence([
+      Animated.timing(xpLevelUpValue.current, {
+        toValue: 1,
+        duration: 620,
+        easing: Easing.out(Easing.back(1.9)),
+        useNativeDriver: true,
+      }),
+      Animated.timing(xpLevelUpValue.current, {
+        toValue: 0.92,
+        duration: 900,
+        easing: Easing.inOut(Easing.quad),
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [showLevelUp, xpState.level]);
+
+  useEffect(() => {
+    if (!latestAchievement) {
+      achievementValue.current.setValue(0);
+      return;
+    }
+
+    achievementValue.current.setValue(0);
+    Animated.sequence([
+      Animated.timing(achievementValue.current, {
+        toValue: 1,
+        duration: 620,
+        easing: Easing.out(Easing.back(1.9)),
+        useNativeDriver: true,
+      }),
+      Animated.timing(achievementValue.current, {
+        toValue: 0.94,
+        duration: 1000,
+        easing: Easing.inOut(Easing.quad),
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [latestAchievement]);
+
+  useEffect(() => {
+    if (!latestMuseumBadge) {
+      museumBadgeValue.current.setValue(0);
+      return;
+    }
+
+    museumBadgeValue.current.setValue(0);
+    Animated.sequence([
+      Animated.timing(museumBadgeValue.current, {
+        toValue: 1,
+        duration: 680,
+        easing: Easing.out(Easing.back(1.9)),
+        useNativeDriver: true,
+      }),
+      Animated.timing(museumBadgeValue.current, {
+        toValue: 0.94,
+        duration: 1100,
+        easing: Easing.inOut(Easing.quad),
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [latestMuseumBadge]);
+
   const floatTranslateY = floatValue.current.interpolate({
     inputRange: [0, 1],
     outputRange: [0, -6],
@@ -568,58 +1234,6 @@ export default function HomeScreen() {
   const floatOpacity = floatValue.current.interpolate({
     inputRange: [0, 1],
     outputRange: [0.96, 1],
-  });
-  const buttonBreathScale = buttonBreathValue.current.interpolate({
-    inputRange: [0, 1],
-    outputRange: [1, 1.012],
-  });
-  const buttonGlowOpacity = buttonBreathValue.current.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0.12, 0.34],
-  });
-  const buttonFlowTranslateX = buttonFlowValue.current.interpolate({
-    inputRange: [0, 1],
-    outputRange: [-190, 260],
-  });
-  const starTwinkleOpacity = starTwinkleValue.current.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0.42, 1],
-  });
-  const starTwinkleScale = starTwinkleValue.current.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0.86, 1.16],
-  });
-  const magicEmojiTranslateY = pulseValue.current.interpolate({
-    inputRange: [0, 1],
-    outputRange: [1, -5],
-  });
-  const resultOpacity = resultAppearValue.current.interpolate({
-    inputRange: [0, 0.35, 1],
-    outputRange: [0, 1, 1],
-  });
-  const resultScale = resultAppearValue.current.interpolate({
-    inputRange: [0, 0.72, 1],
-    outputRange: [0.94, 1.035, 1],
-  });
-  const speakButtonScale = speakBounceValue.current.interpolate({
-    inputRange: [0, 1],
-    outputRange: [1, 1.08],
-  });
-  const errorOpacity = errorAppearValue.current.interpolate({
-    inputRange: [0, 0.2, 1],
-    outputRange: [0, 1, 1],
-  });
-  const errorTranslateX = errorAppearValue.current.interpolate({
-    inputRange: [0, 0.16, 0.32, 0.48, 0.64, 1],
-    outputRange: [0, -5, 5, -3, 3, 0],
-  });
-  const errorScale = errorAppearValue.current.interpolate({
-    inputRange: [0, 0.55, 1],
-    outputRange: [0.97, 1.015, 1],
-  });
-  const errorEmojiTranslateY = errorAppearValue.current.interpolate({
-    inputRange: [0, 0.48, 1],
-    outputRange: [0, -8, 0],
   });
   const scanTranslateY = scanValue.current.interpolate({
     inputRange: [0, 1],
@@ -636,6 +1250,30 @@ export default function HomeScreen() {
   const shimmerTranslateX = shimmerValue.current.interpolate({
     inputRange: [0, 1],
     outputRange: [-240, 280],
+  });
+  const resultOpacity = resultAppearValue.current.interpolate({
+    inputRange: [0, 0.35, 1],
+    outputRange: [0, 1, 1],
+  });
+  const resultScale = resultAppearValue.current.interpolate({
+    inputRange: [0, 0.72, 1],
+    outputRange: [0.94, 1.035, 1],
+  });
+  const errorOpacity = errorAppearValue.current.interpolate({
+    inputRange: [0, 0.2, 1],
+    outputRange: [0, 1, 1],
+  });
+  const errorTranslateX = errorAppearValue.current.interpolate({
+    inputRange: [0, 0.16, 0.32, 0.48, 0.64, 1],
+    outputRange: [0, -5, 5, -3, 3, 0],
+  });
+  const errorScale = errorAppearValue.current.interpolate({
+    inputRange: [0, 0.55, 1],
+    outputRange: [0.97, 1.015, 1],
+  });
+  const errorEmojiTranslateY = errorAppearValue.current.interpolate({
+    inputRange: [0, 0.48, 1],
+    outputRange: [0, -8, 0],
   });
   const unlockOpacity = unlockValue.current.interpolate({
     inputRange: [0, 0.22, 1],
@@ -657,18 +1295,6 @@ export default function HomeScreen() {
     inputRange: [0, 0.42, 1],
     outputRange: [0, 0.5, 0.12],
   });
-  const unlockSparkleScale = unlockValue.current.interpolate({
-    inputRange: [0, 0.5, 1],
-    outputRange: [0.7, 1.25, 1],
-  });
-  const unlockSparkleOpacity = unlockValue.current.interpolate({
-    inputRange: [0, 0.25, 1],
-    outputRange: [0, 1, 0.72],
-  });
-  const countScale = countBounceValue.current.interpolate({
-    inputRange: [0, 1],
-    outputRange: [1, 1.2],
-  });
   const newItemOpacity = unlockValue.current.interpolate({
     inputRange: [0, 0.25, 1],
     outputRange: [0, 1, 1],
@@ -680,66 +1306,6 @@ export default function HomeScreen() {
   const newItemScale = unlockValue.current.interpolate({
     inputRange: [0, 0.68, 1],
     outputRange: [0.9, 1.06, 1],
-  });
-  const levelUpOpacity = levelUpValue.current.interpolate({
-    inputRange: [0, 0.18, 0.92, 1],
-    outputRange: [0, 1, 1, 0],
-  });
-  const levelUpScale = levelUpValue.current.interpolate({
-    inputRange: [0, 0.58, 1],
-    outputRange: [0.78, 1.08, 1],
-  });
-  const levelUpTranslateY = levelUpValue.current.interpolate({
-    inputRange: [0, 1],
-    outputRange: [18, 0],
-  });
-  const levelUpGlowScale = levelUpValue.current.interpolate({
-    inputRange: [0, 0.7, 1],
-    outputRange: [0.65, 1.35, 1.18],
-  });
-  const levelUpGlowOpacity = levelUpValue.current.interpolate({
-    inputRange: [0, 0.35, 1],
-    outputRange: [0, 0.58, 0.18],
-  });
-  const levelUpStarScale = levelUpValue.current.interpolate({
-    inputRange: [0, 0.46, 1],
-    outputRange: [0.65, 1.35, 1],
-  });
-  const questPopOpacity = questPopValue.current.interpolate({
-    inputRange: [0, 0.22, 1],
-    outputRange: [0.28, 1, 0.82],
-  });
-  const questPopScale = questPopValue.current.interpolate({
-    inputRange: [0, 0.5, 1],
-    outputRange: [0.96, 1.08, 1],
-  });
-  const questGlowScale = questPopValue.current.interpolate({
-    inputRange: [0, 0.7, 1],
-    outputRange: [0.72, 1.28, 1.08],
-  });
-  const legendaryOpacity = legendaryValue.current.interpolate({
-    inputRange: [0, 0.18, 1],
-    outputRange: [0, 1, 1],
-  });
-  const legendaryScale = legendaryValue.current.interpolate({
-    inputRange: [0, 0.55, 1],
-    outputRange: [0.78, 1.1, 1],
-  });
-  const legendaryGlowScale = legendaryValue.current.interpolate({
-    inputRange: [0, 0.72, 1],
-    outputRange: [0.6, 1.45, 1.18],
-  });
-  const legendaryStarScale = legendaryValue.current.interpolate({
-    inputRange: [0, 0.48, 1],
-    outputRange: [0.62, 1.42, 1],
-  });
-  const companionOpacity = companionValue.current.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, 1],
-  });
-  const companionScale = companionValue.current.interpolate({
-    inputRange: [0, 0.72, 1],
-    outputRange: [0.96, 1.025, 1],
   });
   const chestOpacity = chestValue.current.interpolate({
     inputRange: [0, 0.22, 1],
@@ -753,6 +1319,104 @@ export default function HomeScreen() {
     inputRange: [0, 0.72, 1],
     outputRange: [0.65, 1.42, 1.16],
   });
+  const xpLevelUpOpacity = xpLevelUpValue.current.interpolate({
+    inputRange: [0, 0.22, 1],
+    outputRange: [0, 1, 1],
+  });
+  const xpLevelUpScale = xpLevelUpValue.current.interpolate({
+    inputRange: [0, 0.58, 1],
+    outputRange: [0.82, 1.08, 1],
+  });
+  const xpLevelUpGlowScale = xpLevelUpValue.current.interpolate({
+    inputRange: [0, 0.72, 1],
+    outputRange: [0.65, 1.42, 1.16],
+  });
+  const achievementOpacity = achievementValue.current.interpolate({
+    inputRange: [0, 0.22, 1],
+    outputRange: [0, 1, 1],
+  });
+  const achievementScale = achievementValue.current.interpolate({
+    inputRange: [0, 0.58, 1],
+    outputRange: [0.82, 1.08, 1],
+  });
+  const achievementTranslateY = achievementValue.current.interpolate({
+    inputRange: [0, 1],
+    outputRange: [18, 0],
+  });
+  const achievementGlowScale = achievementValue.current.interpolate({
+    inputRange: [0, 0.72, 1],
+    outputRange: [0.65, 1.42, 1.16],
+  });
+  const museumBadgeOpacity = museumBadgeValue.current.interpolate({
+    inputRange: [0, 0.22, 1],
+    outputRange: [0, 1, 1],
+  });
+  const museumBadgeScale = museumBadgeValue.current.interpolate({
+    inputRange: [0, 0.58, 1],
+    outputRange: [0.82, 1.08, 1],
+  });
+  const museumBadgeTranslateY = museumBadgeValue.current.interpolate({
+    inputRange: [0, 1],
+    outputRange: [18, 0],
+  });
+  const museumBadgeGlowScale = museumBadgeValue.current.interpolate({
+    inputRange: [0, 0.72, 1],
+    outputRange: [0.65, 1.42, 1.16],
+  });
+  const countScale = countBounceValue.current.interpolate({
+    inputRange: [0, 1],
+    outputRange: [1, 1.2],
+  });
+  const streakScale = streakBounceValue.current.interpolate({
+    inputRange: [0, 1],
+    outputRange: [1, 1.18],
+  });
+  const speakButtonScale = speakBounceValue.current.interpolate({
+    inputRange: [0, 1],
+    outputRange: [1, 1.08],
+  });
+  const starTwinkleOpacity = starTwinkleValue.current.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.42, 1],
+  });
+  const starTwinkleScale = starTwinkleValue.current.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.86, 1.16],
+  });
+  const buttonBreathScale = buttonBreathValue.current.interpolate({
+    inputRange: [0, 1],
+    outputRange: [1, 1.012],
+  });
+  const buttonGlowOpacity = buttonBreathValue.current.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.12, 0.34],
+  });
+  const buttonFlowTranslateX = buttonFlowValue.current.interpolate({
+    inputRange: [0, 1],
+    outputRange: [-190, 260],
+  });
+  const magicEmojiTranslateY = pulseValue.current.interpolate({
+    inputRange: [0, 1],
+    outputRange: [1, -5],
+  });
+
+  const animateCount = () => {
+    countBounceValue.current.setValue(0);
+    Animated.sequence([
+      Animated.timing(countBounceValue.current, {
+        toValue: 1,
+        duration: 160,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      }),
+      Animated.timing(countBounceValue.current, {
+        toValue: 0,
+        duration: 280,
+        easing: Easing.out(Easing.back(1.6)),
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
 
   const updateStreakForToday = () => {
     const today = getDateKey(new Date());
@@ -760,17 +1424,121 @@ export default function HomeScreen() {
       return;
     }
 
-    const yesterday = getDateKey(getOffsetDate(-1));
-    const nextDays = lastStreakDate === yesterday ? streakDays + 1 : 1;
+    const nextDays = lastStreakDate === getYesterdayKey() ? streakDays + 1 : 1;
     setStreakDays(nextDays);
     setLastStreakDate(today);
     saveStoredStreak({ days: nextDays, lastDate: today });
+
+    streakBounceValue.current.setValue(0);
+    Animated.sequence([
+      Animated.timing(streakBounceValue.current, {
+        toValue: 1,
+        duration: 180,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      }),
+      Animated.timing(streakBounceValue.current, {
+        toValue: 0,
+        duration: 300,
+        easing: Easing.out(Easing.back(1.6)),
+        useNativeDriver: true,
+      }),
+    ]).start();
   };
 
-  const openMagicChest = () => {
-    const reward = CHEST_REWARDS[(Date.now() + collection.length) % CHEST_REWARDS.length];
+  const openMagicChest = (nextCount: number) => {
+    const reward = CHEST_REWARDS[(Date.now() + nextCount) % CHEST_REWARDS.length];
     setChestReward(reward);
     setChestOpened(true);
+  };
+
+  const addXpForRecognition = (result: RecognitionResult) => {
+    const category = getStickerCategory(result);
+    const earnedXp = XP_REWARDS[category];
+
+    setXpState((currentState) => {
+      let nextXp = currentState.currentXp + earnedXp;
+      let nextLevel = currentState.level;
+      let didLevelUp = false;
+
+      while (nextXp >= XP_PER_LEVEL) {
+        nextXp -= XP_PER_LEVEL;
+        nextLevel += 1;
+        didLevelUp = true;
+      }
+
+      const nextState = { currentXp: nextXp, level: nextLevel };
+      saveStoredXp(nextState);
+      setShowLevelUp(didLevelUp);
+      return nextState;
+    });
+  };
+
+  const unlockAchievements = (nextCollection: CollectionItem[], nextStreakDays: number) => {
+    const candidateIds = getUnlockedAchievementIds(nextCollection, nextStreakDays);
+
+    setUnlockedAchievementIds((currentIds) => {
+      const newIds = candidateIds.filter((id) => !currentIds.includes(id));
+      if (newIds.length === 0) {
+        return currentIds;
+      }
+
+      const nextIds = [...currentIds, ...newIds];
+      saveStoredAchievements(nextIds);
+      setLatestAchievement(getAchievement(newIds[0]));
+      return nextIds;
+    });
+  };
+
+  const unlockMuseumBadges = (nextIds: string[]) => {
+    const candidateBadgeIds = getUnlockedMuseumBadgeIds(nextIds);
+    setMuseumBadgeIds((currentBadgeIds) => {
+      const newBadgeIds = candidateBadgeIds.filter((id) => !currentBadgeIds.includes(id));
+      if (newBadgeIds.length === 0) {
+        return currentBadgeIds;
+      }
+
+      const nextBadgeIds = [...currentBadgeIds, ...newBadgeIds];
+      saveStoredMuseumBadgeIds(nextBadgeIds);
+      setLatestMuseumBadge(getMuseumBadge(newBadgeIds[0]));
+      return nextBadgeIds;
+    });
+  };
+
+  const collectMuseumExhibits = (result: RecognitionResult) => {
+    const matchedIds = getMatchedMuseumExhibitIds(result);
+    if (matchedIds.length === 0) {
+      return;
+    }
+
+    setMuseumCollectedIds((currentIds) => {
+      const nextIds = Array.from(new Set([...currentIds, ...matchedIds]));
+      if (nextIds.length === currentIds.length) {
+        return currentIds;
+      }
+
+      saveStoredMuseumIds(nextIds);
+      unlockMuseumBadges(nextIds);
+      return nextIds;
+    });
+  };
+
+  const updateCustomMuseums = (nextMuseums: CustomMuseum[]) => {
+    setCustomMuseums(nextMuseums);
+    saveStoredCustomMuseums(nextMuseums);
+  };
+
+  const addOfficialMuseumExhibits = (exhibitIds: string[]) => {
+    setMuseumCollectedIds((currentIds) => {
+      const nextIds = Array.from(new Set([...currentIds, ...exhibitIds]));
+      if (nextIds.length === currentIds.length) {
+        return currentIds;
+      }
+
+      saveStoredMuseumIds(nextIds);
+      unlockMuseumBadges(nextIds);
+      return nextIds;
+    });
   };
 
   const recognizeImage = async (uri: string) => {
@@ -780,6 +1548,7 @@ export default function HomeScreen() {
     setCollectionMessage('');
     setCollectionFeedback('');
     setNewestDiscoveryAt('');
+    setChestOpened(false);
 
     try {
       const formData = new FormData();
@@ -796,7 +1565,7 @@ export default function HomeScreen() {
         } as unknown as Blob);
       }
 
-      const response = await fetch('http://localhost:8000/api/recognize', {
+      const response = await fetch(API_URL, {
         method: 'POST',
         body: formData,
       });
@@ -808,35 +1577,14 @@ export default function HomeScreen() {
       const parsed = (await response.json()) as RecognitionResult;
       setRecognitionResult(parsed);
       updateStreakForToday();
-      const matchedQuestIds = getMatchedQuestIds(parsed, todayQuests);
-      if (matchedQuestIds.length > 0) {
-        setCompletedQuestIds((currentIds) => {
-          const nextIds = Array.from(new Set([...currentIds, ...matchedQuestIds]));
-          if (nextIds.length !== currentIds.length) {
-            questPopValue.current.setValue(0);
-            Animated.sequence([
-              Animated.timing(questPopValue.current, {
-                toValue: 1,
-                duration: 420,
-                easing: Easing.out(Easing.back(1.8)),
-                useNativeDriver: true,
-              }),
-              Animated.timing(questPopValue.current, {
-                toValue: 0.92,
-                duration: 620,
-                easing: Easing.inOut(Easing.quad),
-                useNativeDriver: true,
-              }),
-            ]).start();
-          }
+      const achievementStreakDays = lastStreakDate === getDateKey(new Date())
+        ? streakDays
+        : lastStreakDate === getYesterdayKey()
+          ? streakDays + 1
+          : 1;
+      addXpForRecognition(parsed);
+      collectMuseumExhibits(parsed);
 
-          if (nextIds.length === todayQuests.length && currentIds.length !== todayQuests.length) {
-            setQuestRewardUnlocked(true);
-          }
-
-          return nextIds;
-        });
-      }
       setCollection((currentCollection) => {
         const normalizedName = parsed.object_en.trim().toLowerCase();
         const alreadyDiscovered = currentCollection.some(
@@ -847,15 +1595,12 @@ export default function HomeScreen() {
           setCollectionMessage(COPY.collectionKnown);
           setCollectionFeedback('known');
           setNewestDiscoveryAt('');
+          unlockAchievements(currentCollection, achievementStreakDays);
           return currentCollection;
         }
 
         const discoveredAt = new Date().toISOString();
-        setCollectionMessage(COPY.collectionNew);
-        setCollectionFeedback('new');
-        setNewestDiscoveryAt(discoveredAt);
-        openMagicChest();
-        return [
+        const nextCollection = [
           {
             ...parsed,
             discoveredAt,
@@ -863,6 +1608,14 @@ export default function HomeScreen() {
           },
           ...currentCollection,
         ];
+
+        setCollectionMessage(COPY.collectionNew);
+        setCollectionFeedback('new');
+        setNewestDiscoveryAt(discoveredAt);
+        animateCount();
+        openMagicChest(nextCollection.length);
+        unlockAchievements(nextCollection, achievementStreakDays);
+        return nextCollection;
       });
     } catch (error) {
       console.log('recognition failed', error);
@@ -957,6 +1710,22 @@ export default function HomeScreen() {
     });
   };
 
+  const completedMuseumCount = MAGIC_MUSEUMS.filter(
+    (museum) => getMuseumCollectedCount(museum, museumCollectedIds) === museum.exhibits.length,
+  ).length;
+  const customMuseumItemCount = customMuseums.reduce((sum, museum) => sum + museum.items.length, 0);
+  const totalCuratorItemCount = museumCollectedIds.length + customMuseumItemCount;
+
+  const updateCuratorProfile = (nextProfile: CuratorProfile) => {
+    const normalizedProfile = {
+      avatar: nextProfile.avatar.trim() || '🧙',
+      name: nextProfile.name.trim() || '小小馆长',
+      title: getCuratorTitle(xpState.level),
+    };
+    setCuratorProfile(normalizedProfile);
+    saveStoredCurator(normalizedProfile, xpState);
+  };
+
   return (
     <SafeAreaView style={styles.screen}>
       <ScrollView contentContainerStyle={styles.content}>
@@ -969,15 +1738,37 @@ export default function HomeScreen() {
             <Text style={styles.subtitle}>{COPY.subtitle}</Text>
           </View>
 
-          <MagicCompanion
-            floatOpacity={floatOpacity}
-            floatTranslateY={floatTranslateY}
-            message={companionMessage}
-            messageOpacity={companionOpacity}
-            messageScale={companionScale}
-            starTwinkleOpacity={starTwinkleOpacity}
-            starTwinkleScale={starTwinkleScale}
+          <CuratorProfileCard
+            badgeCount={museumBadgeIds.length}
+            completedMuseumCount={completedMuseumCount}
+            glowScale={xpLevelUpGlowScale}
+            itemCount={totalCuratorItemCount}
+            levelUpOpacity={xpLevelUpOpacity}
+            levelUpScale={xpLevelUpScale}
+            onChangeProfile={updateCuratorProfile}
+            profile={curatorProfile}
+            showLevelUp={showLevelUp}
+            streakDays={streakDays}
+            xpState={xpState}
           />
+
+          <Animated.View
+            style={[
+              styles.companionCard,
+              {
+                opacity: floatOpacity,
+                transform: [{ translateY: floatTranslateY }],
+              },
+            ]}
+          >
+            <Text style={styles.companionAvatar}>🦉</Text>
+            <View style={styles.companionBubble}>
+              <Text style={styles.companionName}>小猫头鹰</Text>
+              <Text style={styles.companionMessage}>
+                {isRecognizing ? '我正在帮你看这是什么...' : '每天回来，都会有新的魔法奖励！'}
+              </Text>
+            </View>
+          </Animated.View>
 
           <Animated.View
             style={[
@@ -1003,7 +1794,7 @@ export default function HomeScreen() {
                     { opacity: starTwinkleOpacity, transform: [{ scale: starTwinkleScale }] },
                   ]}
                 >
-                  {'\u2728'}
+                  {'✨'}
                 </Animated.Text>
                 <Animated.Text
                   style={[
@@ -1012,7 +1803,7 @@ export default function HomeScreen() {
                     { opacity: starTwinkleOpacity, transform: [{ scale: starTwinkleScale }] },
                   ]}
                 >
-                  {'\u2726'}
+                  {'✦'}
                 </Animated.Text>
                 <Animated.Text
                   style={[
@@ -1021,7 +1812,7 @@ export default function HomeScreen() {
                     { opacity: starTwinkleOpacity, transform: [{ scale: starTwinkleScale }] },
                   ]}
                 >
-                  {'\u2728'}
+                  {'✨'}
                 </Animated.Text>
               </View>
 
@@ -1029,7 +1820,7 @@ export default function HomeScreen() {
                 <Image source={{ uri: photoUri }} style={styles.preview} />
               ) : (
                 <View style={styles.photoPlaceholder}>
-                  <Text style={styles.uploadIcon}>{COPY.uploadIcon}</Text>
+                  <Text style={styles.uploadIcon}>📸</Text>
                   <Text style={styles.placeholderTitle}>{COPY.placeholderTitle}</Text>
                   <Text style={styles.placeholderText}>{COPY.placeholderText}</Text>
                 </View>
@@ -1058,14 +1849,9 @@ export default function HomeScreen() {
               <View style={styles.loadingState}>
                 <ActivityIndicator color="#8B5CF6" />
                 <Animated.Text
-                  style={[
-                    styles.loadingMagicIcon,
-                    {
-                      transform: [{ translateY: magicEmojiTranslateY }, { scale: pulseScale }],
-                    },
-                  ]}
+                  style={[styles.loadingMagicIcon, { transform: [{ translateY: magicEmojiTranslateY }] }]}
                 >
-                  {'\ud83e\ude84'}
+                  🪄
                 </Animated.Text>
                 <View>
                   <Text style={styles.statusText}>{COPY.loading}</Text>
@@ -1074,18 +1860,11 @@ export default function HomeScreen() {
               </View>
             ) : recognitionResult ? (
               <MagicWordCard
-                legendaryGlowScale={legendaryGlowScale}
-                legendaryOpacity={legendaryOpacity}
-                legendaryScale={legendaryScale}
-                legendaryStarScale={legendaryStarScale}
-                rarity={getRarity(recognitionResult)}
                 result={recognitionResult}
                 onSpeakChinese={() => speakWord(recognitionResult.object_zh, 'zh')}
                 onSpeakEnglish={() => speakWord(recognitionResult.object_en, 'en')}
                 speakButtonScale={speakButtonScale}
                 speakingLanguage={speakingLanguage}
-                starTwinkleOpacity={starTwinkleOpacity}
-                starTwinkleScale={starTwinkleScale}
               />
             ) : errorMessage ? (
               <FailureCard
@@ -1100,43 +1879,58 @@ export default function HomeScreen() {
           </Animated.View>
 
           <MagicCollection
+            achievementGlowScale={achievementGlowScale}
+            achievementOpacity={achievementOpacity}
+            achievements={ACHIEVEMENTS}
+            achievementScale={achievementScale}
+            achievementTranslateY={achievementTranslateY}
             chestGlowScale={chestGlowScale}
             chestOpened={chestOpened}
             chestOpacity={chestOpacity}
             chestReward={chestReward}
             chestScale={chestScale}
             collection={collection}
-            completedQuestIds={completedQuestIds}
+            collectionMessage={collectionMessage}
             countScale={countScale}
             feedback={collectionFeedback}
-            level={getMagicLevel(collection.length)}
-            levelUpGlowOpacity={levelUpGlowOpacity}
-            levelUpGlowScale={levelUpGlowScale}
-            levelUpLevel={levelUpLevel}
-            levelUpOpacity={levelUpOpacity}
-            levelUpScale={levelUpScale}
-            levelUpStarScale={levelUpStarScale}
-            levelUpTranslateY={levelUpTranslateY}
-            message={collectionMessage}
             newestDiscoveryAt={newestDiscoveryAt}
             newItemOpacity={newItemOpacity}
             newItemScale={newItemScale}
             newItemTranslateY={newItemTranslateY}
-            questGlowScale={questGlowScale}
-            questPopOpacity={questPopOpacity}
-            questPopScale={questPopScale}
-            questRewardUnlocked={questRewardUnlocked}
-            quests={todayQuests}
-            streakDays={streakDays}
             starTwinkleOpacity={starTwinkleOpacity}
             starTwinkleScale={starTwinkleScale}
+            streakDays={streakDays}
+            streakScale={streakScale}
+            showLevelUp={showLevelUp}
+            latestAchievement={latestAchievement}
+            museumCollectedIds={museumCollectedIds}
+            museumBadgeGlowScale={museumBadgeGlowScale}
+            museumBadgeIds={museumBadgeIds}
+            museumBadgeOpacity={museumBadgeOpacity}
+            museumBadges={MUSEUM_BADGES}
+            museumBadgeScale={museumBadgeScale}
+            museumBadgeTranslateY={museumBadgeTranslateY}
+            museums={MAGIC_MUSEUMS}
+            latestMuseumBadge={latestMuseumBadge}
             unlockGlowOpacity={unlockGlowOpacity}
             unlockGlowScale={unlockGlowScale}
             unlockOpacity={unlockOpacity}
             unlockScale={unlockScale}
-            unlockSparkleOpacity={unlockSparkleOpacity}
-            unlockSparkleScale={unlockSparkleScale}
             unlockTranslateY={unlockTranslateY}
+            xpLevelUpGlowScale={xpLevelUpGlowScale}
+            xpLevelUpOpacity={xpLevelUpOpacity}
+            xpLevelUpScale={xpLevelUpScale}
+            xpState={xpState}
+            unlockedAchievementIds={unlockedAchievementIds}
+          />
+
+          <CustomMuseumPanel
+            customMuseums={customMuseums}
+            museumCollectedIds={museumCollectedIds}
+            museums={MAGIC_MUSEUMS}
+            onAddOfficialExhibits={addOfficialMuseumExhibits}
+            onChangeCustomMuseums={updateCustomMuseums}
+            recognitionResult={recognitionResult}
           />
 
           <View style={styles.actions}>
@@ -1178,743 +1972,41 @@ export default function HomeScreen() {
   );
 }
 
-function getCompanionMessage({
-  isRecognizing,
-  levelJustUp,
-  questRewardUnlocked,
-  recognitionResult,
-}: {
-  isRecognizing: boolean;
-  levelJustUp: boolean;
-  questRewardUnlocked: boolean;
-  recognitionResult: RecognitionResult | null;
-}) {
-  if (levelJustUp) {
-    return COPY.companionLevelUp;
-  }
-
-  if (questRewardUnlocked) {
-    return COPY.companionQuestDone;
-  }
-
-  if (recognitionResult && getRarity(recognitionResult).key === 'legendary') {
-    return COPY.companionLegendary;
-  }
-
-  if (recognitionResult) {
-    return COPY.companionSuccess;
-  }
-
-  if (isRecognizing) {
-    return COPY.companionThinking;
-  }
-
-  return COPY.companionReady;
-}
-
-function MagicCompanion({
-  floatOpacity,
-  floatTranslateY,
-  message,
-  messageOpacity,
-  messageScale,
-  starTwinkleOpacity,
-  starTwinkleScale,
-}: {
-  floatOpacity: Animated.AnimatedInterpolation<string | number>;
-  floatTranslateY: Animated.AnimatedInterpolation<string | number>;
-  message: string;
-  messageOpacity: Animated.AnimatedInterpolation<string | number>;
-  messageScale: Animated.AnimatedInterpolation<string | number>;
-  starTwinkleOpacity: Animated.AnimatedInterpolation<string | number>;
-  starTwinkleScale: Animated.AnimatedInterpolation<string | number>;
-}) {
-  return (
-    <Animated.View
-      style={[
-        styles.companionPanel,
-        {
-          opacity: floatOpacity,
-          transform: [{ translateY: floatTranslateY }],
-        },
-      ]}
-    >
-      <View style={styles.companionAvatarWrap}>
-        <Animated.Text
-          style={[
-            styles.companionSparkle,
-            styles.companionSparkleOne,
-            { opacity: starTwinkleOpacity, transform: [{ scale: starTwinkleScale }] },
-          ]}
-        >
-          {'\u2728'}
-        </Animated.Text>
-        <Animated.Text
-          style={[
-            styles.companionSparkle,
-            styles.companionSparkleTwo,
-            { opacity: starTwinkleOpacity, transform: [{ scale: starTwinkleScale }] },
-          ]}
-        >
-          {'\u2726'}
-        </Animated.Text>
-        <Text style={styles.companionAvatar}>{'\ud83e\udd89'}</Text>
-      </View>
-
-      <Animated.View
-        style={[
-          styles.companionBubble,
-          {
-            opacity: messageOpacity,
-            transform: [{ scale: messageScale }],
-          },
-        ]}
-      >
-        <Text style={styles.companionName}>{COPY.companionName}</Text>
-        <Text style={styles.companionMessage}>{message}</Text>
-      </Animated.View>
-    </Animated.View>
-  );
-}
-
-function FailureCard({
-  emojiTranslateY,
-  opacity,
-  scale,
-  translateX,
-}: {
-  emojiTranslateY: Animated.AnimatedInterpolation<string | number>;
-  opacity: Animated.AnimatedInterpolation<string | number>;
-  scale: Animated.AnimatedInterpolation<string | number>;
-  translateX: Animated.AnimatedInterpolation<string | number>;
-}) {
-  return (
-    <Animated.View
-      style={[
-        styles.failureCard,
-        {
-          opacity,
-          transform: [{ translateX }, { scale }],
-        },
-      ]}
-    >
-      <Animated.Text style={[styles.failureEmoji, { transform: [{ translateY: emojiTranslateY }] }]}>
-        {'\ud83e\ude84'}
-      </Animated.Text>
-      <Text style={styles.failureTitle}>{COPY.errorTitle}</Text>
-      <Text style={styles.failureHint}>{COPY.errorHint}</Text>
-      <View style={styles.failureEncouragePill}>
-        <Text style={styles.failureEncourageText}>{COPY.errorEncourage}</Text>
-      </View>
-    </Animated.View>
-  );
-}
-
-function MagicCollection({
-  chestGlowScale,
-  chestOpened,
-  chestOpacity,
-  chestReward,
-  chestScale,
-  collection,
-  completedQuestIds,
-  countScale,
-  feedback,
-  level,
-  levelUpGlowOpacity,
-  levelUpGlowScale,
-  levelUpLevel,
-  levelUpOpacity,
-  levelUpScale,
-  levelUpStarScale,
-  levelUpTranslateY,
-  message,
-  newestDiscoveryAt,
-  newItemOpacity,
-  newItemScale,
-  newItemTranslateY,
-  questGlowScale,
-  questPopOpacity,
-  questPopScale,
-  questRewardUnlocked,
-  quests,
-  streakDays,
-  starTwinkleOpacity,
-  starTwinkleScale,
-  unlockGlowOpacity,
-  unlockGlowScale,
-  unlockOpacity,
-  unlockScale,
-  unlockSparkleOpacity,
-  unlockSparkleScale,
-  unlockTranslateY,
-}: {
-  chestGlowScale: Animated.AnimatedInterpolation<string | number>;
-  chestOpened: boolean;
-  chestOpacity: Animated.AnimatedInterpolation<string | number>;
-  chestReward: string;
-  chestScale: Animated.AnimatedInterpolation<string | number>;
-  collection: CollectionItem[];
-  completedQuestIds: string[];
-  countScale: Animated.AnimatedInterpolation<string | number>;
-  feedback: 'new' | 'known' | '';
-  level: MagicLevel;
-  levelUpGlowOpacity: Animated.AnimatedInterpolation<string | number>;
-  levelUpGlowScale: Animated.AnimatedInterpolation<string | number>;
-  levelUpLevel: MagicLevel | null;
-  levelUpOpacity: Animated.AnimatedInterpolation<string | number>;
-  levelUpScale: Animated.AnimatedInterpolation<string | number>;
-  levelUpStarScale: Animated.AnimatedInterpolation<string | number>;
-  levelUpTranslateY: Animated.AnimatedInterpolation<string | number>;
-  message: string;
-  newestDiscoveryAt: string;
-  newItemOpacity: Animated.AnimatedInterpolation<string | number>;
-  newItemScale: Animated.AnimatedInterpolation<string | number>;
-  newItemTranslateY: Animated.AnimatedInterpolation<string | number>;
-  questGlowScale: Animated.AnimatedInterpolation<string | number>;
-  questPopOpacity: Animated.AnimatedInterpolation<string | number>;
-  questPopScale: Animated.AnimatedInterpolation<string | number>;
-  questRewardUnlocked: boolean;
-  quests: MagicQuest[];
-  streakDays: number;
-  starTwinkleOpacity: Animated.AnimatedInterpolation<string | number>;
-  starTwinkleScale: Animated.AnimatedInterpolation<string | number>;
-  unlockGlowOpacity: Animated.AnimatedInterpolation<string | number>;
-  unlockGlowScale: Animated.AnimatedInterpolation<string | number>;
-  unlockOpacity: Animated.AnimatedInterpolation<string | number>;
-  unlockScale: Animated.AnimatedInterpolation<string | number>;
-  unlockSparkleOpacity: Animated.AnimatedInterpolation<string | number>;
-  unlockSparkleScale: Animated.AnimatedInterpolation<string | number>;
-  unlockTranslateY: Animated.AnimatedInterpolation<string | number>;
-}) {
-  return (
-    <View style={styles.collectionPanel}>
-      <MagicRewardPanel
-        chestGlowScale={chestGlowScale}
-        chestOpened={chestOpened}
-        chestOpacity={chestOpacity}
-        chestReward={chestReward}
-        chestScale={chestScale}
-        starTwinkleOpacity={starTwinkleOpacity}
-        starTwinkleScale={starTwinkleScale}
-        streakDays={streakDays}
-      />
-
-      <MagicQuestPanel
-        completedQuestIds={completedQuestIds}
-        questGlowScale={questGlowScale}
-        questPopOpacity={questPopOpacity}
-        questPopScale={questPopScale}
-        questRewardUnlocked={questRewardUnlocked}
-        quests={quests}
-      />
-
-      <View style={styles.collectionHeader}>
-        <View style={styles.levelHeaderCard}>
-          <View style={styles.levelBadgeCircle}>
-            <Text style={styles.levelBadgeText}>{level.badge}</Text>
-          </View>
-          <View style={styles.levelHeaderText}>
-            <Text style={styles.levelTitle}>
-              {level.badge} {level.title}
-            </Text>
-            <View style={styles.collectionCountRow}>
-              <Text style={styles.collectionCount}>已发现：</Text>
-              <Animated.Text style={[styles.collectionCountNumber, { transform: [{ scale: countScale }] }]}>
-                {collection.length}
-              </Animated.Text>
-              <Text style={styles.collectionCount}> {COPY.collectionWords}</Text>
-            </View>
-          </View>
-        </View>
-
-        <View style={styles.collectionTitleBlock}>
-          <Text style={styles.collectionTitle}>{COPY.collectionTitle}</Text>
-        </View>
-      </View>
-
-      {levelUpLevel ? (
-        <Animated.View
-          style={[
-            styles.levelUpBanner,
-            {
-              opacity: levelUpOpacity,
-              transform: [{ translateY: levelUpTranslateY }, { scale: levelUpScale }],
-            },
-          ]}
-        >
-          <Animated.View
-            pointerEvents="none"
-            style={[
-              styles.levelUpGlow,
-              {
-                opacity: levelUpGlowOpacity,
-                transform: [{ scale: levelUpGlowScale }],
-              },
-            ]}
-          />
-          <Animated.Text
-            style={[
-              styles.levelUpStar,
-              styles.levelUpStarLeft,
-              { opacity: levelUpOpacity, transform: [{ scale: levelUpStarScale }] },
-            ]}
-          >
-            {'\u2728'}
-          </Animated.Text>
-          <Animated.Text
-            style={[
-              styles.levelUpStar,
-              styles.levelUpStarRight,
-              { opacity: levelUpOpacity, transform: [{ scale: levelUpStarScale }] },
-            ]}
-          >
-            {'\u2726'}
-          </Animated.Text>
-          <Text style={styles.levelUpTitle}>{COPY.levelUp}</Text>
-          <Text style={styles.levelUpBecome}>{COPY.levelBecome}</Text>
-          <Text style={styles.levelUpName}>
-            {levelUpLevel.badge} {levelUpLevel.title}！
-          </Text>
-        </Animated.View>
-      ) : null}
-
-      {feedback === 'new' ? (
-        <Animated.View
-          style={[
-            styles.unlockBanner,
-            {
-              opacity: unlockOpacity,
-              transform: [{ translateY: unlockTranslateY }, { scale: unlockScale }],
-            },
-          ]}
-        >
-          <Animated.View
-            pointerEvents="none"
-            style={[
-              styles.unlockGlow,
-              {
-                opacity: unlockGlowOpacity,
-                transform: [{ scale: unlockGlowScale }],
-              },
-            ]}
-          />
-          <Animated.Text
-            style={[
-              styles.unlockSpark,
-              styles.unlockSparkLeft,
-              { opacity: unlockSparkleOpacity, transform: [{ scale: unlockSparkleScale }] },
-            ]}
-          >
-            {'\u2728'}
-          </Animated.Text>
-          <Animated.Text
-            style={[
-              styles.unlockSpark,
-              styles.unlockSparkRight,
-              { opacity: unlockSparkleOpacity, transform: [{ scale: unlockSparkleScale }] },
-            ]}
-          >
-            {'\u2726'}
-          </Animated.Text>
-          <Text style={styles.unlockNewText}>{COPY.unlockNew}</Text>
-          <Text style={styles.unlockStickerText}>{COPY.unlockSticker}</Text>
-        </Animated.View>
-      ) : message ? (
-        <View style={styles.collectionMessagePill}>
-          <Text style={styles.collectionMessageText}>{message}</Text>
-        </View>
-      ) : null}
-
-      <ScrollView
-        contentContainerStyle={styles.collectionList}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-      >
-        {collection.map((item) => (
-          <Animated.View
-            key={`${item.object_en}-${item.discoveredAt}`}
-            style={[
-              styles.collectionItem,
-              item.discoveredAt === newestDiscoveryAt && styles.collectionItemNew,
-              item.discoveredAt === newestDiscoveryAt && {
-                opacity: newItemOpacity,
-                transform: [{ translateY: newItemTranslateY }, { scale: newItemScale }],
-              },
-            ]}
-          >
-            <Text style={styles.collectionEmoji}>{item.emoji}</Text>
-            <Text numberOfLines={1} style={styles.collectionZh}>
-              {item.object_zh}
-            </Text>
-            <Text numberOfLines={1} style={styles.collectionEn}>
-              {item.object_en}
-            </Text>
-          </Animated.View>
-        ))}
-      </ScrollView>
-    </View>
-  );
-}
-
-function MagicRewardPanel({
-  chestGlowScale,
-  chestOpened,
-  chestOpacity,
-  chestReward,
-  chestScale,
-  starTwinkleOpacity,
-  starTwinkleScale,
-  streakDays,
-}: {
-  chestGlowScale: Animated.AnimatedInterpolation<string | number>;
-  chestOpened: boolean;
-  chestOpacity: Animated.AnimatedInterpolation<string | number>;
-  chestReward: string;
-  chestScale: Animated.AnimatedInterpolation<string | number>;
-  starTwinkleOpacity: Animated.AnimatedInterpolation<string | number>;
-  starTwinkleScale: Animated.AnimatedInterpolation<string | number>;
-  streakDays: number;
-}) {
-  return (
-    <View style={styles.rewardPanel}>
-      <View style={styles.streakCard}>
-        <Text style={styles.streakTitle}>{COPY.streakTitle}</Text>
-        <Text style={styles.streakCount}>
-          {streakDays} {COPY.streakDays}
-        </Text>
-      </View>
-
-      <Animated.View
-        style={[
-          styles.chestCard,
-          chestOpened && styles.chestCardOpen,
-          chestOpened && {
-            opacity: chestOpacity,
-            transform: [{ scale: chestScale }],
-          },
-        ]}
-      >
-        {chestOpened ? (
-          <>
-            <Animated.View
-              pointerEvents="none"
-              style={[styles.chestGlow, { transform: [{ scale: chestGlowScale }] }]}
-            />
-            <View pointerEvents="none" style={styles.chestConfettiLayer}>
-              <Animated.Text
-                style={[
-                  styles.chestConfetti,
-                  styles.chestConfettiOne,
-                  { opacity: starTwinkleOpacity, transform: [{ scale: starTwinkleScale }] },
-                ]}
-              >
-                {'\ud83c\udf8a'}
-              </Animated.Text>
-              <Animated.Text
-                style={[
-                  styles.chestConfetti,
-                  styles.chestConfettiTwo,
-                  { opacity: starTwinkleOpacity, transform: [{ scale: starTwinkleScale }] },
-                ]}
-              >
-                {'\u2728'}
-              </Animated.Text>
-              <Animated.Text
-                style={[
-                  styles.chestConfetti,
-                  styles.chestConfettiThree,
-                  { opacity: starTwinkleOpacity, transform: [{ scale: starTwinkleScale }] },
-                ]}
-              >
-                {'\ud83c\udf89'}
-              </Animated.Text>
-            </View>
-            <Text style={styles.chestEmoji}>{'\ud83c\udf81'}</Text>
-            <Text style={styles.chestOpenTitle}>{COPY.chestOpened}</Text>
-            <Text style={styles.chestOpenText}>{COPY.chestReward}</Text>
-            <Text style={styles.chestRewardText}>{chestReward}</Text>
-          </>
-        ) : (
-          <>
-            <Text style={styles.chestEmoji}>{'\ud83c\udf81'}</Text>
-            <Text style={styles.chestTitle}>{COPY.chestTitle}</Text>
-            <Text style={styles.chestHint}>{COPY.chestNeedOne}</Text>
-          </>
-        )}
-      </Animated.View>
-    </View>
-  );
-}
-
-function MagicQuestPanel({
-  completedQuestIds,
-  questGlowScale,
-  questPopOpacity,
-  questPopScale,
-  questRewardUnlocked,
-  quests,
-}: {
-  completedQuestIds: string[];
-  questGlowScale: Animated.AnimatedInterpolation<string | number>;
-  questPopOpacity: Animated.AnimatedInterpolation<string | number>;
-  questPopScale: Animated.AnimatedInterpolation<string | number>;
-  questRewardUnlocked: boolean;
-  quests: MagicQuest[];
-}) {
-  return (
-    <View style={styles.questPanel}>
-      <View style={styles.questHeader}>
-        <Text style={styles.questTitle}>{COPY.questTitle}</Text>
-        <Text style={styles.questProgress}>
-          {completedQuestIds.length}/{quests.length}
-        </Text>
-      </View>
-
-      <View style={styles.questList}>
-        {quests.map((quest) => {
-          const isDone = completedQuestIds.includes(quest.id);
-          return (
-            <Animated.View
-              key={quest.id}
-              style={[
-                styles.questItem,
-                isDone && styles.questItemDone,
-                isDone && {
-                  opacity: questPopOpacity,
-                  transform: [{ scale: questPopScale }],
-                },
-              ]}
-            >
-              {isDone ? (
-                <Animated.View
-                  pointerEvents="none"
-                  style={[styles.questGlow, { transform: [{ scale: questGlowScale }] }]}
-                />
-              ) : null}
-              <Text style={styles.questEmoji}>{isDone ? '\u2705' : quest.emoji}</Text>
-              <Text style={styles.questText}>{quest.title}</Text>
-              {isDone ? <Text style={styles.questSparkle}>{'\u2728'}</Text> : null}
-            </Animated.View>
-          );
-        })}
-      </View>
-
-      {questRewardUnlocked ? (
-        <Animated.View
-          style={[
-            styles.questReward,
-            {
-              opacity: questPopOpacity,
-              transform: [{ scale: questPopScale }],
-            },
-          ]}
-        >
-          <View pointerEvents="none" style={styles.confettiLayer}>
-            <Text style={[styles.confetti, styles.confettiOne]}>{'\ud83c\udf8a'}</Text>
-            <Text style={[styles.confetti, styles.confettiTwo]}>{'\u2728'}</Text>
-            <Text style={[styles.confetti, styles.confettiThree]}>{'\ud83c\udf89'}</Text>
-          </View>
-          <Text style={styles.questRewardTitle}>{COPY.questDone}</Text>
-          <Text style={styles.questRewardText}>{COPY.questReward}</Text>
-        </Animated.View>
-      ) : null}
-    </View>
-  );
-}
-
-function formatConfidence(confidence: string) {
-  const value = confidence.toLowerCase().trim();
-
-  if (value === 'high') {
-    return 'High';
-  }
-
-  if (value === 'medium') {
-    return 'Medium';
-  }
-
-  if (value === 'low') {
-    return 'Low';
-  }
-
-  return confidence;
-}
-
-function getMagicEmoji(result: RecognitionResult) {
-  const text = `${result.object_en} ${result.object_zh}`.toLowerCase();
-  const matchers: [string[], string][] = [
-    [['apple', '\u82f9\u679c'], '\ud83c\udf4e'],
-    [['banana', '\u9999\u8549'], '\ud83c\udf4c'],
-    [['orange', '\u6a59', '\u6a58'], '\ud83c\udf4a'],
-    [['cat', '\u732b'], '\ud83d\udc31'],
-    [['dog', '\u72d7', '\u5c0f\u72d7'], '\ud83d\udc36'],
-    [['bird', '\u9e1f'], '\ud83d\udc26'],
-    [['fish', '\u9c7c'], '\ud83d\udc20'],
-    [['airplane', 'plane', 'jet', 'fighter', '\u98de\u673a', '\u6218\u6597\u673a'], '\u2708\ufe0f'],
-    [['car', 'vehicle', '\u6c7d\u8f66', '\u8f66'], '\ud83d\ude97'],
-    [['bus', '\u516c\u4ea4'], '\ud83d\ude8c'],
-    [['train', '\u706b\u8f66'], '\ud83d\ude86'],
-    [['ship', 'boat', '\u8239'], '\u26f5'],
-    [['ball', '\u7403'], '\u26bd'],
-    [['book', '\u4e66'], '\ud83d\udcd6'],
-    [['flower', '\u82b1'], '\ud83c\udf38'],
-    [['tree', '\u6811'], '\ud83c\udf33'],
-    [['cup', '\u676f'], '\ud83e\udd64'],
-    [['phone', '\u624b\u673a'], '\ud83d\udcf1'],
-    [['computer', '\u7535\u8111'], '\ud83d\udcbb'],
-    [['shoe', '\u978b'], '\ud83d\udc5f'],
-    [['chair', '\u6905'], '\ud83e\ude91'],
-    [['toy', '\u73a9\u5177'], '\ud83e\uddf8'],
-  ];
-
-  const found = matchers.find(([keywords]) => keywords.some((keyword) => text.includes(keyword)));
-  return found ? found[1] : '\u2728';
-}
-
-function getRarity(result: RecognitionResult) {
-  const text = `${result.object_en} ${result.object_zh}`.toLowerCase();
-  const matchers: [RarityKey, string[]][] = [
-    ['legendary', ['panda', 'rocket', 'castle', 'dinosaur', '\u718a\u732b', '\u706b\u7bad', '\u57ce\u5821', '\u6050\u9f99']],
-    ['epic', ['fighter', 'airplane', 'plane', 'jet', 'robot', '\u6218\u6597\u673a', '\u98de\u673a', '\u673a\u5668\u4eba']],
-    ['rare', ['car', 'vehicle', 'train', 'ship', 'boat', '\u6c7d\u8f66', '\u706b\u8f66', '\u8f6e\u8239', '\u8239']],
-    ['common', ['apple', 'cup', 'book', '\u82f9\u679c', '\u676f', '\u4e66']],
-  ];
-  const found = matchers.find(([, keywords]) => keywords.some((keyword) => text.includes(keyword)));
-  return found ? MAGIC_RARITIES[found[0]] : MAGIC_RARITIES.common;
-}
-
 function MagicWordCard({
-  legendaryGlowScale,
-  legendaryOpacity,
-  legendaryScale,
-  legendaryStarScale,
-  rarity,
   result,
   onSpeakChinese,
   onSpeakEnglish,
   speakButtonScale,
   speakingLanguage,
-  starTwinkleOpacity,
-  starTwinkleScale,
 }: {
-  legendaryGlowScale: Animated.AnimatedInterpolation<string | number>;
-  legendaryOpacity: Animated.AnimatedInterpolation<string | number>;
-  legendaryScale: Animated.AnimatedInterpolation<string | number>;
-  legendaryStarScale: Animated.AnimatedInterpolation<string | number>;
-  rarity: MagicRarity;
   result: RecognitionResult;
   onSpeakChinese: () => void;
   onSpeakEnglish: () => void;
   speakButtonScale: Animated.AnimatedInterpolation<string | number>;
   speakingLanguage: 'zh' | 'en' | null;
-  starTwinkleOpacity: Animated.AnimatedInterpolation<string | number>;
-  starTwinkleScale: Animated.AnimatedInterpolation<string | number>;
 }) {
   return (
-    <View
-      style={[
-        styles.wordCard,
-        rarity.key === 'common' && styles.wordCardCommon,
-        rarity.key === 'rare' && styles.wordCardRare,
-        rarity.key === 'epic' && styles.wordCardEpic,
-        rarity.key === 'legendary' && styles.wordCardLegendary,
-      ]}
-    >
-      <View style={styles.wordCardTop}>
-        <Text style={styles.foundTitle}>{COPY.found}</Text>
-        <Text style={styles.celebrateText}>{COPY.celebrate}</Text>
-      </View>
-
-      {rarity.key === 'legendary' ? (
-        <Animated.View
-          style={[
-            styles.legendaryBanner,
-            { opacity: legendaryOpacity, transform: [{ scale: legendaryScale }] },
-          ]}
-        >
-          <Animated.View style={[styles.legendaryGlow, { transform: [{ scale: legendaryGlowScale }] }]} />
-          <Animated.Text
-            style={[
-              styles.legendaryBurst,
-              styles.legendaryBurstOne,
-              { opacity: starTwinkleOpacity, transform: [{ scale: legendaryStarScale }] },
-            ]}
-          >
-            {'\u2728'}
-          </Animated.Text>
-          <Animated.Text
-            style={[
-              styles.legendaryBurst,
-              styles.legendaryBurstTwo,
-              { opacity: starTwinkleOpacity, transform: [{ scale: starTwinkleScale }] },
-            ]}
-          >
-            {'\u2726'}
-          </Animated.Text>
-          <Animated.Text
-            style={[
-              styles.legendaryBurst,
-              styles.legendaryBurstThree,
-              { opacity: starTwinkleOpacity, transform: [{ scale: legendaryStarScale }] },
-            ]}
-          >
-            {'\u2728'}
-          </Animated.Text>
-          <Text style={styles.legendaryTitle}>{COPY.legendaryTitle}</Text>
-          <Text style={styles.legendarySubtitle}>{COPY.legendaryFound}</Text>
-        </Animated.View>
-      ) : null}
-
-      <View
-        style={[
-          styles.rarityPill,
-          rarity.key === 'common' && styles.rarityPillCommon,
-          rarity.key === 'rare' && styles.rarityPillRare,
-          rarity.key === 'epic' && styles.rarityPillEpic,
-          rarity.key === 'legendary' && styles.rarityPillLegendary,
-        ]}
-      >
-        <Text
-          style={[
-            styles.rarityText,
-            rarity.key === 'rare' && styles.rarityTextRare,
-            rarity.key === 'epic' && styles.rarityTextEpic,
-            rarity.key === 'legendary' && styles.rarityTextLegendary,
-          ]}
-        >
-          {rarity.badge} {rarity.label}
-          {'\u53d1\u73b0'}
-        </Text>
-      </View>
-
-      <View
-        style={[
-          styles.emojiStage,
-          rarity.key === 'rare' && styles.emojiStageRare,
-          rarity.key === 'epic' && styles.emojiStageEpic,
-          rarity.key === 'legendary' && styles.emojiStageLegendary,
-        ]}
-      >
+    <View style={styles.wordCard}>
+      <Text style={styles.foundTitle}>{COPY.found}</Text>
+      <Text style={styles.celebrateText}>{COPY.celebrate}</Text>
+      <View style={styles.emojiStage}>
         <Text style={styles.magicEmoji}>{getMagicEmoji(result)}</Text>
       </View>
-
       <Text style={styles.chineseWord}>{result.object_zh}</Text>
       <Text style={styles.englishWord}>{result.object_en}</Text>
       <Text style={styles.confidenceLine}>
         {COPY.confidence}: {formatConfidence(result.confidence)}
       </Text>
-
       <View style={styles.speechActions}>
         <SpeechButton
           active={speakingLanguage === 'zh'}
-          label={'\ud83d\udd0a \u4e2d\u6587\u53d1\u97f3'}
+          label="🔊 中文发音"
           onPress={onSpeakChinese}
           scale={speakButtonScale}
         />
         <SpeechButton
           active={speakingLanguage === 'en'}
-          label={'\ud83d\udd0a English'}
+          label="🔊 English"
           onPress={onSpeakEnglish}
           scale={speakButtonScale}
         />
@@ -1950,6 +2042,933 @@ function SpeechButton({
   );
 }
 
+function FailureCard({
+  emojiTranslateY,
+  opacity,
+  scale,
+  translateX,
+}: {
+  emojiTranslateY: Animated.AnimatedInterpolation<string | number>;
+  opacity: Animated.AnimatedInterpolation<string | number>;
+  scale: Animated.AnimatedInterpolation<string | number>;
+  translateX: Animated.AnimatedInterpolation<string | number>;
+}) {
+  return (
+    <Animated.View style={[styles.failureCard, { opacity, transform: [{ translateX }, { scale }] }]}>
+      <Animated.Text style={[styles.failureEmoji, { transform: [{ translateY: emojiTranslateY }] }]}>
+        🪄
+      </Animated.Text>
+      <Text style={styles.failureTitle}>{COPY.errorTitle}</Text>
+      <Text style={styles.failureHint}>{COPY.errorHint}</Text>
+      <View style={styles.failureEncouragePill}>
+        <Text style={styles.failureEncourageText}>{COPY.errorEncourage}</Text>
+      </View>
+    </Animated.View>
+  );
+}
+
+function MagicCollection({
+  achievementGlowScale,
+  achievementOpacity,
+  achievements,
+  achievementScale,
+  achievementTranslateY,
+  chestGlowScale,
+  chestOpened,
+  chestOpacity,
+  chestReward,
+  chestScale,
+  collection,
+  collectionMessage,
+  countScale,
+  feedback,
+  newestDiscoveryAt,
+  newItemOpacity,
+  newItemScale,
+  newItemTranslateY,
+  starTwinkleOpacity,
+  starTwinkleScale,
+  streakDays,
+  streakScale,
+  showLevelUp,
+  latestAchievement,
+  museumCollectedIds,
+  museumBadgeGlowScale,
+  museumBadgeIds,
+  museumBadgeOpacity,
+  museumBadges,
+  museumBadgeScale,
+  museumBadgeTranslateY,
+  museums,
+  latestMuseumBadge,
+  unlockGlowOpacity,
+  unlockGlowScale,
+  unlockOpacity,
+  unlockScale,
+  unlockTranslateY,
+  xpLevelUpGlowScale,
+  xpLevelUpOpacity,
+  xpLevelUpScale,
+  xpState,
+  unlockedAchievementIds,
+}: {
+  achievementGlowScale: Animated.AnimatedInterpolation<string | number>;
+  achievementOpacity: Animated.AnimatedInterpolation<string | number>;
+  achievements: AchievementDefinition[];
+  achievementScale: Animated.AnimatedInterpolation<string | number>;
+  achievementTranslateY: Animated.AnimatedInterpolation<string | number>;
+  chestGlowScale: Animated.AnimatedInterpolation<string | number>;
+  chestOpened: boolean;
+  chestOpacity: Animated.AnimatedInterpolation<string | number>;
+  chestReward: string;
+  chestScale: Animated.AnimatedInterpolation<string | number>;
+  collection: CollectionItem[];
+  collectionMessage: string;
+  countScale: Animated.AnimatedInterpolation<string | number>;
+  feedback: 'new' | 'known' | '';
+  newestDiscoveryAt: string;
+  newItemOpacity: Animated.AnimatedInterpolation<string | number>;
+  newItemScale: Animated.AnimatedInterpolation<string | number>;
+  newItemTranslateY: Animated.AnimatedInterpolation<string | number>;
+  starTwinkleOpacity: Animated.AnimatedInterpolation<string | number>;
+  starTwinkleScale: Animated.AnimatedInterpolation<string | number>;
+  streakDays: number;
+  streakScale: Animated.AnimatedInterpolation<string | number>;
+  showLevelUp: boolean;
+  latestAchievement: AchievementDefinition | null;
+  museumCollectedIds: string[];
+  museumBadgeGlowScale: Animated.AnimatedInterpolation<string | number>;
+  museumBadgeIds: string[];
+  museumBadgeOpacity: Animated.AnimatedInterpolation<string | number>;
+  museumBadges: MuseumBadge[];
+  museumBadgeScale: Animated.AnimatedInterpolation<string | number>;
+  museumBadgeTranslateY: Animated.AnimatedInterpolation<string | number>;
+  museums: MagicMuseum[];
+  latestMuseumBadge: MuseumBadge | null;
+  unlockGlowOpacity: Animated.AnimatedInterpolation<string | number>;
+  unlockGlowScale: Animated.AnimatedInterpolation<string | number>;
+  unlockOpacity: Animated.AnimatedInterpolation<string | number>;
+  unlockScale: Animated.AnimatedInterpolation<string | number>;
+  unlockTranslateY: Animated.AnimatedInterpolation<string | number>;
+  xpLevelUpGlowScale: Animated.AnimatedInterpolation<string | number>;
+  xpLevelUpOpacity: Animated.AnimatedInterpolation<string | number>;
+  xpLevelUpScale: Animated.AnimatedInterpolation<string | number>;
+  xpState: XpState;
+  unlockedAchievementIds: AchievementId[];
+}) {
+  const collectedCount = collection.length;
+  const completionPercent = Math.min(100, Math.round((collectedCount / STICKER_TOTAL) * 100));
+
+  return (
+    <View style={styles.collectionPanel}>
+      <MagicRewardPanel
+        chestGlowScale={chestGlowScale}
+        chestOpened={chestOpened}
+        chestOpacity={chestOpacity}
+        chestReward={chestReward}
+        chestScale={chestScale}
+        showLevelUp={showLevelUp}
+        starTwinkleOpacity={starTwinkleOpacity}
+        starTwinkleScale={starTwinkleScale}
+        streakDays={streakDays}
+        streakScale={streakScale}
+        xpLevelUpGlowScale={xpLevelUpGlowScale}
+        xpLevelUpOpacity={xpLevelUpOpacity}
+        xpLevelUpScale={xpLevelUpScale}
+        xpState={xpState}
+      />
+
+      <AchievementPanel
+        achievementGlowScale={achievementGlowScale}
+        achievementOpacity={achievementOpacity}
+        achievements={achievements}
+        achievementScale={achievementScale}
+        achievementTranslateY={achievementTranslateY}
+        latestAchievement={latestAchievement}
+        unlockedAchievementIds={unlockedAchievementIds}
+      />
+
+      <MagicMuseumPanel museumCollectedIds={museumCollectedIds} museums={museums} />
+
+      <MuseumBadgeWall
+        latestMuseumBadge={latestMuseumBadge}
+        museumBadgeGlowScale={museumBadgeGlowScale}
+        museumBadgeIds={museumBadgeIds}
+        museumBadgeOpacity={museumBadgeOpacity}
+        museumBadges={museumBadges}
+        museumBadgeScale={museumBadgeScale}
+        museumBadgeTranslateY={museumBadgeTranslateY}
+      />
+
+      <View style={styles.collectionHeader}>
+        <Text style={styles.collectionTitle}>{COPY.collectionTitle}</Text>
+        <View style={styles.albumStatsCard}>
+          <View style={styles.albumStatBlock}>
+            <Text style={styles.albumStatLabel}>已收集：</Text>
+            <View style={styles.collectionCountRow}>
+              <Animated.Text style={[styles.collectionCountNumber, { transform: [{ scale: countScale }] }]}>
+                {collectedCount}
+              </Animated.Text>
+              <Text style={styles.collectionCount}> / {STICKER_TOTAL}</Text>
+            </View>
+          </View>
+          <View style={styles.albumStatBlock}>
+            <Text style={styles.albumStatLabel}>完成度：</Text>
+            <Text style={styles.albumPercent}>{completionPercent}%</Text>
+          </View>
+        </View>
+      </View>
+
+      {feedback === 'new' ? (
+        <Animated.View
+          style={[
+            styles.unlockBanner,
+            {
+              opacity: unlockOpacity,
+              transform: [{ translateY: unlockTranslateY }, { scale: unlockScale }],
+            },
+          ]}
+        >
+          <Animated.View
+            pointerEvents="none"
+            style={[styles.unlockGlow, { opacity: unlockGlowOpacity, transform: [{ scale: unlockGlowScale }] }]}
+          />
+          <Text style={styles.unlockNewText}>{COPY.unlockNew}</Text>
+          <Text style={styles.unlockStickerText}>{COPY.unlockSticker}</Text>
+        </Animated.View>
+      ) : collectionMessage ? (
+        <View style={styles.collectionMessagePill}>
+          <Text style={styles.collectionMessageText}>{collectionMessage}</Text>
+        </View>
+      ) : null}
+
+      <View style={styles.albumSections}>
+        {STICKER_CATEGORIES.map((category) => {
+          const categoryItems = getCategoryItems(collection, category.key);
+          const mysteryCount = Math.max(0, category.total - categoryItems.length);
+          const mysterySlots = Array.from({ length: mysteryCount }, (_, index) => `${category.key}-mystery-${index}`);
+
+          return (
+            <View key={category.key} style={styles.albumCategory}>
+              <View style={styles.albumCategoryHeader}>
+                <Text style={styles.albumCategoryTitle}>{category.label}</Text>
+                <Text style={styles.albumCategoryCount}>
+                  {categoryItems.length}/{category.total}
+                </Text>
+              </View>
+
+              <ScrollView
+                contentContainerStyle={styles.collectionList}
+                horizontal
+                showsHorizontalScrollIndicator={false}
+              >
+                {categoryItems.map((item) => (
+                  <Animated.View
+                    key={`${item.object_en}-${item.discoveredAt}`}
+                    style={[
+                      styles.collectionItem,
+                      item.discoveredAt === newestDiscoveryAt && styles.collectionItemNew,
+                      item.discoveredAt === newestDiscoveryAt && {
+                        opacity: newItemOpacity,
+                        transform: [{ translateY: newItemTranslateY }, { scale: newItemScale }],
+                      },
+                    ]}
+                  >
+                    <Text style={styles.collectionEmoji}>{item.emoji}</Text>
+                    <Text numberOfLines={1} style={styles.collectionZh}>
+                      {item.object_zh}
+                    </Text>
+                    <Text numberOfLines={1} style={styles.collectionEn}>
+                      {item.object_en}
+                    </Text>
+                  </Animated.View>
+                ))}
+
+                {mysterySlots.map((slot) => (
+                  <View key={slot} style={[styles.collectionItem, styles.mysteryItem]}>
+                    <Text style={styles.mysteryEmoji}>❓</Text>
+                    <Text numberOfLines={1} style={styles.mysteryTitle}>
+                      神秘贴纸
+                    </Text>
+                    <Text numberOfLines={1} style={styles.mysteryText}>
+                      尚未发现
+                    </Text>
+                  </View>
+                ))}
+              </ScrollView>
+            </View>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
+function MagicMuseumPanel({
+  museumCollectedIds,
+  museums,
+}: {
+  museumCollectedIds: string[];
+  museums: MagicMuseum[];
+}) {
+  const totalExhibits = museums.reduce((sum, museum) => sum + museum.exhibits.length, 0);
+  const completedMuseumCount = museums.filter(
+    (museum) => getMuseumCollectedCount(museum, museumCollectedIds) === museum.exhibits.length,
+  ).length;
+  const progressPercent = Math.min(100, (museumCollectedIds.length / totalExhibits) * 100);
+
+  return (
+    <View style={styles.museumPanel}>
+      <View style={styles.museumHero}>
+        <Text style={styles.museumTitle}>🏛 我的魔法博物馆</Text>
+        <Text style={styles.museumSummary}>
+          已完成：{completedMuseumCount} / {museums.length} 馆
+        </Text>
+        <Text style={styles.museumSummary}>
+          已收藏：{museumCollectedIds.length} / {totalExhibits}
+        </Text>
+        <View style={styles.museumProgressTrack}>
+          <View style={[styles.museumProgressFill, { width: `${progressPercent}%` as `${number}%` }]} />
+        </View>
+      </View>
+
+      <View style={styles.museumList}>
+        {museums.map((museum) => {
+          const collectedCount = getMuseumCollectedCount(museum, museumCollectedIds);
+          const museumPercent = Math.round((collectedCount / museum.exhibits.length) * 100);
+
+          return (
+            <View key={museum.id} style={styles.museumCard}>
+              <View style={styles.museumCardHeader}>
+                <View>
+                  <Text style={styles.museumCardTitle}>
+                    {museum.emoji} {museum.title}
+                  </Text>
+                  <Text style={styles.museumCardCount}>
+                    {collectedCount} / {museum.exhibits.length}
+                  </Text>
+                </View>
+                <Text style={styles.museumPercent}>{museumPercent}%</Text>
+              </View>
+              <View style={styles.museumProgressTrackSmall}>
+                <View style={[styles.museumProgressFill, { width: `${museumPercent}%` as `${number}%` }]} />
+              </View>
+
+              <ScrollView
+                contentContainerStyle={styles.museumExhibitList}
+                horizontal
+                showsHorizontalScrollIndicator={false}
+              >
+                {museum.exhibits.map((exhibit) => {
+                  const isCollected = museumCollectedIds.includes(exhibit.id);
+
+                  return (
+                    <View
+                      key={exhibit.id}
+                      style={[styles.museumExhibitCard, !isCollected && styles.museumMysteryCard]}
+                    >
+                      <Text style={isCollected ? styles.museumExhibitEmoji : styles.museumMysteryEmoji}>
+                        {isCollected ? exhibit.emoji : '❓'}
+                      </Text>
+                      <Text numberOfLines={1} style={isCollected ? styles.museumExhibitZh : styles.museumMysteryTitle}>
+                        {isCollected ? exhibit.object_zh : '神秘藏品'}
+                      </Text>
+                      <Text numberOfLines={1} style={isCollected ? styles.museumExhibitEn : styles.museumMysteryText}>
+                        {isCollected ? exhibit.object_en : '尚未发现'}
+                      </Text>
+                    </View>
+                  );
+                })}
+              </ScrollView>
+            </View>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
+function MuseumBadgeWall({
+  latestMuseumBadge,
+  museumBadgeGlowScale,
+  museumBadgeIds,
+  museumBadgeOpacity,
+  museumBadges,
+  museumBadgeScale,
+  museumBadgeTranslateY,
+}: {
+  latestMuseumBadge: MuseumBadge | null;
+  museumBadgeGlowScale: Animated.AnimatedInterpolation<string | number>;
+  museumBadgeIds: string[];
+  museumBadgeOpacity: Animated.AnimatedInterpolation<string | number>;
+  museumBadges: MuseumBadge[];
+  museumBadgeScale: Animated.AnimatedInterpolation<string | number>;
+  museumBadgeTranslateY: Animated.AnimatedInterpolation<string | number>;
+}) {
+  const unlockedBadges = museumBadges.filter((badge) => museumBadgeIds.includes(badge.id));
+
+  return (
+    <View style={styles.badgeWallPanel}>
+      {latestMuseumBadge ? (
+        <Animated.View
+          style={[
+            styles.museumRewardToast,
+            {
+              opacity: museumBadgeOpacity,
+              transform: [{ translateY: museumBadgeTranslateY }, { scale: museumBadgeScale }],
+            },
+          ]}
+        >
+          <Animated.View
+            pointerEvents="none"
+            style={[styles.museumRewardGlow, { transform: [{ scale: museumBadgeGlowScale }] }]}
+          />
+          <View pointerEvents="none" style={styles.museumRewardConfettiLayer}>
+            <Text style={[styles.museumRewardConfetti, styles.museumRewardConfettiOne]}>🎊</Text>
+            <Text style={[styles.museumRewardConfetti, styles.museumRewardConfettiTwo]}>✨</Text>
+            <Text style={[styles.museumRewardConfetti, styles.museumRewardConfettiThree]}>🎉</Text>
+          </View>
+          <Text style={styles.museumRewardTitle}>🎉 博物馆完成！</Text>
+          <Text style={styles.museumRewardLabel}>获得：</Text>
+          <Text style={styles.museumRewardName}>
+            {latestMuseumBadge.emoji} {latestMuseumBadge.title}
+          </Text>
+        </Animated.View>
+      ) : null}
+
+      <View style={styles.badgeWallHeader}>
+        <Text style={styles.badgeWallTitle}>🏅 我的徽章墙</Text>
+        <Text style={styles.badgeWallCount}>
+          {unlockedBadges.length}/{museumBadges.length}
+        </Text>
+      </View>
+
+      <ScrollView contentContainerStyle={styles.badgeWallList} horizontal showsHorizontalScrollIndicator={false}>
+        {museumBadges.map((badge) => {
+          const isUnlocked = museumBadgeIds.includes(badge.id);
+
+          return (
+            <View key={badge.id} style={[styles.museumBadgeCard, !isUnlocked && styles.museumBadgeLocked]}>
+              <Text style={styles.museumBadgeEmoji}>{isUnlocked ? badge.emoji : '🔒'}</Text>
+              <Text numberOfLines={1} style={isUnlocked ? styles.museumBadgeName : styles.museumBadgeLockedText}>
+                {isUnlocked ? badge.title : '待解锁'}
+              </Text>
+            </View>
+          );
+        })}
+      </ScrollView>
+    </View>
+  );
+}
+
+function CustomMuseumPanel({
+  customMuseums,
+  museumCollectedIds,
+  museums,
+  onAddOfficialExhibits,
+  onChangeCustomMuseums,
+  recognitionResult,
+}: {
+  customMuseums: CustomMuseum[];
+  museumCollectedIds: string[];
+  museums: MagicMuseum[];
+  onAddOfficialExhibits: (exhibitIds: string[]) => void;
+  onChangeCustomMuseums: (nextMuseums: CustomMuseum[]) => void;
+  recognitionResult: RecognitionResult | null;
+}) {
+  const [newMuseumEmoji, setNewMuseumEmoji] = useState('🏛');
+  const [newMuseumName, setNewMuseumName] = useState('');
+  const [showDestinations, setShowDestinations] = useState(false);
+  const [editingMuseumId, setEditingMuseumId] = useState('');
+  const [editingEmoji, setEditingEmoji] = useState('');
+  const [editingName, setEditingName] = useState('');
+  const [movingItem, setMovingItem] = useState<MovingCustomItem>(null);
+
+  const matchedOfficialMuseums = recognitionResult
+    ? museums
+        .map((museum) => ({
+          exhibitIds: museum.exhibits
+            .filter((exhibit) => getMatchedMuseumExhibitIds(recognitionResult).includes(exhibit.id))
+            .map((exhibit) => exhibit.id),
+          museum,
+        }))
+        .filter((entry) => entry.exhibitIds.length > 0)
+    : [];
+
+  const createMuseum = () => {
+    const name = newMuseumName.trim();
+    if (!name) {
+      return;
+    }
+
+    onChangeCustomMuseums([
+      ...customMuseums,
+      {
+        emoji: newMuseumEmoji.trim() || '🏛',
+        id: `custom-${Date.now()}`,
+        items: [],
+        name,
+      },
+    ]);
+    setNewMuseumEmoji('🏛');
+    setNewMuseumName('');
+  };
+
+  const addToCustomMuseum = (museumId: string) => {
+    if (!recognitionResult) {
+      return;
+    }
+
+    const item = buildCustomMuseumItem(recognitionResult);
+    const nextMuseums = customMuseums.map((museum) => {
+      if (museum.id !== museumId || museum.items.some((existingItem) => existingItem.id === item.id)) {
+        return museum;
+      }
+
+      return {
+        ...museum,
+        items: [item, ...museum.items],
+      };
+    });
+    onChangeCustomMuseums(nextMuseums);
+  };
+
+  const deleteMuseum = (museumId: string) => {
+    onChangeCustomMuseums(customMuseums.filter((museum) => museum.id !== museumId));
+    if (editingMuseumId === museumId) {
+      setEditingMuseumId('');
+    }
+  };
+
+  const startRename = (museum: CustomMuseum) => {
+    setEditingMuseumId(museum.id);
+    setEditingEmoji(museum.emoji);
+    setEditingName(museum.name);
+  };
+
+  const saveRename = () => {
+    const name = editingName.trim();
+    if (!editingMuseumId || !name) {
+      return;
+    }
+
+    onChangeCustomMuseums(
+      customMuseums.map((museum) =>
+        museum.id === editingMuseumId
+          ? {
+              ...museum,
+              emoji: editingEmoji.trim() || '🏛',
+              name,
+            }
+          : museum,
+      ),
+    );
+    setEditingMuseumId('');
+  };
+
+  const moveItemToMuseum = (targetMuseumId: string) => {
+    if (!movingItem || targetMuseumId === movingItem.museumId) {
+      return;
+    }
+
+    const sourceMuseum = customMuseums.find((museum) => museum.id === movingItem.museumId);
+    const item = sourceMuseum?.items.find((museumItem) => museumItem.id === movingItem.itemId);
+    if (!item) {
+      return;
+    }
+
+    const nextMuseums = customMuseums.map((museum) => {
+      if (museum.id === movingItem.museumId) {
+        return {
+          ...museum,
+          items: museum.items.filter((museumItem) => museumItem.id !== movingItem.itemId),
+        };
+      }
+
+      if (museum.id === targetMuseumId) {
+        return {
+          ...museum,
+          items: museum.items.some((museumItem) => museumItem.id === item.id) ? museum.items : [item, ...museum.items],
+        };
+      }
+
+      return museum;
+    });
+
+    onChangeCustomMuseums(nextMuseums);
+    setMovingItem(null);
+  };
+
+  return (
+    <View style={styles.customMuseumPanel}>
+      <Text style={styles.customMuseumTitle}>➕ 创建博物馆</Text>
+      <View style={styles.customMuseumForm}>
+        <TextInput
+          style={[styles.customMuseumInput, styles.customMuseumEmojiInput]}
+          onChangeText={setNewMuseumEmoji}
+          placeholder="Emoji"
+          value={newMuseumEmoji}
+        />
+        <TextInput
+          style={styles.customMuseumInput}
+          onChangeText={setNewMuseumName}
+          placeholder="博物馆名称"
+          value={newMuseumName}
+        />
+      </View>
+      <Pressable style={({ pressed }) => [styles.customMuseumButton, pressed && styles.buttonPressed]} onPress={createMuseum}>
+        <Text style={styles.customMuseumButtonText}>创建博物馆</Text>
+      </Pressable>
+
+      {recognitionResult ? (
+        <View style={styles.addMuseumBox}>
+          <Pressable
+            style={({ pressed }) => [styles.addMuseumToggle, pressed && styles.secondaryButtonPressed]}
+            onPress={() => setShowDestinations((currentValue) => !currentValue)}
+          >
+            <Text style={styles.addMuseumToggleText}>➕ 加入博物馆</Text>
+          </Pressable>
+
+          {showDestinations ? (
+            <View style={styles.destinationList}>
+              <Text style={styles.destinationTitle}>官方馆</Text>
+              {matchedOfficialMuseums.length > 0 ? (
+                matchedOfficialMuseums.map(({ exhibitIds, museum }) => (
+                  <Pressable
+                    key={museum.id}
+                    style={({ pressed }) => [styles.destinationButton, pressed && styles.secondaryButtonPressed]}
+                    onPress={() => onAddOfficialExhibits(exhibitIds)}
+                  >
+                    <Text style={styles.destinationButtonText}>
+                      {museum.emoji} {museum.title}
+                      {exhibitIds.every((id) => museumCollectedIds.includes(id)) ? ' 已加入' : ''}
+                    </Text>
+                  </Pressable>
+                ))
+              ) : (
+                <Text style={styles.destinationEmptyText}>这次识别暂时没有匹配到官方馆藏品。</Text>
+              )}
+
+              <Text style={styles.destinationTitle}>自定义馆</Text>
+              {customMuseums.length > 0 ? (
+                customMuseums.map((museum) => (
+                  <Pressable
+                    key={museum.id}
+                    style={({ pressed }) => [styles.destinationButton, pressed && styles.secondaryButtonPressed]}
+                    onPress={() => addToCustomMuseum(museum.id)}
+                  >
+                    <Text style={styles.destinationButtonText}>
+                      {museum.emoji} {museum.name}
+                    </Text>
+                  </Pressable>
+                ))
+              ) : (
+                <Text style={styles.destinationEmptyText}>先创建一个自己的博物馆吧。</Text>
+              )}
+            </View>
+          ) : null}
+        </View>
+      ) : null}
+
+      <View style={styles.customMuseumList}>
+        {customMuseums.map((museum) => (
+          <View key={museum.id} style={styles.customMuseumCard}>
+            {editingMuseumId === museum.id ? (
+              <View>
+                <View style={styles.customMuseumForm}>
+                  <TextInput
+                    style={[styles.customMuseumInput, styles.customMuseumEmojiInput]}
+                    onChangeText={setEditingEmoji}
+                    value={editingEmoji}
+                  />
+                  <TextInput style={styles.customMuseumInput} onChangeText={setEditingName} value={editingName} />
+                </View>
+                <View style={styles.customMuseumActions}>
+                  <Pressable style={styles.smallMuseumButton} onPress={saveRename}>
+                    <Text style={styles.smallMuseumButtonText}>保存</Text>
+                  </Pressable>
+                  <Pressable style={styles.smallMuseumButtonSoft} onPress={() => setEditingMuseumId('')}>
+                    <Text style={styles.smallMuseumButtonSoftText}>取消</Text>
+                  </Pressable>
+                </View>
+              </View>
+            ) : (
+              <View style={styles.customMuseumHeader}>
+                <View>
+                  <Text style={styles.customMuseumName}>
+                    {museum.emoji} {museum.name}
+                  </Text>
+                  <Text style={styles.customMuseumMeta}>藏品数量：{museum.items.length}</Text>
+                  <Text style={styles.customMuseumMeta}>完成度：自由收藏</Text>
+                </View>
+                <View style={styles.customMuseumHeaderActions}>
+                  <Pressable style={styles.iconTextButton} onPress={() => startRename(museum)}>
+                    <Text style={styles.iconTextButtonText}>重命名</Text>
+                  </Pressable>
+                  <Pressable style={styles.iconTextButtonDanger} onPress={() => deleteMuseum(museum.id)}>
+                    <Text style={styles.iconTextButtonDangerText}>删除</Text>
+                  </Pressable>
+                </View>
+              </View>
+            )}
+
+            {museum.items.length > 0 ? (
+              <ScrollView contentContainerStyle={styles.customItemList} horizontal showsHorizontalScrollIndicator={false}>
+                {museum.items.map((item) => (
+                  <View key={item.id} style={styles.customItemCard}>
+                    <Text style={styles.collectionEmoji}>{item.emoji}</Text>
+                    <Text numberOfLines={1} style={styles.collectionZh}>
+                      {item.object_zh}
+                    </Text>
+                    <Text numberOfLines={1} style={styles.collectionEn}>
+                      {item.object_en}
+                    </Text>
+                    <Pressable
+                      style={styles.moveItemButton}
+                      onPress={() => setMovingItem({ itemId: item.id, museumId: museum.id })}
+                    >
+                      <Text style={styles.moveItemButtonText}>移动</Text>
+                    </Pressable>
+                  </View>
+                ))}
+              </ScrollView>
+            ) : (
+              <Text style={styles.destinationEmptyText}>还没有藏品。识别成功后可以加入这里。</Text>
+            )}
+
+            {movingItem?.museumId === museum.id ? (
+              <View style={styles.movePanel}>
+                <Text style={styles.destinationTitle}>移动到：</Text>
+                {customMuseums
+                  .filter((targetMuseum) => targetMuseum.id !== museum.id)
+                  .map((targetMuseum) => (
+                    <Pressable
+                      key={targetMuseum.id}
+                      style={styles.destinationButton}
+                      onPress={() => moveItemToMuseum(targetMuseum.id)}
+                    >
+                      <Text style={styles.destinationButtonText}>
+                        {targetMuseum.emoji} {targetMuseum.name}
+                      </Text>
+                    </Pressable>
+                  ))}
+                <Pressable style={styles.smallMuseumButtonSoft} onPress={() => setMovingItem(null)}>
+                  <Text style={styles.smallMuseumButtonSoftText}>取消移动</Text>
+                </Pressable>
+              </View>
+            ) : null}
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+function MagicRewardPanel({
+  chestGlowScale,
+  chestOpened,
+  chestOpacity,
+  chestReward,
+  chestScale,
+  showLevelUp,
+  starTwinkleOpacity,
+  starTwinkleScale,
+  streakDays,
+  streakScale,
+  xpLevelUpGlowScale,
+  xpLevelUpOpacity,
+  xpLevelUpScale,
+  xpState,
+}: {
+  chestGlowScale: Animated.AnimatedInterpolation<string | number>;
+  chestOpened: boolean;
+  chestOpacity: Animated.AnimatedInterpolation<string | number>;
+  chestReward: string;
+  chestScale: Animated.AnimatedInterpolation<string | number>;
+  showLevelUp: boolean;
+  starTwinkleOpacity: Animated.AnimatedInterpolation<string | number>;
+  starTwinkleScale: Animated.AnimatedInterpolation<string | number>;
+  streakDays: number;
+  streakScale: Animated.AnimatedInterpolation<string | number>;
+  xpLevelUpGlowScale: Animated.AnimatedInterpolation<string | number>;
+  xpLevelUpOpacity: Animated.AnimatedInterpolation<string | number>;
+  xpLevelUpScale: Animated.AnimatedInterpolation<string | number>;
+  xpState: XpState;
+}) {
+  const xpProgressPercent = `${Math.min(100, (xpState.currentXp / XP_PER_LEVEL) * 100)}%` as `${number}%`;
+
+  return (
+    <View style={styles.rewardPanel}>
+      <View style={styles.streakCard}>
+        <Text style={styles.streakTitle}>{COPY.streakTitle}</Text>
+        <Animated.Text style={[styles.streakCount, { transform: [{ scale: streakScale }] }]}>
+          {streakDays} {COPY.streakDays}
+        </Animated.Text>
+      </View>
+
+      <View style={styles.xpCard}>
+        <View style={styles.xpHeader}>
+          <Text style={styles.xpLevel}>LV {xpState.level}</Text>
+          <Text style={styles.xpText}>
+            {xpState.currentXp} / {XP_PER_LEVEL} XP
+          </Text>
+        </View>
+        <View style={styles.xpTrack}>
+          <View style={[styles.xpFill, { width: xpProgressPercent }]} />
+        </View>
+
+        {showLevelUp ? (
+          <Animated.View
+            style={[
+              styles.levelUpBadge,
+              {
+                opacity: xpLevelUpOpacity,
+                transform: [{ scale: xpLevelUpScale }],
+              },
+            ]}
+          >
+            <Animated.View
+              pointerEvents="none"
+              style={[styles.levelUpGlow, { transform: [{ scale: xpLevelUpGlowScale }] }]}
+            />
+            <Text style={styles.levelUpText}>{COPY.levelUp}</Text>
+          </Animated.View>
+        ) : null}
+      </View>
+
+      <Animated.View
+        style={[
+          styles.chestCard,
+          chestOpened && styles.chestCardOpen,
+          chestOpened && {
+            opacity: chestOpacity,
+            transform: [{ scale: chestScale }],
+          },
+        ]}
+      >
+        {chestOpened ? (
+          <>
+            <Animated.View
+              pointerEvents="none"
+              style={[styles.chestGlow, { transform: [{ scale: chestGlowScale }] }]}
+            />
+            <View pointerEvents="none" style={styles.chestConfettiLayer}>
+              <Animated.Text
+                style={[
+                  styles.chestConfetti,
+                  styles.chestConfettiOne,
+                  { opacity: starTwinkleOpacity, transform: [{ scale: starTwinkleScale }] },
+                ]}
+              >
+                🎊
+              </Animated.Text>
+              <Animated.Text
+                style={[
+                  styles.chestConfetti,
+                  styles.chestConfettiTwo,
+                  { opacity: starTwinkleOpacity, transform: [{ scale: starTwinkleScale }] },
+                ]}
+              >
+                ✨
+              </Animated.Text>
+              <Animated.Text
+                style={[
+                  styles.chestConfetti,
+                  styles.chestConfettiThree,
+                  { opacity: starTwinkleOpacity, transform: [{ scale: starTwinkleScale }] },
+                ]}
+              >
+                🎉
+              </Animated.Text>
+            </View>
+            <Text style={styles.chestEmoji}>🎁</Text>
+            <Text style={styles.chestOpenTitle}>{COPY.chestOpened}</Text>
+            <Text style={styles.chestOpenText}>{COPY.chestReward}</Text>
+            <Text style={styles.chestRewardText}>{chestReward}</Text>
+          </>
+        ) : (
+          <>
+            <Text style={styles.chestEmoji}>🎁</Text>
+            <Text style={styles.chestTitle}>{COPY.chestTitle}</Text>
+            <Text style={styles.chestHint}>{COPY.chestNeedOne}</Text>
+          </>
+        )}
+      </Animated.View>
+    </View>
+  );
+}
+
+function AchievementPanel({
+  achievementGlowScale,
+  achievementOpacity,
+  achievements,
+  achievementScale,
+  achievementTranslateY,
+  latestAchievement,
+  unlockedAchievementIds,
+}: {
+  achievementGlowScale: Animated.AnimatedInterpolation<string | number>;
+  achievementOpacity: Animated.AnimatedInterpolation<string | number>;
+  achievements: AchievementDefinition[];
+  achievementScale: Animated.AnimatedInterpolation<string | number>;
+  achievementTranslateY: Animated.AnimatedInterpolation<string | number>;
+  latestAchievement: AchievementDefinition | null;
+  unlockedAchievementIds: AchievementId[];
+}) {
+  const unlockedAchievements = achievements.filter((achievement) => unlockedAchievementIds.includes(achievement.id));
+
+  return (
+    <View style={styles.achievementPanel}>
+      {latestAchievement ? (
+        <Animated.View
+          style={[
+            styles.achievementToast,
+            {
+              opacity: achievementOpacity,
+              transform: [{ translateY: achievementTranslateY }, { scale: achievementScale }],
+            },
+          ]}
+        >
+          <Animated.View
+            pointerEvents="none"
+            style={[styles.achievementGlow, { transform: [{ scale: achievementGlowScale }] }]}
+          />
+          <Text style={styles.achievementSparkle}>✨</Text>
+          <Text style={styles.achievementToastTitle}>成就解锁！</Text>
+          <Text style={styles.achievementToastName}>
+            {latestAchievement.emoji} {latestAchievement.title}
+          </Text>
+        </Animated.View>
+      ) : null}
+
+      <View style={styles.achievementHeader}>
+        <Text style={styles.achievementTitle}>🏅 已解锁成就</Text>
+        <Text style={styles.achievementCount}>
+          {unlockedAchievements.length}/{achievements.length}
+        </Text>
+      </View>
+
+      <ScrollView contentContainerStyle={styles.achievementList} horizontal showsHorizontalScrollIndicator={false}>
+        {unlockedAchievements.length > 0 ? (
+          unlockedAchievements.map((achievement) => (
+            <View key={achievement.id} style={styles.achievementBadge}>
+              <Text style={styles.achievementBadgeEmoji}>{achievement.emoji}</Text>
+              <Text numberOfLines={1} style={styles.achievementBadgeText}>
+                {achievement.title}
+              </Text>
+            </View>
+          ))
+        ) : (
+          <View style={styles.achievementEmptyCard}>
+            <Text style={styles.achievementBadgeEmoji}>🏅</Text>
+            <Text style={styles.achievementEmptyText}>完成第一次识别，点亮第一个成就。</Text>
+          </View>
+        )}
+      </ScrollView>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
@@ -1968,7 +2987,7 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: 'center',
-    marginBottom: 18,
+    marginBottom: 16,
   },
   brandPill: {
     borderRadius: 999,
@@ -1987,14 +3006,12 @@ const styles = StyleSheet.create({
     color: '#8A4B10',
     fontSize: 12,
     fontWeight: '900',
-    letterSpacing: 0,
   },
   title: {
     color: '#34214D',
     fontSize: 34,
     fontWeight: '900',
     lineHeight: 39,
-    maxWidth: 350,
     textAlign: 'center',
   },
   subtitle: {
@@ -2003,73 +3020,38 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     lineHeight: 24,
     marginTop: 10,
-    maxWidth: 330,
     textAlign: 'center',
   },
-  companionPanel: {
+  companionCard: {
     alignItems: 'center',
     flexDirection: 'row',
     gap: 10,
     marginBottom: 14,
   },
-  companionAvatarWrap: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: 72,
-    height: 72,
-    borderRadius: 28,
-    borderWidth: 2,
-    borderColor: '#F7C948',
-    backgroundColor: '#FFF1B8',
-    shadowColor: '#F59E0B',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.2,
-    shadowRadius: 18,
-  },
   companionAvatar: {
-    fontSize: 42,
-    lineHeight: 50,
-  },
-  companionSparkle: {
-    position: 'absolute',
-    color: '#A855F7',
-    fontSize: 18,
-    fontWeight: '900',
-  },
-  companionSparkleOne: {
-    right: 4,
-    top: 4,
-  },
-  companionSparkleTwo: {
-    bottom: 4,
-    left: 6,
-    color: '#F59E0B',
+    fontSize: 36,
+    lineHeight: 44,
   },
   companionBubble: {
     flex: 1,
-    borderRadius: 24,
+    borderRadius: 22,
     borderWidth: 1,
     borderColor: '#E9D5FF',
-    backgroundColor: '#FFFDF7',
+    backgroundColor: '#FFF9EB',
     paddingHorizontal: 14,
-    paddingVertical: 12,
-    shadowColor: '#A855F7',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.14,
-    shadowRadius: 20,
+    paddingVertical: 10,
   },
   companionName: {
-    color: '#7C3AED',
-    fontSize: 12,
+    color: '#6D28D9',
+    fontSize: 13,
     fontWeight: '900',
-    lineHeight: 17,
-    marginBottom: 3,
   },
   companionMessage: {
-    color: '#3B245F',
-    fontSize: 15,
-    fontWeight: '900',
-    lineHeight: 21,
+    color: '#6B4A82',
+    fontSize: 13,
+    fontWeight: '800',
+    lineHeight: 19,
+    marginTop: 2,
   },
   photoGlowFrame: {
     width: '100%',
@@ -2087,7 +3069,6 @@ const styles = StyleSheet.create({
   photoGlowFrameActive: {
     borderColor: '#D8B4FE',
     shadowColor: '#A855F7',
-    shadowOpacity: 0.2,
   },
   photoCard: {
     alignItems: 'center',
@@ -2171,7 +3152,6 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: '800',
     lineHeight: 24,
-    maxWidth: 260,
     textAlign: 'center',
   },
   scanLine: {
@@ -2213,11 +3193,8 @@ const styles = StyleSheet.create({
   resultCardSuccess: {
     borderColor: '#F7C948',
     backgroundColor: '#FFF9E8',
-    shadowColor: '#F59E0B',
-    shadowOpacity: 0.18,
   },
   loadingState: {
-    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -2238,6 +3215,19 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     marginTop: 3,
   },
+  wordCard: {
+    alignItems: 'center',
+    borderRadius: 28,
+    borderWidth: 1,
+    borderColor: '#FFE2A8',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 18,
+    paddingVertical: 20,
+    shadowColor: '#F59E0B',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.13,
+    shadowRadius: 20,
+  },
   foundTitle: {
     color: '#8B3A10',
     fontSize: 22,
@@ -2252,154 +3242,6 @@ const styles = StyleSheet.create({
     marginTop: 4,
     textAlign: 'center',
   },
-  wordCard: {
-    alignItems: 'center',
-    borderRadius: 28,
-    borderWidth: 1,
-    borderColor: '#FFE2A8',
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 18,
-    paddingVertical: 20,
-    shadowColor: '#F59E0B',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.13,
-    shadowRadius: 20,
-  },
-  wordCardCommon: {
-    borderColor: '#F8FAFC',
-    shadowColor: '#FFFFFF',
-    shadowOpacity: 0.3,
-  },
-  wordCardRare: {
-    borderColor: '#93C5FD',
-    backgroundColor: '#F0F8FF',
-    shadowColor: '#3B82F6',
-    shadowOpacity: 0.22,
-  },
-  wordCardEpic: {
-    borderColor: '#C084FC',
-    backgroundColor: '#FFF8DC',
-    shadowColor: '#A855F7',
-    shadowOpacity: 0.26,
-  },
-  wordCardLegendary: {
-    borderColor: '#F7C948',
-    backgroundColor: '#FFF7D6',
-    shadowColor: '#EC4899',
-    shadowOpacity: 0.34,
-    shadowRadius: 30,
-  },
-  wordCardTop: {
-    marginBottom: 14,
-  },
-  legendaryBanner: {
-    alignItems: 'center',
-    alignSelf: 'stretch',
-    borderRadius: 26,
-    borderWidth: 2,
-    borderColor: '#F7C948',
-    backgroundColor: '#FFF1B8',
-    marginBottom: 14,
-    overflow: 'hidden',
-    paddingHorizontal: 14,
-    paddingVertical: 14,
-    shadowColor: '#EC4899',
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.28,
-    shadowRadius: 24,
-  },
-  legendaryGlow: {
-    position: 'absolute',
-    width: 190,
-    height: 190,
-    borderRadius: 95,
-    backgroundColor: '#FFFFFF',
-    opacity: 0.46,
-  },
-  legendaryBurst: {
-    position: 'absolute',
-    color: '#A855F7',
-    fontSize: 24,
-    fontWeight: '900',
-  },
-  legendaryBurstOne: {
-    left: 18,
-    top: 12,
-  },
-  legendaryBurstTwo: {
-    right: 24,
-    top: 18,
-    color: '#2563EB',
-  },
-  legendaryBurstThree: {
-    bottom: 10,
-    right: 72,
-    color: '#EC4899',
-  },
-  legendaryTitle: {
-    color: '#7C2D12',
-    fontSize: 22,
-    fontWeight: '900',
-    lineHeight: 28,
-    textAlign: 'center',
-  },
-  legendarySubtitle: {
-    color: '#7C3AED',
-    fontSize: 17,
-    fontWeight: '900',
-    lineHeight: 23,
-    marginTop: 2,
-    textAlign: 'center',
-  },
-  rarityPill: {
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    backgroundColor: '#FFFFFF',
-    marginBottom: 14,
-    paddingHorizontal: 13,
-    paddingVertical: 7,
-    shadowColor: '#FFFFFF',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.22,
-    shadowRadius: 12,
-  },
-  rarityPillCommon: {
-    borderColor: '#E2E8F0',
-    backgroundColor: '#FFFFFF',
-  },
-  rarityPillRare: {
-    borderColor: '#93C5FD',
-    backgroundColor: '#DBEAFE',
-    shadowColor: '#3B82F6',
-  },
-  rarityPillEpic: {
-    borderColor: '#C084FC',
-    backgroundColor: '#F5E8FF',
-    shadowColor: '#A855F7',
-  },
-  rarityPillLegendary: {
-    borderColor: '#F7C948',
-    backgroundColor: '#FFF1B8',
-    shadowColor: '#EC4899',
-    shadowOpacity: 0.32,
-  },
-  rarityText: {
-    color: '#475569',
-    fontSize: 14,
-    fontWeight: '900',
-    lineHeight: 19,
-    textAlign: 'center',
-  },
-  rarityTextRare: {
-    color: '#1D4ED8',
-  },
-  rarityTextEpic: {
-    color: '#7C3AED',
-  },
-  rarityTextLegendary: {
-    color: '#C2410C',
-  },
   emojiStage: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -2410,29 +3252,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#FFD66B',
     marginBottom: 16,
-    shadowColor: '#F59E0B',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.14,
-    shadowRadius: 14,
-  },
-  emojiStageRare: {
-    borderColor: '#93C5FD',
-    backgroundColor: '#DBEAFE',
-    shadowColor: '#3B82F6',
-    shadowOpacity: 0.24,
-  },
-  emojiStageEpic: {
-    borderColor: '#C084FC',
-    backgroundColor: '#F5E8FF',
-    shadowColor: '#A855F7',
-    shadowOpacity: 0.28,
-  },
-  emojiStageLegendary: {
-    borderColor: '#F7C948',
-    backgroundColor: '#FFF1B8',
-    shadowColor: '#EC4899',
-    shadowOpacity: 0.34,
-    shadowRadius: 24,
+    marginTop: 14,
   },
   magicEmoji: {
     fontSize: 62,
@@ -2470,7 +3290,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: 46,
-    minWidth: 124,
     flex: 1,
     borderRadius: 18,
     borderWidth: 1,
@@ -2478,15 +3297,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#F5EDFF',
     paddingHorizontal: 12,
     paddingVertical: 10,
-    shadowColor: '#A855F7',
-    shadowOffset: { width: 0, height: 7 },
-    shadowOpacity: 0.12,
-    shadowRadius: 12,
   },
   speechButtonActive: {
     borderColor: '#C084FC',
     backgroundColor: '#EFE0FF',
-    shadowOpacity: 0.28,
   },
   speechButtonPressed: {
     opacity: 0.9,
@@ -2513,10 +3327,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFF8E8',
     paddingHorizontal: 18,
     paddingVertical: 20,
-    shadowColor: '#F59E0B',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.13,
-    shadowRadius: 20,
   },
   failureEmoji: {
     fontSize: 48,
@@ -2562,7 +3372,6 @@ const styles = StyleSheet.create({
     marginTop: 16,
     overflow: 'hidden',
     paddingBottom: 16,
-    paddingTop: 18,
     shadowColor: '#A855F7',
     shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.12,
@@ -2574,6 +3383,7 @@ const styles = StyleSheet.create({
     gap: 10,
     paddingBottom: 16,
     paddingHorizontal: 18,
+    paddingTop: 18,
   },
   streakCard: {
     alignItems: 'center',
@@ -2586,10 +3396,6 @@ const styles = StyleSheet.create({
     minHeight: 52,
     paddingHorizontal: 14,
     paddingVertical: 10,
-    shadowColor: '#F97316',
-    shadowOffset: { width: 0, height: 7 },
-    shadowOpacity: 0.12,
-    shadowRadius: 14,
   },
   streakTitle: {
     color: '#9A3412',
@@ -2603,6 +3409,78 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     lineHeight: 24,
   },
+  xpCard: {
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: '#E9D5FF',
+    backgroundColor: '#F8EEFF',
+    overflow: 'hidden',
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    shadowColor: '#A855F7',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+  },
+  xpHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  xpLevel: {
+    color: '#6D28D9',
+    fontSize: 20,
+    fontWeight: '900',
+    lineHeight: 26,
+  },
+  xpText: {
+    color: '#7C5C99',
+    fontSize: 14,
+    fontWeight: '900',
+    lineHeight: 20,
+  },
+  xpTrack: {
+    height: 13,
+    borderRadius: 999,
+    backgroundColor: '#E9D5FF',
+    overflow: 'hidden',
+  },
+  xpFill: {
+    height: '100%',
+    borderRadius: 999,
+    backgroundColor: '#F59E0B',
+  },
+  levelUpBadge: {
+    alignItems: 'center',
+    alignSelf: 'center',
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: '#F7C948',
+    backgroundColor: '#FFF1B8',
+    marginTop: 12,
+    overflow: 'hidden',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    shadowColor: '#F59E0B',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.24,
+    shadowRadius: 18,
+  },
+  levelUpGlow: {
+    position: 'absolute',
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: '#FFFFFF',
+    opacity: 0.5,
+  },
+  levelUpText: {
+    color: '#C2410C',
+    fontSize: 16,
+    fontWeight: '900',
+    lineHeight: 22,
+  },
   chestCard: {
     alignItems: 'center',
     borderRadius: 24,
@@ -2612,15 +3490,12 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     paddingHorizontal: 14,
     paddingVertical: 14,
-    shadowColor: '#F59E0B',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.16,
-    shadowRadius: 20,
   },
   chestCardOpen: {
     borderColor: '#C084FC',
     backgroundColor: '#FFF7D6',
     shadowColor: '#A855F7',
+    shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.28,
     shadowRadius: 26,
   },
@@ -2696,188 +3571,708 @@ const styles = StyleSheet.create({
     marginTop: 7,
     textAlign: 'center',
   },
-  questPanel: {
+  achievementPanel: {
     borderBottomWidth: 1,
     borderColor: '#F3D8A6',
-    paddingTop: 16,
     paddingBottom: 16,
     paddingHorizontal: 18,
+    paddingTop: 16,
   },
-  questHeader: {
+  achievementToast: {
     alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 10,
+    borderRadius: 26,
+    borderWidth: 1,
+    borderColor: '#F7C948',
+    backgroundColor: '#FFF1B8',
+    marginBottom: 12,
+    overflow: 'hidden',
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    shadowColor: '#F59E0B',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.22,
+    shadowRadius: 20,
   },
-  questTitle: {
-    color: '#4C2D6F',
+  achievementGlow: {
+    position: 'absolute',
+    width: 160,
+    height: 160,
+    borderRadius: 80,
+    backgroundColor: '#FFFFFF',
+    opacity: 0.5,
+  },
+  achievementSparkle: {
+    color: '#A855F7',
+    fontSize: 24,
+    fontWeight: '900',
+    lineHeight: 30,
+  },
+  achievementToastTitle: {
+    color: '#C2410C',
     fontSize: 20,
     fontWeight: '900',
     lineHeight: 26,
+    textAlign: 'center',
   },
-  questProgress: {
-    color: '#7C3AED',
-    fontSize: 14,
-    fontWeight: '900',
-    lineHeight: 20,
-  },
-  questList: {
-    gap: 9,
-  },
-  questItem: {
-    alignItems: 'center',
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#F8D58D',
-    backgroundColor: '#FFFFFF',
-    flexDirection: 'row',
-    gap: 9,
-    minHeight: 48,
-    overflow: 'hidden',
-    paddingHorizontal: 12,
-    paddingVertical: 9,
-    shadowColor: '#F59E0B',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-  },
-  questItemDone: {
-    borderColor: '#C084FC',
-    backgroundColor: '#F8EEFF',
-    shadowColor: '#A855F7',
-    shadowOpacity: 0.18,
-    shadowRadius: 18,
-  },
-  questGlow: {
-    position: 'absolute',
-    right: -16,
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    backgroundColor: '#FFFFFF',
-    opacity: 0.42,
-  },
-  questEmoji: {
-    fontSize: 24,
-    lineHeight: 30,
-  },
-  questText: {
+  achievementToastName: {
     color: '#4C2D6F',
-    flex: 1,
-    fontSize: 15,
-    fontWeight: '900',
-    lineHeight: 21,
-  },
-  questSparkle: {
-    color: '#A855F7',
-    fontSize: 20,
+    fontSize: 17,
     fontWeight: '900',
     lineHeight: 24,
-  },
-  questReward: {
-    alignItems: 'center',
-    borderRadius: 24,
-    borderWidth: 1,
-    borderColor: '#F7C948',
-    backgroundColor: '#FFF1B8',
-    marginTop: 12,
-    overflow: 'hidden',
-    paddingHorizontal: 14,
-    paddingVertical: 13,
-    shadowColor: '#F59E0B',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.2,
-    shadowRadius: 20,
-  },
-  confettiLayer: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  confetti: {
-    position: 'absolute',
-    fontSize: 22,
-  },
-  confettiOne: {
-    left: 18,
-    top: 10,
-  },
-  confettiTwo: {
-    right: 28,
-    top: 16,
-  },
-  confettiThree: {
-    bottom: 10,
-    right: 62,
-  },
-  questRewardTitle: {
-    color: '#C2410C',
-    fontSize: 19,
-    fontWeight: '900',
-    lineHeight: 25,
+    marginTop: 2,
     textAlign: 'center',
   },
-  questRewardText: {
-    color: '#4C2D6F',
-    fontSize: 15,
-    fontWeight: '900',
-    lineHeight: 21,
-    marginTop: 3,
-    textAlign: 'center',
-  },
-  collectionHeader: {
-    paddingTop: 16,
-    paddingHorizontal: 18,
-  },
-  levelHeaderCard: {
+  achievementHeader: {
     alignItems: 'center',
-    borderRadius: 24,
-    borderWidth: 1,
-    borderColor: '#F7C948',
-    backgroundColor: '#FFF1B8',
     flexDirection: 'row',
-    gap: 12,
-    overflow: 'hidden',
-    paddingHorizontal: 14,
-    paddingVertical: 13,
-    shadowColor: '#F59E0B',
-    shadowOffset: { width: 0, height: 9 },
-    shadowOpacity: 0.15,
-    shadowRadius: 18,
+    justifyContent: 'space-between',
   },
-  levelBadgeCircle: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    borderWidth: 1,
-    borderColor: '#E9D5FF',
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#A855F7',
-    shadowOffset: { width: 0, height: 7 },
-    shadowOpacity: 0.14,
-    shadowRadius: 14,
-  },
-  levelBadgeText: {
-    fontSize: 28,
-    lineHeight: 34,
-  },
-  levelHeaderText: {
-    flex: 1,
-  },
-  levelTitle: {
+  achievementTitle: {
     color: '#4C2D6F',
     fontSize: 18,
     fontWeight: '900',
     lineHeight: 24,
   },
-  collectionTitleBlock: {
+  achievementCount: {
+    color: '#7C3AED',
+    fontSize: 14,
+    fontWeight: '900',
+    lineHeight: 20,
+  },
+  achievementList: {
+    gap: 10,
+    paddingTop: 12,
+  },
+  achievementBadge: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 118,
+    minHeight: 82,
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: '#E9D5FF',
+    backgroundColor: '#F8EEFF',
+    paddingHorizontal: 10,
+    paddingVertical: 10,
+    shadowColor: '#A855F7',
+    shadowOffset: { width: 0, height: 7 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+  },
+  achievementBadgeEmoji: {
+    fontSize: 28,
+    lineHeight: 34,
+    marginBottom: 4,
+  },
+  achievementBadgeText: {
+    color: '#4C2D6F',
+    fontSize: 13,
+    fontWeight: '900',
+    lineHeight: 18,
+    textAlign: 'center',
+    width: '100%',
+  },
+  achievementEmptyCard: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 82,
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: '#E9D5FF',
+    backgroundColor: '#FFF9EB',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    width: 210,
+  },
+  achievementEmptyText: {
+    color: '#8A6B9F',
+    fontSize: 13,
+    fontWeight: '800',
+    lineHeight: 18,
+    textAlign: 'center',
+  },
+  museumPanel: {
+    borderBottomWidth: 1,
+    borderColor: '#F3D8A6',
+    paddingBottom: 16,
+    paddingHorizontal: 18,
+    paddingTop: 16,
+  },
+  museumHero: {
+    borderRadius: 26,
+    borderWidth: 1,
+    borderColor: '#F7C948',
+    backgroundColor: '#FFF7D6',
+    paddingHorizontal: 16,
+    paddingVertical: 15,
+    shadowColor: '#F59E0B',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.14,
+    shadowRadius: 18,
+  },
+  museumTitle: {
+    color: '#4C2D6F',
+    fontSize: 21,
+    fontWeight: '900',
+    lineHeight: 28,
+    textAlign: 'center',
+  },
+  museumSummary: {
+    color: '#8A5E22',
+    fontSize: 14,
+    fontWeight: '900',
+    lineHeight: 20,
+    marginTop: 4,
+    textAlign: 'center',
+  },
+  museumProgressTrack: {
+    height: 12,
+    borderRadius: 999,
+    backgroundColor: '#FDE68A',
+    marginTop: 12,
+    overflow: 'hidden',
+  },
+  museumProgressTrackSmall: {
+    height: 9,
+    borderRadius: 999,
+    backgroundColor: '#FDE68A',
+    marginTop: 10,
+    overflow: 'hidden',
+  },
+  museumProgressFill: {
+    height: '100%',
+    borderRadius: 999,
+    backgroundColor: '#A855F7',
+  },
+  museumList: {
+    gap: 14,
     marginTop: 14,
+  },
+  museumCard: {
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: '#E9D5FF',
+    backgroundColor: '#FFFDF7',
+    overflow: 'hidden',
+    paddingBottom: 14,
+    paddingTop: 14,
+    shadowColor: '#A855F7',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.08,
+    shadowRadius: 14,
+  },
+  museumCardHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 14,
+  },
+  museumCardTitle: {
+    color: '#4C2D6F',
+    fontSize: 17,
+    fontWeight: '900',
+    lineHeight: 23,
+  },
+  museumCardCount: {
+    color: '#9A6A19',
+    fontSize: 13,
+    fontWeight: '900',
+    lineHeight: 18,
+    marginTop: 2,
+  },
+  museumPercent: {
+    color: '#7C3AED',
+    fontSize: 18,
+    fontWeight: '900',
+    lineHeight: 24,
+  },
+  museumExhibitList: {
+    gap: 10,
+    paddingHorizontal: 14,
+    paddingTop: 12,
+  },
+  museumExhibitCard: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 96,
+    minHeight: 116,
+    borderRadius: 23,
+    borderWidth: 1,
+    borderColor: '#F8D58D',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 9,
+    paddingVertical: 11,
+    shadowColor: '#F59E0B',
+    shadowOffset: { width: 0, height: 7 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+  },
+  museumMysteryCard: {
+    borderColor: '#E9D5FF',
+    backgroundColor: '#F7EEFF',
+    borderStyle: 'dashed',
+    shadowColor: '#A855F7',
+    shadowOpacity: 0.06,
+  },
+  museumExhibitEmoji: {
+    fontSize: 36,
+    lineHeight: 44,
+    marginBottom: 6,
+  },
+  museumMysteryEmoji: {
+    fontSize: 33,
+    lineHeight: 42,
+    marginBottom: 6,
+    opacity: 0.74,
+  },
+  museumExhibitZh: {
+    color: '#3B245F',
+    fontSize: 13,
+    fontWeight: '900',
+    lineHeight: 19,
+    textAlign: 'center',
+    width: '100%',
+  },
+  museumExhibitEn: {
+    color: '#7C3AED',
+    fontSize: 12,
+    fontWeight: '900',
+    lineHeight: 17,
+    marginTop: 2,
+    textAlign: 'center',
+    width: '100%',
+  },
+  museumMysteryTitle: {
+    color: '#6D28D9',
+    fontSize: 13,
+    fontWeight: '900',
+    lineHeight: 19,
+    textAlign: 'center',
+    width: '100%',
+  },
+  museumMysteryText: {
+    color: '#9B7BB7',
+    fontSize: 12,
+    fontWeight: '800',
+    lineHeight: 17,
+    marginTop: 2,
+    textAlign: 'center',
+    width: '100%',
+  },
+  badgeWallPanel: {
+    borderBottomWidth: 1,
+    borderColor: '#F3D8A6',
+    paddingBottom: 16,
+    paddingHorizontal: 18,
+    paddingTop: 16,
+  },
+  museumRewardToast: {
+    alignItems: 'center',
+    borderRadius: 28,
+    borderWidth: 1,
+    borderColor: '#F7C948',
+    backgroundColor: '#FFF1B8',
+    marginBottom: 14,
+    overflow: 'hidden',
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    shadowColor: '#F59E0B',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.24,
+    shadowRadius: 24,
+  },
+  museumRewardGlow: {
+    position: 'absolute',
+    width: 190,
+    height: 190,
+    borderRadius: 95,
+    backgroundColor: '#FFFFFF',
+    opacity: 0.5,
+  },
+  museumRewardConfettiLayer: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  museumRewardConfetti: {
+    position: 'absolute',
+    color: '#A855F7',
+    fontSize: 24,
+    fontWeight: '900',
+  },
+  museumRewardConfettiOne: {
+    left: 24,
+    top: 14,
+  },
+  museumRewardConfettiTwo: {
+    right: 32,
+    top: 18,
+  },
+  museumRewardConfettiThree: {
+    bottom: 14,
+    right: 76,
+  },
+  museumRewardTitle: {
+    color: '#C2410C',
+    fontSize: 21,
+    fontWeight: '900',
+    lineHeight: 28,
+    textAlign: 'center',
+  },
+  museumRewardLabel: {
+    color: '#7C3AED',
+    fontSize: 14,
+    fontWeight: '900',
+    lineHeight: 20,
+    marginTop: 5,
+    textAlign: 'center',
+  },
+  museumRewardName: {
+    color: '#3B245F',
+    fontSize: 20,
+    fontWeight: '900',
+    lineHeight: 27,
+    marginTop: 2,
+    textAlign: 'center',
+  },
+  badgeWallHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  badgeWallTitle: {
+    color: '#4C2D6F',
+    fontSize: 18,
+    fontWeight: '900',
+    lineHeight: 24,
+  },
+  badgeWallCount: {
+    color: '#7C3AED',
+    fontSize: 14,
+    fontWeight: '900',
+    lineHeight: 20,
+  },
+  badgeWallList: {
+    gap: 10,
+    paddingTop: 12,
+  },
+  museumBadgeCard: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 116,
+    minHeight: 88,
+    borderRadius: 23,
+    borderWidth: 1,
+    borderColor: '#F7C948',
+    backgroundColor: '#FFF7D6',
+    paddingHorizontal: 10,
+    paddingVertical: 10,
+    shadowColor: '#F59E0B',
+    shadowOffset: { width: 0, height: 7 },
+    shadowOpacity: 0.12,
+    shadowRadius: 14,
+  },
+  museumBadgeLocked: {
+    borderColor: '#E9D5FF',
+    backgroundColor: '#F7EEFF',
+    shadowColor: '#A855F7',
+    shadowOpacity: 0.06,
+  },
+  museumBadgeEmoji: {
+    fontSize: 30,
+    lineHeight: 38,
+    marginBottom: 4,
+  },
+  museumBadgeName: {
+    color: '#4C2D6F',
+    fontSize: 13,
+    fontWeight: '900',
+    lineHeight: 18,
+    textAlign: 'center',
+    width: '100%',
+  },
+  museumBadgeLockedText: {
+    color: '#9B7BB7',
+    fontSize: 13,
+    fontWeight: '900',
+    lineHeight: 18,
+    textAlign: 'center',
+    width: '100%',
+  },
+  customMuseumPanel: {
+    borderRadius: 28,
+    borderWidth: 1,
+    borderColor: '#E9D5FF',
+    backgroundColor: '#FFF9EB',
+    marginTop: 16,
+    overflow: 'hidden',
+    paddingHorizontal: 18,
+    paddingVertical: 18,
+    shadowColor: '#A855F7',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.12,
+    shadowRadius: 24,
+  },
+  customMuseumTitle: {
+    color: '#4C2D6F',
+    fontSize: 20,
+    fontWeight: '900',
+    lineHeight: 26,
+  },
+  customMuseumForm: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 12,
+  },
+  customMuseumInput: {
+    flex: 1,
+    minHeight: 46,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: '#E9D5FF',
+    backgroundColor: '#FFFFFF',
+    color: '#3B245F',
+    fontSize: 15,
+    fontWeight: '800',
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+  },
+  customMuseumEmojiInput: {
+    flex: 0,
+    textAlign: 'center',
+    width: 68,
+  },
+  customMuseumButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 48,
+    borderRadius: 20,
+    backgroundColor: '#7C3AED',
+    marginTop: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    shadowColor: '#7C3AED',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.18,
+    shadowRadius: 14,
+  },
+  customMuseumButtonText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '900',
+  },
+  addMuseumBox: {
+    borderTopWidth: 1,
+    borderColor: '#F3D8A6',
+    marginTop: 16,
+    paddingTop: 16,
+  },
+  addMuseumToggle: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 48,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#F7C948',
+    backgroundColor: '#FFF1B8',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  addMuseumToggleText: {
+    color: '#7C3AED',
+    fontSize: 16,
+    fontWeight: '900',
+  },
+  destinationList: {
+    gap: 9,
+    marginTop: 12,
+  },
+  destinationTitle: {
+    color: '#8A5E22',
+    fontSize: 13,
+    fontWeight: '900',
+    lineHeight: 18,
+    marginTop: 4,
+  },
+  destinationButton: {
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: '#E9D5FF',
+    backgroundColor: '#F8EEFF',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  destinationButtonText: {
+    color: '#4C2D6F',
+    fontSize: 14,
+    fontWeight: '900',
+    lineHeight: 20,
+  },
+  destinationEmptyText: {
+    color: '#8A6B9F',
+    fontSize: 13,
+    fontWeight: '800',
+    lineHeight: 19,
+  },
+  customMuseumList: {
+    gap: 12,
+    marginTop: 16,
+  },
+  customMuseumCard: {
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: '#F8D58D',
+    backgroundColor: '#FFFDF7',
+    overflow: 'hidden',
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    shadowColor: '#F59E0B',
+    shadowOffset: { width: 0, height: 7 },
+    shadowOpacity: 0.08,
+    shadowRadius: 14,
+  },
+  customMuseumHeader: {
+    flexDirection: 'row',
+    gap: 10,
+    justifyContent: 'space-between',
+  },
+  customMuseumName: {
+    color: '#4C2D6F',
+    fontSize: 17,
+    fontWeight: '900',
+    lineHeight: 23,
+  },
+  customMuseumMeta: {
+    color: '#9A6A19',
+    fontSize: 13,
+    fontWeight: '800',
+    lineHeight: 18,
+    marginTop: 2,
+  },
+  customMuseumHeaderActions: {
+    alignItems: 'flex-end',
+    gap: 7,
+  },
+  iconTextButton: {
+    borderRadius: 999,
+    backgroundColor: '#F5E8FF',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  iconTextButtonText: {
+    color: '#7C3AED',
+    fontSize: 12,
+    fontWeight: '900',
+  },
+  iconTextButtonDanger: {
+    borderRadius: 999,
+    backgroundColor: '#FFF1E6',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  iconTextButtonDangerText: {
+    color: '#C2410C',
+    fontSize: 12,
+    fontWeight: '900',
+  },
+  customMuseumActions: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 10,
+  },
+  smallMuseumButton: {
+    borderRadius: 999,
+    backgroundColor: '#7C3AED',
+    paddingHorizontal: 13,
+    paddingVertical: 8,
+  },
+  smallMuseumButtonText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '900',
+  },
+  smallMuseumButtonSoft: {
+    alignSelf: 'flex-start',
+    borderRadius: 999,
+    backgroundColor: '#F5E8FF',
+    paddingHorizontal: 13,
+    paddingVertical: 8,
+  },
+  smallMuseumButtonSoftText: {
+    color: '#7C3AED',
+    fontSize: 13,
+    fontWeight: '900',
+  },
+  customItemList: {
+    gap: 10,
+    paddingTop: 12,
+  },
+  customItemCard: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 100,
+    minHeight: 138,
+    borderRadius: 23,
+    borderWidth: 1,
+    borderColor: '#F8D58D',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 9,
+    paddingVertical: 11,
+  },
+  moveItemButton: {
+    borderRadius: 999,
+    backgroundColor: '#F5E8FF',
+    marginTop: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  moveItemButtonText: {
+    color: '#7C3AED',
+    fontSize: 12,
+    fontWeight: '900',
+  },
+  movePanel: {
+    borderTopWidth: 1,
+    borderColor: '#F3D8A6',
+    gap: 8,
+    marginTop: 12,
+    paddingTop: 12,
+  },
+  collectionHeader: {
+    paddingHorizontal: 18,
+    paddingTop: 16,
   },
   collectionTitle: {
     color: '#4C2D6F',
     fontSize: 20,
     fontWeight: '900',
     lineHeight: 26,
+  },
+  albumStatsCard: {
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: '#F8D58D',
+    backgroundColor: '#FFF7ED',
+    flexDirection: 'row',
+    gap: 10,
+    justifyContent: 'space-between',
+    marginTop: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  albumStatBlock: {
+    flex: 1,
+  },
+  albumStatLabel: {
+    color: '#9A6A19',
+    fontSize: 13,
+    fontWeight: '900',
+    lineHeight: 18,
+  },
+  albumPercent: {
+    color: '#7C3AED',
+    fontSize: 20,
+    fontWeight: '900',
+    lineHeight: 26,
+    marginTop: 2,
   },
   collectionCountRow: {
     alignItems: 'center',
@@ -2896,67 +4291,32 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     lineHeight: 22,
   },
-  levelUpBanner: {
+  albumSections: {
+    gap: 16,
+    paddingTop: 14,
+  },
+  albumCategory: {
+    borderTopWidth: 1,
+    borderColor: '#F3D8A6',
+    paddingTop: 14,
+  },
+  albumCategoryHeader: {
     alignItems: 'center',
-    alignSelf: 'stretch',
-    borderRadius: 28,
-    borderWidth: 2,
-    borderColor: '#F7C948',
-    backgroundColor: '#FFF7C2',
-    marginHorizontal: 18,
-    marginTop: 14,
-    overflow: 'hidden',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    shadowColor: '#F59E0B',
-    shadowOffset: { width: 0, height: 14 },
-    shadowOpacity: 0.28,
-    shadowRadius: 28,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 18,
   },
-  levelUpGlow: {
-    position: 'absolute',
-    width: 190,
-    height: 190,
-    borderRadius: 95,
-    backgroundColor: '#FFFFFF',
-  },
-  levelUpStar: {
-    position: 'absolute',
-    color: '#A855F7',
-    fontSize: 28,
+  albumCategoryTitle: {
+    color: '#4C2D6F',
+    fontSize: 16,
     fontWeight: '900',
+    lineHeight: 22,
   },
-  levelUpStarLeft: {
-    left: 24,
-    top: 18,
-  },
-  levelUpStarRight: {
-    right: 24,
-    bottom: 18,
-    color: '#EC4899',
-  },
-  levelUpTitle: {
-    color: '#C2410C',
-    fontSize: 24,
-    fontWeight: '900',
-    lineHeight: 30,
-    textAlign: 'center',
-  },
-  levelUpBecome: {
+  albumCategoryCount: {
     color: '#7C3AED',
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '900',
-    lineHeight: 21,
-    marginTop: 4,
-    textAlign: 'center',
-  },
-  levelUpName: {
-    color: '#3B245F',
-    fontSize: 20,
-    fontWeight: '900',
-    lineHeight: 27,
-    marginTop: 2,
-    textAlign: 'center',
+    lineHeight: 20,
   },
   unlockBanner: {
     alignItems: 'center',
@@ -2970,10 +4330,6 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     paddingHorizontal: 14,
     paddingVertical: 13,
-    shadowColor: '#F59E0B',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.18,
-    shadowRadius: 20,
   },
   unlockGlow: {
     position: 'absolute',
@@ -2981,21 +4337,6 @@ const styles = StyleSheet.create({
     height: 150,
     borderRadius: 75,
     backgroundColor: '#FFFFFF',
-  },
-  unlockSpark: {
-    position: 'absolute',
-    color: '#A855F7',
-    fontSize: 23,
-    fontWeight: '900',
-  },
-  unlockSparkLeft: {
-    left: 24,
-    top: 16,
-  },
-  unlockSparkRight: {
-    right: 26,
-    bottom: 16,
-    color: '#EC4899',
   },
   unlockNewText: {
     color: '#C2410C',
@@ -3057,6 +4398,13 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.22,
     shadowRadius: 18,
   },
+  mysteryItem: {
+    borderColor: '#E9D5FF',
+    backgroundColor: '#F7EEFF',
+    borderStyle: 'dashed',
+    shadowColor: '#A855F7',
+    shadowOpacity: 0.06,
+  },
   collectionEmoji: {
     fontSize: 38,
     lineHeight: 46,
@@ -3078,6 +4426,38 @@ const styles = StyleSheet.create({
     marginTop: 2,
     textAlign: 'center',
     width: '100%',
+  },
+  mysteryEmoji: {
+    fontSize: 34,
+    lineHeight: 42,
+    marginBottom: 6,
+    opacity: 0.74,
+  },
+  mysteryTitle: {
+    color: '#6D28D9',
+    fontSize: 13,
+    fontWeight: '900',
+    lineHeight: 19,
+    textAlign: 'center',
+    width: '100%',
+  },
+  mysteryText: {
+    color: '#9B7BB7',
+    fontSize: 12,
+    fontWeight: '800',
+    lineHeight: 17,
+    marginTop: 2,
+    textAlign: 'center',
+    width: '100%',
+  },
+  emptyCollectionText: {
+    color: '#8A6B9F',
+    fontSize: 14,
+    fontWeight: '800',
+    lineHeight: 20,
+    paddingHorizontal: 18,
+    paddingTop: 14,
+    textAlign: 'center',
   },
   actions: {
     gap: 12,
