@@ -46,12 +46,17 @@ type AchievementId =
   | 'five_items'
   | 'ten_items'
   | 'three_day_streak'
+  | 'legendary_discovery'
+  | 'one_official_museum'
+  | 'three_official_museums'
+  | 'one_custom_museum'
   | 'pilot_apprentice'
   | 'traffic_expert'
   | 'animal_friend'
   | 'twenty_items';
 
 type AchievementDefinition = {
+  encouragement?: string;
   emoji: string;
   id: AchievementId;
   title: string;
@@ -195,6 +200,17 @@ const ACHIEVEMENTS: AchievementDefinition[] = [
   { emoji: '🚗', id: 'traffic_expert', title: '交通专家' },
   { emoji: '🐾', id: 'animal_friend', title: '动物朋友' },
   { emoji: '🏅', id: 'twenty_items', title: '魔法收藏家' },
+];
+
+const ACTIVE_ACHIEVEMENTS: AchievementDefinition[] = [
+  { emoji: '🏅', encouragement: '第一道魔法亮起来了，继续探索吧！', id: 'first_scan', title: '初次探索者' },
+  { emoji: '🔍', encouragement: '你已经会发现身边的小秘密了！', id: 'five_items', title: '小小发现家' },
+  { emoji: '🏛', encouragement: '你的魔法收藏馆越来越像样了！', id: 'ten_items', title: '魔法收藏家' },
+  { emoji: '🔥', encouragement: '连续回来探索，是很厉害的魔法习惯！', id: 'three_day_streak', title: '连续探索者' },
+  { emoji: '🌈', encouragement: '哇，这是特别珍贵的传奇发现！', id: 'legendary_discovery', title: '传奇发现者' },
+  { emoji: '🎉', encouragement: '你完成了第一座官方博物馆！', id: 'one_official_museum', title: '博物馆新人' },
+  { emoji: '👑', encouragement: '三座博物馆完成，你已经很像真正的馆长了！', id: 'three_official_museums', title: '博物馆达人' },
+  { emoji: '✨', encouragement: '你开始创建自己的魔法博物馆了！', id: 'one_custom_museum', title: '小小馆长' },
 ];
 
 const MAGIC_MUSEUMS: MagicMuseum[] = [
@@ -485,8 +501,11 @@ function readStoredAchievements(): AchievementId[] {
       return [];
     }
 
-    const validIds = new Set(ACHIEVEMENTS.map((achievement) => achievement.id));
-    return parsed.filter((id): id is AchievementId => validIds.has(id as AchievementId));
+    const validIds = new Set(ACTIVE_ACHIEVEMENTS.map((achievement) => achievement.id));
+    const legacyIds = getLegacyAchievementIds();
+    return parsed.filter(
+      (id): id is AchievementId => validIds.has(id as AchievementId) || legacyIds.has(id as AchievementId),
+    );
   } catch {
     return [];
   }
@@ -502,6 +521,10 @@ function saveStoredAchievements(achievementIds: AchievementId[]) {
   } catch {
     // Achievements are local encouragement. Recognition should continue if storage is blocked.
   }
+}
+
+function getLegacyAchievementIds() {
+  return new Set([...ACHIEVEMENTS.map((achievement) => achievement.id), ...getUnlockedAchievementIds([], 0)]);
 }
 
 function getAllMuseumExhibits() {
@@ -970,8 +993,62 @@ function getUnlockedAchievementIds(collection: CollectionItem[], streakDays: num
   return unlockedIds;
 }
 
+function getCompletedOfficialMuseumCount(collectedIds: string[]) {
+  return MAGIC_MUSEUMS.filter((museum) => getMuseumCollectedCount(museum, collectedIds) === museum.exhibits.length)
+    .length;
+}
+
+function getActiveUnlockedAchievementIds({
+  collection,
+  customMuseumCount,
+  museumCollectedIds,
+  streakDays,
+}: {
+  collection: CollectionItem[];
+  customMuseumCount: number;
+  museumCollectedIds: string[];
+  streakDays: number;
+}): AchievementId[] {
+  const unlockedIds: AchievementId[] = [];
+
+  if (collection.length >= 1) {
+    unlockedIds.push('first_scan');
+  }
+
+  if (collection.length >= 5) {
+    unlockedIds.push('five_items');
+  }
+
+  if (collection.length >= 10) {
+    unlockedIds.push('ten_items');
+  }
+
+  if (streakDays >= 3) {
+    unlockedIds.push('three_day_streak');
+  }
+
+  if (collection.some((item) => getStickerCategory(item) === 'legendary')) {
+    unlockedIds.push('legendary_discovery');
+  }
+
+  const completedMuseumCount = getCompletedOfficialMuseumCount(museumCollectedIds);
+  if (completedMuseumCount >= 1) {
+    unlockedIds.push('one_official_museum');
+  }
+
+  if (completedMuseumCount >= 3) {
+    unlockedIds.push('three_official_museums');
+  }
+
+  if (customMuseumCount >= 1) {
+    unlockedIds.push('one_custom_museum');
+  }
+
+  return unlockedIds;
+}
+
 function getAchievement(id: AchievementId) {
-  return ACHIEVEMENTS.find((achievement) => achievement.id === id) ?? ACHIEVEMENTS[0];
+  return ACTIVE_ACHIEVEMENTS.find((achievement) => achievement.id === id) ?? ACTIVE_ACHIEVEMENTS[0];
 }
 
 function getMatchedMuseumExhibitIds(result: RecognitionResult) {
@@ -1775,8 +1852,23 @@ export default function HomeScreen() {
     });
   };
 
-  const unlockAchievements = (nextCollection: CollectionItem[], nextStreakDays: number) => {
-    const candidateIds = getUnlockedAchievementIds(nextCollection, nextStreakDays);
+  const unlockAchievements = ({
+    nextCollection,
+    nextCustomMuseumCount,
+    nextMuseumCollectedIds,
+    nextStreakDays,
+  }: {
+    nextCollection: CollectionItem[];
+    nextCustomMuseumCount: number;
+    nextMuseumCollectedIds: string[];
+    nextStreakDays: number;
+  }) => {
+    const candidateIds = getActiveUnlockedAchievementIds({
+      collection: nextCollection,
+      customMuseumCount: nextCustomMuseumCount,
+      museumCollectedIds: nextMuseumCollectedIds,
+      streakDays: nextStreakDays,
+    });
 
     setUnlockedAchievementIds((currentIds) => {
       const newIds = candidateIds.filter((id) => !currentIds.includes(id));
@@ -1896,7 +1988,12 @@ export default function HomeScreen() {
           setCollectionMessage(COPY.collectionKnown);
           setCollectionFeedback('known');
           setNewestDiscoveryAt('');
-          unlockAchievements(currentCollection, achievementStreakDays);
+          unlockAchievements({
+            nextCollection: currentCollection,
+            nextCustomMuseumCount: customMuseums.length,
+            nextMuseumCollectedIds: museumCollectedIds,
+            nextStreakDays: achievementStreakDays,
+          });
           return currentCollection;
         }
 
@@ -1916,7 +2013,12 @@ export default function HomeScreen() {
         setNewestDiscoveryAt(discoveredAt);
         animateCount();
         openMagicChest(nextCollection.length);
-        unlockAchievements(nextCollection, achievementStreakDays);
+        unlockAchievements({
+          nextCollection,
+          nextCustomMuseumCount: customMuseums.length,
+          nextMuseumCollectedIds: museumCollectedIds,
+          nextStreakDays: achievementStreakDays,
+        });
         return nextCollection;
       });
     } catch (error) {
@@ -2012,9 +2114,7 @@ export default function HomeScreen() {
     });
   };
 
-  const completedMuseumCount = MAGIC_MUSEUMS.filter(
-    (museum) => getMuseumCollectedCount(museum, museumCollectedIds) === museum.exhibits.length,
-  ).length;
+  const completedMuseumCount = getCompletedOfficialMuseumCount(museumCollectedIds);
   const customMuseumItemCount = customMuseums.reduce((sum, museum) => sum + museum.items.length, 0);
   const totalCuratorItemCount = museumCollectedIds.length + customMuseumItemCount;
 
@@ -2036,6 +2136,15 @@ export default function HomeScreen() {
       return nextIds;
     });
   };
+
+  useEffect(() => {
+    unlockAchievements({
+      nextCollection: collection,
+      nextCustomMuseumCount: customMuseums.length,
+      nextMuseumCollectedIds: museumCollectedIds,
+      nextStreakDays: streakDays,
+    });
+  }, [collection, customMuseums.length, museumCollectedIds, streakDays]);
 
   return (
     <SafeAreaView style={styles.screen}>
@@ -2192,7 +2301,7 @@ export default function HomeScreen() {
           <MagicCollection
             achievementGlowScale={achievementGlowScale}
             achievementOpacity={achievementOpacity}
-            achievements={ACHIEVEMENTS}
+            achievements={ACTIVE_ACHIEVEMENTS}
             achievementScale={achievementScale}
             achievementTranslateY={achievementTranslateY}
             chestGlowScale={chestGlowScale}
@@ -3425,6 +3534,7 @@ function AchievementPanel({
   unlockedAchievementIds: AchievementId[];
 }) {
   const unlockedAchievements = achievements.filter((achievement) => unlockedAchievementIds.includes(achievement.id));
+  const unlockedCount = unlockedAchievements.length;
 
   return (
     <View style={styles.achievementPanel}>
@@ -3442,37 +3552,47 @@ function AchievementPanel({
             pointerEvents="none"
             style={[styles.achievementGlow, { transform: [{ scale: achievementGlowScale }] }]}
           />
+          <View pointerEvents="none" style={styles.achievementConfettiLayer}>
+            <Text style={[styles.achievementConfetti, styles.achievementConfettiOne]}>🎉</Text>
+            <Text style={[styles.achievementConfetti, styles.achievementConfettiTwo]}>✨</Text>
+            <Text style={[styles.achievementConfetti, styles.achievementConfettiThree]}>🏅</Text>
+          </View>
           <Text style={styles.achievementSparkle}>✨</Text>
-          <Text style={styles.achievementToastTitle}>成就解锁！</Text>
+          <Text style={styles.achievementToastTitle}>✨ 成就解锁！</Text>
           <Text style={styles.achievementToastName}>
             {latestAchievement.emoji} {latestAchievement.title}
+          </Text>
+          <Text style={styles.achievementToastEncouragement}>
+            {latestAchievement.encouragement ?? '新的魔法成就已经点亮！'}
           </Text>
         </Animated.View>
       ) : null}
 
       <View style={styles.achievementHeader}>
-        <Text style={styles.achievementTitle}>🏅 已解锁成就</Text>
+        <Text style={styles.achievementTitle}>🏆 魔法成就</Text>
         <Text style={styles.achievementCount}>
-          {unlockedAchievements.length}/{achievements.length}
+          已解锁 {unlockedCount} / {achievements.length}
         </Text>
       </View>
 
       <ScrollView contentContainerStyle={styles.achievementList} horizontal showsHorizontalScrollIndicator={false}>
-        {unlockedAchievements.length > 0 ? (
-          unlockedAchievements.map((achievement) => (
-            <View key={achievement.id} style={styles.achievementBadge}>
-              <Text style={styles.achievementBadgeEmoji}>{achievement.emoji}</Text>
+        {achievements.map((achievement) => {
+          const isUnlocked = unlockedAchievementIds.includes(achievement.id);
+
+          return (
+            <View key={achievement.id} style={[styles.achievementBadge, !isUnlocked && styles.achievementBadgeLocked]}>
+              <Text style={[styles.achievementBadgeEmoji, !isUnlocked && styles.achievementBadgeEmojiLocked]}>
+                {isUnlocked ? achievement.emoji : '🔒'}
+              </Text>
               <Text numberOfLines={1} style={styles.achievementBadgeText}>
                 {achievement.title}
               </Text>
+              <Text numberOfLines={2} style={isUnlocked ? styles.achievementBadgeHint : styles.achievementLockedHint}>
+                {isUnlocked ? achievement.encouragement ?? '已点亮' : '等待解锁'}
+              </Text>
             </View>
-          ))
-        ) : (
-          <View style={styles.achievementEmptyCard}>
-            <Text style={styles.achievementBadgeEmoji}>🏅</Text>
-            <Text style={styles.achievementEmptyText}>完成第一次识别，点亮第一个成就。</Text>
-          </View>
-        )}
+          );
+        })}
       </ScrollView>
     </View>
   );
@@ -4291,6 +4411,37 @@ const styles = StyleSheet.create({
     marginTop: 2,
     textAlign: 'center',
   },
+  achievementToastEncouragement: {
+    color: '#7C3AED',
+    fontSize: 13,
+    fontWeight: '900',
+    lineHeight: 19,
+    marginTop: 4,
+    textAlign: 'center',
+  },
+  achievementConfettiLayer: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  achievementConfetti: {
+    position: 'absolute',
+    color: '#A855F7',
+    fontSize: 22,
+    fontWeight: '900',
+  },
+  achievementConfettiOne: {
+    left: 22,
+    top: 10,
+  },
+  achievementConfettiTwo: {
+    right: 26,
+    top: 14,
+    color: '#F59E0B',
+  },
+  achievementConfettiThree: {
+    bottom: 12,
+    right: 74,
+    color: '#EC4899',
+  },
   achievementHeader: {
     alignItems: 'center',
     flexDirection: 'row',
@@ -4328,10 +4479,20 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 12,
   },
+  achievementBadgeLocked: {
+    borderColor: '#E9D5FF',
+    backgroundColor: '#F4ECFF',
+    borderStyle: 'dashed',
+    opacity: 0.76,
+    shadowOpacity: 0.04,
+  },
   achievementBadgeEmoji: {
     fontSize: 28,
     lineHeight: 34,
     marginBottom: 4,
+  },
+  achievementBadgeEmojiLocked: {
+    opacity: 0.62,
   },
   achievementBadgeText: {
     color: '#4C2D6F',
@@ -4525,6 +4686,24 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     lineHeight: 17,
     marginTop: 2,
+    textAlign: 'center',
+    width: '100%',
+  },
+  achievementBadgeHint: {
+    color: '#7C3AED',
+    fontSize: 11,
+    fontWeight: '800',
+    lineHeight: 15,
+    marginTop: 4,
+    textAlign: 'center',
+    width: '100%',
+  },
+  achievementLockedHint: {
+    color: '#9B7BB7',
+    fontSize: 11,
+    fontWeight: '800',
+    lineHeight: 15,
+    marginTop: 4,
     textAlign: 'center',
     width: '100%',
   },
