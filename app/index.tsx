@@ -121,6 +121,17 @@ type CuratorProfile = {
   title: string;
 };
 
+type ShareCardData = {
+  encouragement: string;
+  emoji: string;
+  museumTitle: string;
+  objectEn: string;
+  objectZh: string;
+  rarityLabel: string;
+  title: string;
+  curatorTitle: string;
+};
+
 const API_URL = 'http://localhost:8000/api/recognize';
 const STREAK_STORAGE_KEY = 'ai-magic-camera-streak';
 const XP_STORAGE_KEY = 'ai-magic-camera-xp';
@@ -952,6 +963,30 @@ function getArtifactMuseumAndCity(item: RecognitionResult, cityMaps: CityMap[]) 
   };
 }
 
+function buildShareCardData({
+  curatorTitle,
+  encouragement,
+  result,
+  title,
+}: {
+  curatorTitle: string;
+  encouragement: string;
+  result: RecognitionResult;
+  title: string;
+}): ShareCardData {
+  const location = getArtifactMuseumAndCity(result, CITY_MAPS);
+  return {
+    curatorTitle,
+    encouragement,
+    emoji: getMagicEmoji(result),
+    museumTitle: location.museumTitle,
+    objectEn: result.object_en || 'magic discovery',
+    objectZh: result.object_zh || '魔法发现',
+    rarityLabel: getStickerCategoryLabel(getStickerCategory(result)),
+    title,
+  };
+}
+
 function collectionHasKeyword(collection: CollectionItem[], keywords: string[]) {
   return collection.some((item) => {
     const text = `${item.object_en} ${item.object_zh}`.toLowerCase();
@@ -1239,7 +1274,13 @@ export default function HomeScreen() {
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [isRecognizing, setIsRecognizing] = useState(false);
   const [recognitionResult, setRecognitionResult] = useState<RecognitionResult | null>(null);
-  const [errorMessage, setErrorMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState<string | null>('');
+  const [debugResponse, setDebugResponse] = useState({
+    objectEn: '',
+    objectZh: '',
+    rawText: '',
+    status: '',
+  });
   const [collection, setCollection] = useState<CollectionItem[]>([]);
   const [collectionMessage, setCollectionMessage] = useState('');
   const [collectionFeedback, setCollectionFeedback] = useState<'new' | 'known' | ''>('');
@@ -1263,6 +1304,7 @@ export default function HomeScreen() {
     name: '小小馆长',
     title: getCuratorTitle(1),
   });
+  const [shareCard, setShareCard] = useState<ShareCardData | null>(null);
   const [hoveredButton, setHoveredButton] = useState<'camera' | 'album' | null>(null);
   const [speakingLanguage, setSpeakingLanguage] = useState<'zh' | 'en' | null>(null);
 
@@ -1938,6 +1980,13 @@ export default function HomeScreen() {
     setIsRecognizing(true);
     setRecognitionResult(null);
     setErrorMessage('');
+
+    setDebugResponse({
+      objectEn: '',
+      objectZh: '',
+      rawText: 'recognizeImage called',
+      status: 'started',
+    });
     setCollectionMessage('');
     setCollectionFeedback('');
     setNewestDiscoveryAt('');
@@ -1958,30 +2007,66 @@ export default function HomeScreen() {
         } as unknown as Blob);
       }
 
+      setDebugResponse({
+        objectEn: '',
+        objectZh: '',
+        rawText: 'fetch is about to run',
+        status: 'fetching',
+      });
+
       const response = await fetch(API_URL, {
         method: 'POST',
         body: formData,
       });
 
-      if (!response.ok) {
-        throw new Error('Recognition request failed.');
+      console.log('status', response.status);
+      const rawText = await response.text();
+      console.log('rawText', rawText);
+      let parsed: Partial<RecognitionResult> = {};
+      try {
+        parsed = JSON.parse(rawText) as RecognitionResult;
+        console.log('parsed JSON', parsed);
+      } catch (parseError) {
+        console.log('recognize json parse failed', parseError);
       }
 
-      const parsed = (await response.json()) as RecognitionResult;
-      setRecognitionResult(parsed);
+      console.log('object_zh', parsed.object_zh ?? '');
+      console.log('object_en', parsed.object_en ?? '');
+
+      setDebugResponse({
+        objectEn: parsed.object_en ?? '',
+        objectZh: parsed.object_zh ?? '',
+        rawText,
+        status: String(response.status),
+      });
+
+      if (!parsed.object_en && !parsed.object_zh) {
+        setRecognitionResult(null);
+        setErrorMessage(null);
+        return;
+      }
+
+      const recognizedData: RecognitionResult = {
+        confidence: parsed.confidence || 'high',
+        object_en: parsed.object_en ?? '',
+        object_zh: parsed.object_zh ?? '',
+      };
+
+      setRecognitionResult(recognizedData);
+      setErrorMessage(null);
       updateStreakForToday();
       const achievementStreakDays = lastStreakDate === getDateKey(new Date())
         ? streakDays
         : lastStreakDate === getYesterdayKey()
           ? streakDays + 1
           : 1;
-      addXpForRecognition(parsed);
-      collectMuseumExhibits(parsed);
+      addXpForRecognition(recognizedData);
+      collectMuseumExhibits(recognizedData);
 
       setCollection((currentCollection) => {
-        const normalizedName = parsed.object_en.trim().toLowerCase();
+        const normalizedName = (recognizedData.object_en || recognizedData.object_zh).trim().toLowerCase();
         const alreadyDiscovered = currentCollection.some(
-          (item) => item.object_en.trim().toLowerCase() === normalizedName,
+          (item) => (item.object_en || item.object_zh).trim().toLowerCase() === normalizedName,
         );
 
         if (alreadyDiscovered) {
@@ -2000,9 +2085,9 @@ export default function HomeScreen() {
         const discoveredAt = new Date().toISOString();
         const nextCollection = [
           {
-            ...parsed,
+            ...recognizedData,
             discoveredAt,
-            emoji: getMagicEmoji(parsed),
+            emoji: getMagicEmoji(recognizedData),
           },
           ...currentCollection,
         ];
@@ -2023,7 +2108,13 @@ export default function HomeScreen() {
       });
     } catch (error) {
       console.log('recognition failed', error);
-      setErrorMessage(COPY.error);
+      setDebugResponse({
+        objectEn: '',
+        objectZh: '',
+        rawText: String(error),
+        status: 'error',
+      });
+      setErrorMessage(null);
     } finally {
       setIsRecognizing(false);
     }
@@ -2032,6 +2123,7 @@ export default function HomeScreen() {
   const takePhoto = async () => {
     setRecognitionResult(null);
     setErrorMessage('');
+    setDebugResponse({ objectEn: '', objectZh: '', rawText: '', status: '' });
 
     try {
       if (Platform.OS !== 'web') {
@@ -2064,6 +2156,7 @@ export default function HomeScreen() {
   const chooseFromAlbum = async () => {
     setRecognitionResult(null);
     setErrorMessage('');
+    setDebugResponse({ objectEn: '', objectZh: '', rawText: '', status: '' });
 
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
@@ -2135,6 +2228,25 @@ export default function HomeScreen() {
       saveStoredExpandedArtifactIds(nextIds);
       return nextIds;
     });
+  };
+
+  const getShareSourceResult = (): RecognitionResult =>
+    recognitionResult ??
+    collection[0] ?? {
+      confidence: 'high',
+      object_en: 'magic discovery',
+      object_zh: '魔法发现',
+    };
+
+  const openShareCard = (title: string, encouragement: string, result: RecognitionResult = getShareSourceResult()) => {
+    setShareCard(
+      buildShareCardData({
+        curatorTitle: getCuratorTitle(xpState.level),
+        encouragement,
+        result,
+        title,
+      }),
+    );
   };
 
   useEffect(() => {
@@ -2279,12 +2391,30 @@ export default function HomeScreen() {
                 </View>
               </View>
             ) : recognitionResult ? (
-              <MagicWordCard
-                result={recognitionResult}
-                onSpeakChinese={() => speakWord(recognitionResult.object_zh, 'zh')}
-                onSpeakEnglish={() => speakWord(recognitionResult.object_en, 'en')}
-                speakButtonScale={speakButtonScale}
-                speakingLanguage={speakingLanguage}
+              <>
+                <MagicWordCard
+                  result={recognitionResult}
+                  onShare={() => openShareCard('AI Magic Word Camera', 'I found a new magic artifact!', recognitionResult)}
+                  onSpeakChinese={() => speakWord(recognitionResult.object_zh, 'zh')}
+                  onSpeakEnglish={() => speakWord(recognitionResult.object_en, 'en')}
+                  speakButtonScale={speakButtonScale}
+                  speakingLanguage={speakingLanguage}
+                />
+                {debugResponse.status || debugResponse.rawText ? (
+                  <DebugResponseCard
+                    objectEn={debugResponse.objectEn}
+                    objectZh={debugResponse.objectZh}
+                    rawText={debugResponse.rawText}
+                    status={debugResponse.status}
+                  />
+                ) : null}
+              </>
+            ) : debugResponse.status || debugResponse.rawText ? (
+              <DebugResponseCard
+                objectEn={debugResponse.objectEn}
+                objectZh={debugResponse.objectZh}
+                rawText={debugResponse.rawText}
+                status={debugResponse.status}
               />
             ) : errorMessage ? (
               <FailureCard
@@ -2346,6 +2476,7 @@ export default function HomeScreen() {
             xpState={xpState}
             unlockedAchievementIds={unlockedAchievementIds}
             onToggleArtifactStory={toggleArtifactStory}
+            onShareMuseumBadge={(badge) => openShareCard(`${badge.emoji} ${badge.title}`, '这座博物馆被你点亮了，真了不起！')}
           />
 
           <CustomMuseumPanel
@@ -2392,17 +2523,20 @@ export default function HomeScreen() {
           </View>
         </View>
       </ScrollView>
+      {shareCard ? <ShareCardPreview data={shareCard} onClose={() => setShareCard(null)} /> : null}
     </SafeAreaView>
   );
 }
 
 function MagicWordCard({
+  onShare,
   result,
   onSpeakChinese,
   onSpeakEnglish,
   speakButtonScale,
   speakingLanguage,
 }: {
+  onShare: () => void;
   result: RecognitionResult;
   onSpeakChinese: () => void;
   onSpeakEnglish: () => void;
@@ -2416,11 +2550,15 @@ function MagicWordCard({
       <View style={styles.emojiStage}>
         <Text style={styles.magicEmoji}>{getMagicEmoji(result)}</Text>
       </View>
-      <Text style={styles.chineseWord}>{result.object_zh}</Text>
-      <Text style={styles.englishWord}>{result.object_en}</Text>
+      <Text style={styles.chineseWord}>{result.object_zh || '未命名藏品'}</Text>
+      <Text style={styles.englishWord}>{result.object_en || 'unnamed artifact'}</Text>
+      <Text style={styles.rarityLine}>稀有度：{getStickerCategoryLabel(getStickerCategory(result))}</Text>
       <Text style={styles.confidenceLine}>
         {COPY.confidence}: {formatConfidence(result.confidence)}
       </Text>
+      <Pressable style={({ pressed }) => [styles.shareButton, pressed && styles.shareButtonPressed]} onPress={onShare}>
+        <Text style={styles.shareButtonText}>📸 生成分享卡</Text>
+      </Pressable>
       <View style={styles.speechActions}>
         <SpeechButton
           active={speakingLanguage === 'zh'}
@@ -2434,6 +2572,46 @@ function MagicWordCard({
           onPress={onSpeakEnglish}
           scale={speakButtonScale}
         />
+      </View>
+    </View>
+  );
+}
+
+function ShareCardPreview({ data, onClose }: { data: ShareCardData; onClose: () => void }) {
+  return (
+    <View style={styles.sharePreviewOverlay}>
+      <View style={styles.sharePreviewBackdrop} />
+      <View style={styles.sharePreviewShell}>
+        <View pointerEvents="none" style={styles.sharePreviewGlow} />
+        <Text style={[styles.sharePreviewSparkle, styles.sharePreviewSparkleOne]}>✨</Text>
+        <Text style={[styles.sharePreviewSparkle, styles.sharePreviewSparkleTwo]}>🌟</Text>
+        <Text style={[styles.sharePreviewSparkle, styles.sharePreviewSparkleThree]}>✨</Text>
+
+        <View style={styles.sharePreviewCard}>
+          <Text style={styles.sharePreviewBrand}>AI魔法识字相机</Text>
+          <Text style={styles.sharePreviewTitle}>{data.title}</Text>
+          <View style={styles.sharePreviewEmojiStage}>
+            <Text style={styles.sharePreviewEmoji}>{data.emoji}</Text>
+          </View>
+          <Text style={styles.sharePreviewZh}>{data.objectZh}</Text>
+          <Text style={styles.sharePreviewEn}>{data.objectEn}</Text>
+          <View style={styles.sharePreviewInfoGrid}>
+            <View style={styles.sharePreviewInfoPill}>
+              <Text style={styles.sharePreviewInfoLabel}>稀有度</Text>
+              <Text style={styles.sharePreviewInfoValue}>{data.rarityLabel}</Text>
+            </View>
+            <View style={styles.sharePreviewInfoPill}>
+              <Text style={styles.sharePreviewInfoLabel}>馆长等级</Text>
+              <Text style={styles.sharePreviewInfoValue}>{data.curatorTitle}</Text>
+            </View>
+          </View>
+          <Text style={styles.sharePreviewMuseum}>所属博物馆：{data.museumTitle}</Text>
+          <Text style={styles.sharePreviewEncouragement}>{data.encouragement}</Text>
+        </View>
+
+        <Pressable style={({ pressed }) => [styles.sharePreviewCloseButton, pressed && styles.shareButtonPressed]} onPress={onClose}>
+          <Text style={styles.sharePreviewCloseText}>关闭</Text>
+        </Pressable>
       </View>
     </View>
   );
@@ -2491,6 +2669,29 @@ function FailureCard({
   );
 }
 
+function DebugResponseCard({
+  objectEn,
+  objectZh,
+  rawText,
+  status,
+}: {
+  objectEn: string;
+  objectZh: string;
+  rawText: string;
+  status: string;
+}) {
+  return (
+    <View style={styles.debugResponseCard}>
+      <Text style={styles.debugResponseTitle}>DEBUG RESPONSE</Text>
+      <Text style={styles.debugResponseLine}>status: {status || '(empty)'}</Text>
+      <Text style={styles.debugResponseLine}>object_zh: {objectZh || '(empty)'}</Text>
+      <Text style={styles.debugResponseLine}>object_en: {objectEn || '(empty)'}</Text>
+      <Text style={styles.debugResponseRawLabel}>rawText:</Text>
+      <Text style={styles.debugResponseRawText}>{rawText || '(empty)'}</Text>
+    </View>
+  );
+}
+
 function MagicCollection({
   achievementGlowScale,
   achievementOpacity,
@@ -2538,6 +2739,7 @@ function MagicCollection({
   xpLevelUpScale,
   xpState,
   unlockedAchievementIds,
+  onShareMuseumBadge,
   onToggleArtifactStory,
 }: {
   achievementGlowScale: Animated.AnimatedInterpolation<string | number>;
@@ -2586,6 +2788,7 @@ function MagicCollection({
   xpLevelUpScale: Animated.AnimatedInterpolation<string | number>;
   xpState: XpState;
   unlockedAchievementIds: AchievementId[];
+  onShareMuseumBadge: (badge: MuseumBadge) => void;
   onToggleArtifactStory: (artifactId: string) => void;
 }) {
   const collectedCount = collection.length;
@@ -2632,6 +2835,7 @@ function MagicCollection({
         museumBadges={museumBadges}
         museumBadgeScale={museumBadgeScale}
         museumBadgeTranslateY={museumBadgeTranslateY}
+        onShareMuseumBadge={onShareMuseumBadge}
       />
 
       <View style={styles.collectionHeader}>
@@ -3014,6 +3218,7 @@ function MuseumBadgeWall({
   museumBadges,
   museumBadgeScale,
   museumBadgeTranslateY,
+  onShareMuseumBadge,
 }: {
   latestMuseumBadge: MuseumBadge | null;
   museumBadgeGlowScale: Animated.AnimatedInterpolation<string | number>;
@@ -3022,6 +3227,7 @@ function MuseumBadgeWall({
   museumBadges: MuseumBadge[];
   museumBadgeScale: Animated.AnimatedInterpolation<string | number>;
   museumBadgeTranslateY: Animated.AnimatedInterpolation<string | number>;
+  onShareMuseumBadge: (badge: MuseumBadge) => void;
 }) {
   const unlockedBadges = museumBadges.filter((badge) => museumBadgeIds.includes(badge.id));
 
@@ -3051,6 +3257,12 @@ function MuseumBadgeWall({
           <Text style={styles.museumRewardName}>
             {latestMuseumBadge.emoji} {latestMuseumBadge.title}
           </Text>
+          <Pressable
+            style={({ pressed }) => [styles.shareButton, styles.shareButtonSmall, pressed && styles.shareButtonPressed]}
+            onPress={() => onShareMuseumBadge(latestMuseumBadge)}
+          >
+            <Text style={styles.shareButtonText}>✨ 分享博物馆卡</Text>
+          </Pressable>
         </Animated.View>
       ) : null}
 
@@ -3903,10 +4115,230 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     textAlign: 'center',
   },
+  rarityLine: {
+    color: '#6D28D9',
+    fontSize: 14,
+    fontWeight: '900',
+    lineHeight: 20,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
   confidenceLine: {
     color: '#A05A16',
     fontSize: 15,
     fontWeight: '900',
+    textAlign: 'center',
+  },
+  sharePreviewOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+    zIndex: 50,
+  },
+  sharePreviewBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(76, 45, 111, 0.42)',
+  },
+  sharePreviewShell: {
+    alignItems: 'center',
+    width: '100%',
+    maxWidth: 360,
+  },
+  sharePreviewGlow: {
+    position: 'absolute',
+    top: 20,
+    width: 260,
+    height: 260,
+    borderRadius: 130,
+    backgroundColor: '#FDE68A',
+    opacity: 0.42,
+    shadowColor: '#F59E0B',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.35,
+    shadowRadius: 30,
+  },
+  sharePreviewSparkle: {
+    position: 'absolute',
+    color: '#F59E0B',
+    fontSize: 24,
+    fontWeight: '900',
+    zIndex: 2,
+  },
+  sharePreviewSparkleOne: {
+    left: 22,
+    top: 28,
+  },
+  sharePreviewSparkleTwo: {
+    right: 26,
+    top: 54,
+  },
+  sharePreviewSparkleThree: {
+    bottom: 74,
+    left: 42,
+  },
+  sharePreviewCard: {
+    alignItems: 'center',
+    width: '100%',
+    borderRadius: 30,
+    borderWidth: 2,
+    borderColor: '#F7C948',
+    backgroundColor: '#FFF9EB',
+    overflow: 'hidden',
+    paddingHorizontal: 20,
+    paddingVertical: 22,
+    shadowColor: '#A855F7',
+    shadowOffset: { width: 0, height: 16 },
+    shadowOpacity: 0.24,
+    shadowRadius: 26,
+  },
+  sharePreviewBrand: {
+    color: '#6D28D9',
+    fontSize: 22,
+    fontWeight: '900',
+    lineHeight: 29,
+    textAlign: 'center',
+  },
+  sharePreviewTitle: {
+    color: '#A05A16',
+    fontSize: 14,
+    fontWeight: '900',
+    lineHeight: 20,
+    marginTop: 4,
+    textAlign: 'center',
+  },
+  sharePreviewEmojiStage: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 118,
+    height: 118,
+    borderRadius: 40,
+    borderWidth: 1,
+    borderColor: '#F7C948',
+    backgroundColor: '#FFF1B8',
+    marginTop: 16,
+  },
+  sharePreviewEmoji: {
+    fontSize: 66,
+    lineHeight: 76,
+  },
+  sharePreviewZh: {
+    color: '#3B245F',
+    fontSize: 30,
+    fontWeight: '900',
+    lineHeight: 38,
+    marginTop: 14,
+    textAlign: 'center',
+  },
+  sharePreviewEn: {
+    color: '#7C3AED',
+    fontSize: 20,
+    fontWeight: '900',
+    lineHeight: 27,
+    marginTop: 2,
+    textAlign: 'center',
+  },
+  sharePreviewInfoGrid: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 16,
+    width: '100%',
+  },
+  sharePreviewInfoPill: {
+    flex: 1,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: '#E9D5FF',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 10,
+    paddingVertical: 10,
+  },
+  sharePreviewInfoLabel: {
+    color: '#8A6B9F',
+    fontSize: 11,
+    fontWeight: '900',
+    lineHeight: 15,
+    textAlign: 'center',
+  },
+  sharePreviewInfoValue: {
+    color: '#4C2D6F',
+    fontSize: 13,
+    fontWeight: '900',
+    lineHeight: 18,
+    marginTop: 2,
+    textAlign: 'center',
+  },
+  sharePreviewMuseum: {
+    color: '#8A5E22',
+    fontSize: 13,
+    fontWeight: '900',
+    lineHeight: 19,
+    marginTop: 13,
+    textAlign: 'center',
+  },
+  sharePreviewEncouragement: {
+    color: '#6D28D9',
+    fontSize: 16,
+    fontWeight: '900',
+    lineHeight: 23,
+    marginTop: 12,
+    textAlign: 'center',
+  },
+  sharePreviewCloseButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 42,
+    borderRadius: 999,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E9D5FF',
+    marginTop: 14,
+    paddingHorizontal: 24,
+    paddingVertical: 9,
+    shadowColor: '#4C2D6F',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 14,
+  },
+  sharePreviewCloseText: {
+    color: '#6D28D9',
+    fontSize: 14,
+    fontWeight: '900',
+    lineHeight: 20,
+    textAlign: 'center',
+  },
+  shareButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 44,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: '#C084FC',
+    backgroundColor: '#F5E8FF',
+    marginTop: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    shadowColor: '#A855F7',
+    shadowOffset: { width: 0, height: 7 },
+    shadowOpacity: 0.14,
+    shadowRadius: 13,
+  },
+  shareButtonSmall: {
+    alignSelf: 'center',
+    minHeight: 38,
+    marginTop: 10,
+    paddingHorizontal: 13,
+    paddingVertical: 8,
+  },
+  shareButtonPressed: {
+    opacity: 0.9,
+    transform: [{ scale: 0.98 }],
+  },
+  shareButtonText: {
+    color: '#6D28D9',
+    fontSize: 14,
+    fontWeight: '900',
+    lineHeight: 20,
     textAlign: 'center',
   },
   speechActions: {
@@ -3992,6 +4424,42 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     lineHeight: 18,
     textAlign: 'center',
+  },
+  debugResponseCard: {
+    alignSelf: 'stretch',
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: '#E9D5FF',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+  },
+  debugResponseTitle: {
+    color: '#6D28D9',
+    fontSize: 15,
+    fontWeight: '900',
+    lineHeight: 21,
+    marginBottom: 6,
+  },
+  debugResponseLine: {
+    color: '#3B245F',
+    fontSize: 12,
+    fontWeight: '800',
+    lineHeight: 18,
+  },
+  debugResponseRawLabel: {
+    color: '#8A5E22',
+    fontSize: 12,
+    fontWeight: '900',
+    lineHeight: 18,
+    marginTop: 8,
+  },
+  debugResponseRawText: {
+    color: '#4C2D6F',
+    fontSize: 11,
+    fontWeight: '700',
+    lineHeight: 16,
+    marginTop: 3,
   },
   collectionPanel: {
     borderRadius: 28,
