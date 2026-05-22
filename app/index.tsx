@@ -72,6 +72,20 @@ type MagicMuseum = {
   title: string;
 };
 
+type CityMuseumNode = {
+  emoji: string;
+  id: string;
+  linkedMuseumId: string;
+  name: string;
+};
+
+type CityMap = {
+  emoji: string;
+  id: string;
+  museums: CityMuseumNode[];
+  name: string;
+};
+
 type MuseumBadge = {
   emoji: string;
   id: string;
@@ -110,6 +124,9 @@ const MUSEUM_STORAGE_KEY = 'ai-magic-camera-museum';
 const MUSEUM_BADGES_STORAGE_KEY = 'ai-magic-camera-museum-badges';
 const CUSTOM_MUSEUMS_STORAGE_KEY = 'ai-magic-camera-custom-museums';
 const CURATOR_STORAGE_KEY = 'ai-magic-camera-curator';
+const CITY_MAP_STORAGE_KEY = 'ai-magic-camera-city-map';
+const COLLECTION_STORAGE_KEY = 'ai-magic-camera-collection';
+const ARTIFACT_STORY_STORAGE_KEY = 'ai-magic-camera-artifact-stories';
 const STICKER_TOTAL = 120;
 const XP_PER_LEVEL = 100;
 
@@ -293,6 +310,82 @@ const MUSEUM_BADGES: MuseumBadge[] = [
   { emoji: '🚀', id: 'badge-technology', museumId: 'technology', title: '科技探险家' },
   { emoji: '🏺', id: 'badge-culture', museumId: 'culture', title: '文明探索者' },
   { emoji: '👑', id: 'badge-master', museumId: null, title: '博物馆大师' },
+];
+
+const ARTIFACT_FACTS: { fact: string; keywords: string[] }[] = [
+  { fact: '熊猫每天可以吃20公斤竹子。', keywords: ['panda', '熊猫', '鐔婄尗'] },
+  { fact: '狮子的吼声最远可传8公里。', keywords: ['lion', '狮子', '鐙瓙'] },
+  { fact: '第一架飞机在1903年成功飞行。', keywords: ['airplane', 'plane', 'jet', 'fighter', '飞机', '战斗机', '椋炴満', '鎴樻枟鏈?'] },
+  { fact: '现代汽车拥有上万个零件。', keywords: ['car', 'vehicle', '汽车', '姹借溅'] },
+  { fact: '火箭需要强大的推力才能飞向太空。', keywords: ['rocket', '火箭', '鐏'] },
+  { fact: '机器人可以帮助人类完成危险或重复的工作。', keywords: ['robot', '机器人', '鏈哄櫒浜?'] },
+  { fact: '火车可以一次带很多人去很远的地方。', keywords: ['train', '火车', '鐏溅'] },
+  { fact: '轮船能在海上运输巨大的货物。', keywords: ['ship', 'boat', '轮船', '鑸?', '杞埞'] },
+  { fact: '苹果里含有丰富的膳食纤维。', keywords: ['apple', '苹果', '鑻规灉'] },
+  { fact: '书本像一扇小门，可以带你进入新世界。', keywords: ['book', '书', '涔?'] },
+];
+
+const CITY_MAPS: CityMap[] = [
+  {
+    emoji: '🌆',
+    id: 'shanghai',
+    name: '上海',
+    museums: [
+      { emoji: '🦕', id: 'shanghai-natural-history', linkedMuseumId: 'nature', name: '上海自然博物馆' },
+      { emoji: '🚀', id: 'shanghai-science-tech', linkedMuseumId: 'technology', name: '上海科技馆' },
+      { emoji: '🏛️', id: 'shanghai-history', linkedMuseumId: 'culture', name: '上海历史博物馆' },
+    ],
+  },
+  {
+    emoji: '🏯',
+    id: 'beijing',
+    name: '北京',
+    museums: [
+      { emoji: '👑', id: 'beijing-palace', linkedMuseumId: 'culture', name: '故宫博物院' },
+      { emoji: '🏺', id: 'beijing-national', linkedMuseumId: 'culture', name: '中国国家博物馆' },
+      { emoji: '🧪', id: 'beijing-science-tech', linkedMuseumId: 'technology', name: '中国科技馆' },
+    ],
+  },
+  {
+    emoji: '🌸',
+    id: 'guangzhou',
+    name: '广州',
+    museums: [
+      { emoji: '🏛️', id: 'guangzhou-guangdong-museum', linkedMuseumId: 'culture', name: '广东省博物馆' },
+      { emoji: '🔬', id: 'guangzhou-science-center', linkedMuseumId: 'technology', name: '广东科学中心' },
+      { emoji: '🦁', id: 'guangzhou-zoo', linkedMuseumId: 'animal', name: '广州动物园' },
+    ],
+  },
+  {
+    emoji: '🌊',
+    id: 'shenzhen',
+    name: '深圳',
+    museums: [
+      { emoji: '🏙️', id: 'shenzhen-museum', linkedMuseumId: 'culture', name: '深圳博物馆' },
+      { emoji: '🧠', id: 'shenzhen-science', linkedMuseumId: 'technology', name: '深圳科学馆' },
+      { emoji: '🌿', id: 'shenzhen-fairy-lake', linkedMuseumId: 'nature', name: '仙湖植物园' },
+    ],
+  },
+  {
+    emoji: '🗼',
+    id: 'tokyo',
+    name: '东京',
+    museums: [
+      { emoji: '🏺', id: 'tokyo-national', linkedMuseumId: 'culture', name: '东京国立博物馆' },
+      { emoji: '🦖', id: 'tokyo-nature-science', linkedMuseumId: 'nature', name: '国立科学博物馆' },
+      { emoji: '🤖', id: 'tokyo-miraikan', linkedMuseumId: 'technology', name: '日本科学未来馆' },
+    ],
+  },
+  {
+    emoji: '🗽',
+    id: 'new-york',
+    name: '纽约',
+    museums: [
+      { emoji: '🦕', id: 'new-york-natural-history', linkedMuseumId: 'nature', name: '美国自然历史博物馆' },
+      { emoji: '🖼️', id: 'new-york-met', linkedMuseumId: 'culture', name: '大都会艺术博物馆' },
+      { emoji: '✈️', id: 'new-york-intrepid', linkedMuseumId: 'traffic', name: '无畏号海空航天博物馆' },
+    ],
+  },
 ];
 
 function getDateKey(date: Date) {
@@ -485,6 +578,121 @@ function saveStoredMuseumBadgeIds(badgeIds: string[]) {
   }
 }
 
+function getAllCityMapNodeIds() {
+  return CITY_MAPS.flatMap((city) => city.museums.map((museum) => museum.id));
+}
+
+function readStoredCityMapNodeIds(): string[] {
+  if (Platform.OS !== 'web' || typeof window === 'undefined') {
+    return [];
+  }
+
+  try {
+    const rawValue = window.localStorage.getItem(CITY_MAP_STORAGE_KEY);
+    if (!rawValue) {
+      return [];
+    }
+
+    const parsed = JSON.parse(rawValue) as string[];
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+
+    const validIds = new Set(getAllCityMapNodeIds());
+    return parsed.filter((id) => validIds.has(id));
+  } catch {
+    return [];
+  }
+}
+
+function saveStoredCityMapNodeIds(nodeIds: string[]) {
+  if (Platform.OS !== 'web' || typeof window === 'undefined') {
+    return;
+  }
+
+  try {
+    window.localStorage.setItem(CITY_MAP_STORAGE_KEY, JSON.stringify(nodeIds));
+  } catch {
+    // City map progress is local encouragement. Recognition should continue if storage is blocked.
+  }
+}
+
+function readStoredCollection(): CollectionItem[] {
+  if (Platform.OS !== 'web' || typeof window === 'undefined') {
+    return [];
+  }
+
+  try {
+    const rawValue = window.localStorage.getItem(COLLECTION_STORAGE_KEY);
+    if (!rawValue) {
+      return [];
+    }
+
+    const parsed = JSON.parse(rawValue) as CollectionItem[];
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+
+    return parsed
+      .filter(
+        (item) =>
+          item &&
+          typeof item.object_en === 'string' &&
+          typeof item.object_zh === 'string' &&
+          typeof item.confidence === 'string' &&
+          typeof item.discoveredAt === 'string',
+      )
+      .map((item) => ({
+        ...item,
+        emoji: typeof item.emoji === 'string' && item.emoji.trim() ? item.emoji : getMagicEmoji(item),
+      }));
+  } catch {
+    return [];
+  }
+}
+
+function saveStoredCollection(collection: CollectionItem[]) {
+  if (Platform.OS !== 'web' || typeof window === 'undefined') {
+    return;
+  }
+
+  try {
+    window.localStorage.setItem(COLLECTION_STORAGE_KEY, JSON.stringify(collection));
+  } catch {
+    // Collection cards are local play data. Recognition should continue if storage is blocked.
+  }
+}
+
+function readStoredExpandedArtifactIds(): string[] {
+  if (Platform.OS !== 'web' || typeof window === 'undefined') {
+    return [];
+  }
+
+  try {
+    const rawValue = window.localStorage.getItem(ARTIFACT_STORY_STORAGE_KEY);
+    if (!rawValue) {
+      return [];
+    }
+
+    const parsed = JSON.parse(rawValue) as string[];
+    return Array.isArray(parsed) ? parsed.filter((id) => typeof id === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveStoredExpandedArtifactIds(artifactIds: string[]) {
+  if (Platform.OS !== 'web' || typeof window === 'undefined') {
+    return;
+  }
+
+  try {
+    window.localStorage.setItem(ARTIFACT_STORY_STORAGE_KEY, JSON.stringify(artifactIds));
+  } catch {
+    // Expanded story cards are a UI preference. The app should keep working if storage is blocked.
+  }
+}
+
 function readStoredCustomMuseums(): CustomMuseum[] {
   if (Platform.OS !== 'web' || typeof window === 'undefined') {
     return [];
@@ -663,6 +871,64 @@ function getCategoryItems(collection: CollectionItem[], categoryKey: StickerCate
   return collection.filter((item) => getStickerCategory(item) === categoryKey);
 }
 
+function getArtifactStoryId(item: CollectionItem) {
+  return `${item.object_en.trim().toLowerCase()}-${item.discoveredAt}`;
+}
+
+function getStickerCategoryLabel(categoryKey: StickerCategoryKey) {
+  if (categoryKey === 'legendary') {
+    return '🌈 传奇';
+  }
+
+  if (categoryKey === 'epic') {
+    return '🟣 史诗';
+  }
+
+  if (categoryKey === 'rare') {
+    return '🔵 稀有';
+  }
+
+  return '⚪ 普通';
+}
+
+function formatDiscoveredAt(discoveredAt: string) {
+  const date = new Date(discoveredAt);
+  if (Number.isNaN(date.getTime())) {
+    return '刚刚发现';
+  }
+
+  return date.toLocaleString('zh-CN', {
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    month: '2-digit',
+  });
+}
+
+function getArtifactFact(item: RecognitionResult) {
+  const text = `${item.object_en} ${item.object_zh}`.toLowerCase();
+  const matchedFact = ARTIFACT_FACTS.find((fact) =>
+    fact.keywords.some((keyword) => text.includes(keyword.toLowerCase())),
+  );
+
+  return matchedFact?.fact ?? '每一次发现，都会让你的魔法图鉴变得更丰富。';
+}
+
+function getArtifactMuseumAndCity(item: RecognitionResult, cityMaps: CityMap[]) {
+  const matchedExhibitId = getMatchedMuseumExhibitIds(item)[0];
+  const matchedMuseum = MAGIC_MUSEUMS.find((museum) =>
+    museum.exhibits.some((exhibit) => exhibit.id === matchedExhibitId),
+  );
+  const matchedCity = matchedMuseum
+    ? cityMaps.find((city) => city.museums.some((museum) => museum.linkedMuseumId === matchedMuseum.id))
+    : null;
+
+  return {
+    cityName: matchedCity?.name ?? '魔法城市',
+    museumTitle: matchedMuseum?.title ?? '魔法图鉴馆',
+  };
+}
+
 function collectionHasKeyword(collection: CollectionItem[], keywords: string[]) {
   return collection.some((item) => {
     const text = `${item.object_en} ${item.object_zh}`.toLowerCase();
@@ -718,6 +984,19 @@ function getMatchedMuseumExhibitIds(result: RecognitionResult) {
 
 function getMuseumCollectedCount(museum: MagicMuseum, collectedIds: string[]) {
   return museum.exhibits.filter((exhibit) => collectedIds.includes(exhibit.id)).length;
+}
+
+function isOfficialMuseumComplete(museumId: string, collectedIds: string[]) {
+  const museum = MAGIC_MUSEUMS.find((item) => item.id === museumId);
+  return Boolean(museum && getMuseumCollectedCount(museum, collectedIds) === museum.exhibits.length);
+}
+
+function getCompletedCityMapNodeIds(collectedIds: string[]) {
+  return CITY_MAPS.flatMap((city) =>
+    city.museums
+      .filter((museum) => isOfficialMuseumComplete(museum.linkedMuseumId, collectedIds))
+      .map((museum) => museum.id),
+  );
 }
 
 function getUnlockedMuseumBadgeIds(collectedIds: string[]) {
@@ -888,6 +1167,7 @@ export default function HomeScreen() {
   const [collectionMessage, setCollectionMessage] = useState('');
   const [collectionFeedback, setCollectionFeedback] = useState<'new' | 'known' | ''>('');
   const [newestDiscoveryAt, setNewestDiscoveryAt] = useState('');
+  const [expandedArtifactIds, setExpandedArtifactIds] = useState<string[]>([]);
   const [streakDays, setStreakDays] = useState(0);
   const [lastStreakDate, setLastStreakDate] = useState('');
   const [chestOpened, setChestOpened] = useState(false);
@@ -899,6 +1179,7 @@ export default function HomeScreen() {
   const [museumCollectedIds, setMuseumCollectedIds] = useState<string[]>([]);
   const [museumBadgeIds, setMuseumBadgeIds] = useState<string[]>([]);
   const [latestMuseumBadge, setLatestMuseumBadge] = useState<MuseumBadge | null>(null);
+  const [cityMapCompletedNodeIds, setCityMapCompletedNodeIds] = useState<string[]>([]);
   const [customMuseums, setCustomMuseums] = useState<CustomMuseum[]>([]);
   const [curatorProfile, setCuratorProfile] = useState<CuratorProfile>({
     avatar: '🧙',
@@ -939,8 +1220,11 @@ export default function HomeScreen() {
     }
 
     setUnlockedAchievementIds(readStoredAchievements());
+    setCollection(readStoredCollection());
+    setExpandedArtifactIds(readStoredExpandedArtifactIds());
     setMuseumCollectedIds(readStoredMuseumIds());
     setMuseumBadgeIds(readStoredMuseumBadgeIds());
+    setCityMapCompletedNodeIds(readStoredCityMapNodeIds());
     setCustomMuseums(readStoredCustomMuseums());
     const storedCurator = readStoredCurator();
     if (storedCurator) {
@@ -963,6 +1247,23 @@ export default function HomeScreen() {
       setCuratorProfile(nextProfile);
     }
   }, [curatorProfile, xpState]);
+
+  useEffect(() => {
+    const completedNodeIds = getCompletedCityMapNodeIds(museumCollectedIds);
+    if (completedNodeIds.length === 0) {
+      return;
+    }
+
+    setCityMapCompletedNodeIds((currentIds) => {
+      const nextIds = Array.from(new Set([...currentIds, ...completedNodeIds]));
+      if (nextIds.length === currentIds.length) {
+        return currentIds;
+      }
+
+      saveStoredCityMapNodeIds(nextIds);
+      return nextIds;
+    });
+  }, [museumCollectedIds]);
 
   useEffect(() => {
     const floatLoop = Animated.loop(
@@ -1609,6 +1910,7 @@ export default function HomeScreen() {
           ...currentCollection,
         ];
 
+        saveStoredCollection(nextCollection);
         setCollectionMessage(COPY.collectionNew);
         setCollectionFeedback('new');
         setNewestDiscoveryAt(discoveredAt);
@@ -1724,6 +2026,15 @@ export default function HomeScreen() {
     };
     setCuratorProfile(normalizedProfile);
     saveStoredCurator(normalizedProfile, xpState);
+  };
+
+  const toggleArtifactStory = (artifactId: string) => {
+    setExpandedArtifactIds((currentIds) => {
+      const isExpanded = currentIds.includes(artifactId);
+      const nextIds = isExpanded ? currentIds.filter((id) => id !== artifactId) : [...currentIds, artifactId];
+      saveStoredExpandedArtifactIds(nextIds);
+      return nextIds;
+    });
   };
 
   return (
@@ -1889,9 +2200,12 @@ export default function HomeScreen() {
             chestOpacity={chestOpacity}
             chestReward={chestReward}
             chestScale={chestScale}
+            cityMapCompletedNodeIds={cityMapCompletedNodeIds}
+            cityMaps={CITY_MAPS}
             collection={collection}
             collectionMessage={collectionMessage}
             countScale={countScale}
+            expandedArtifactIds={expandedArtifactIds}
             feedback={collectionFeedback}
             newestDiscoveryAt={newestDiscoveryAt}
             newItemOpacity={newItemOpacity}
@@ -1922,6 +2236,7 @@ export default function HomeScreen() {
             xpLevelUpScale={xpLevelUpScale}
             xpState={xpState}
             unlockedAchievementIds={unlockedAchievementIds}
+            onToggleArtifactStory={toggleArtifactStory}
           />
 
           <CustomMuseumPanel
@@ -2078,9 +2393,12 @@ function MagicCollection({
   chestOpacity,
   chestReward,
   chestScale,
+  cityMapCompletedNodeIds,
+  cityMaps,
   collection,
   collectionMessage,
   countScale,
+  expandedArtifactIds,
   feedback,
   newestDiscoveryAt,
   newItemOpacity,
@@ -2111,6 +2429,7 @@ function MagicCollection({
   xpLevelUpScale,
   xpState,
   unlockedAchievementIds,
+  onToggleArtifactStory,
 }: {
   achievementGlowScale: Animated.AnimatedInterpolation<string | number>;
   achievementOpacity: Animated.AnimatedInterpolation<string | number>;
@@ -2122,9 +2441,12 @@ function MagicCollection({
   chestOpacity: Animated.AnimatedInterpolation<string | number>;
   chestReward: string;
   chestScale: Animated.AnimatedInterpolation<string | number>;
+  cityMapCompletedNodeIds: string[];
+  cityMaps: CityMap[];
   collection: CollectionItem[];
   collectionMessage: string;
   countScale: Animated.AnimatedInterpolation<string | number>;
+  expandedArtifactIds: string[];
   feedback: 'new' | 'known' | '';
   newestDiscoveryAt: string;
   newItemOpacity: Animated.AnimatedInterpolation<string | number>;
@@ -2155,6 +2477,7 @@ function MagicCollection({
   xpLevelUpScale: Animated.AnimatedInterpolation<string | number>;
   xpState: XpState;
   unlockedAchievementIds: AchievementId[];
+  onToggleArtifactStory: (artifactId: string) => void;
 }) {
   const collectedCount = collection.length;
   const completionPercent = Math.min(100, Math.round((collectedCount / STICKER_TOTAL) * 100));
@@ -2189,6 +2512,8 @@ function MagicCollection({
       />
 
       <MagicMuseumPanel museumCollectedIds={museumCollectedIds} museums={museums} />
+
+      <CityMapPanel cityMapCompletedNodeIds={cityMapCompletedNodeIds} cityMaps={cityMaps} />
 
       <MuseumBadgeWall
         latestMuseumBadge={latestMuseumBadge}
@@ -2262,27 +2587,25 @@ function MagicCollection({
                 horizontal
                 showsHorizontalScrollIndicator={false}
               >
-                {categoryItems.map((item) => (
-                  <Animated.View
-                    key={`${item.object_en}-${item.discoveredAt}`}
-                    style={[
-                      styles.collectionItem,
-                      item.discoveredAt === newestDiscoveryAt && styles.collectionItemNew,
-                      item.discoveredAt === newestDiscoveryAt && {
-                        opacity: newItemOpacity,
-                        transform: [{ translateY: newItemTranslateY }, { scale: newItemScale }],
-                      },
-                    ]}
-                  >
-                    <Text style={styles.collectionEmoji}>{item.emoji}</Text>
-                    <Text numberOfLines={1} style={styles.collectionZh}>
-                      {item.object_zh}
-                    </Text>
-                    <Text numberOfLines={1} style={styles.collectionEn}>
-                      {item.object_en}
-                    </Text>
-                  </Animated.View>
-                ))}
+                {categoryItems.map((item) => {
+                  const artifactId = getArtifactStoryId(item);
+
+                  return (
+                    <ArtifactStoryCard
+                      key={artifactId}
+                      cityMaps={cityMaps}
+                      isExpanded={expandedArtifactIds.includes(artifactId)}
+                      isNewest={item.discoveredAt === newestDiscoveryAt}
+                      item={item}
+                      newItemOpacity={newItemOpacity}
+                      newItemScale={newItemScale}
+                      newItemTranslateY={newItemTranslateY}
+                      onToggle={() => onToggleArtifactStory(artifactId)}
+                      starTwinkleOpacity={starTwinkleOpacity}
+                      starTwinkleScale={starTwinkleScale}
+                    />
+                  );
+                })}
 
                 {mysterySlots.map((slot) => (
                   <View key={slot} style={[styles.collectionItem, styles.mysteryItem]}>
@@ -2301,6 +2624,128 @@ function MagicCollection({
         })}
       </View>
     </View>
+  );
+}
+
+function ArtifactStoryCard({
+  cityMaps,
+  isExpanded,
+  isNewest,
+  item,
+  newItemOpacity,
+  newItemScale,
+  newItemTranslateY,
+  onToggle,
+  starTwinkleOpacity,
+  starTwinkleScale,
+}: {
+  cityMaps: CityMap[];
+  isExpanded: boolean;
+  isNewest: boolean;
+  item: CollectionItem;
+  newItemOpacity: Animated.AnimatedInterpolation<string | number>;
+  newItemScale: Animated.AnimatedInterpolation<string | number>;
+  newItemTranslateY: Animated.AnimatedInterpolation<string | number>;
+  onToggle: () => void;
+  starTwinkleOpacity: Animated.AnimatedInterpolation<string | number>;
+  starTwinkleScale: Animated.AnimatedInterpolation<string | number>;
+}) {
+  const entryValue = useRef(new Animated.Value(0)).current;
+  const pressScale = useRef(new Animated.Value(1)).current;
+  const category = getStickerCategory(item);
+  const location = getArtifactMuseumAndCity(item, cityMaps);
+
+  useEffect(() => {
+    Animated.spring(entryValue, {
+      friction: 7,
+      tension: 90,
+      toValue: 1,
+      useNativeDriver: true,
+    }).start();
+  }, [entryValue]);
+
+  const entryScale = entryValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.92, 1],
+  });
+
+  const onPressIn = () => {
+    Animated.spring(pressScale, {
+      friction: 6,
+      tension: 140,
+      toValue: 1.04,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const onPressOut = () => {
+    Animated.spring(pressScale, {
+      friction: 6,
+      tension: 140,
+      toValue: 1,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  return (
+    <Animated.View
+      style={[
+        {
+          opacity: isNewest ? newItemOpacity : entryValue,
+          transform: [
+            { translateY: isNewest ? newItemTranslateY : 0 },
+            { scale: Animated.multiply(isNewest ? newItemScale : entryScale, pressScale) },
+          ],
+        },
+      ]}
+    >
+      <Pressable onPress={onToggle} onPressIn={onPressIn} onPressOut={onPressOut}>
+        <View
+          style={[
+            styles.artifactStoryCard,
+            category === 'rare' && styles.artifactStoryCardRare,
+            category === 'epic' && styles.artifactStoryCardEpic,
+            category === 'legendary' && styles.artifactStoryCardLegendary,
+            isNewest && styles.collectionItemNew,
+          ]}
+        >
+          <Animated.Text
+            pointerEvents="none"
+            style={[
+              styles.artifactSparkle,
+              { opacity: starTwinkleOpacity, transform: [{ scale: starTwinkleScale }] },
+            ]}
+          >
+            ✨
+          </Animated.Text>
+          <View style={styles.artifactStoryTopRow}>
+            <Text style={styles.artifactStoryEmoji}>{item.emoji}</Text>
+            <View style={styles.artifactStoryNameBlock}>
+              <Text numberOfLines={1} style={styles.artifactStoryZh}>
+                {item.object_zh}
+              </Text>
+              <Text numberOfLines={1} style={styles.artifactStoryEn}>
+                {item.object_en}
+              </Text>
+            </View>
+          </View>
+
+          <Text style={styles.artifactRarity}>{getStickerCategoryLabel(category)}发现</Text>
+          <Text style={styles.artifactMeta}>发现时间：{formatDiscoveredAt(item.discoveredAt)}</Text>
+
+          {isExpanded ? (
+            <View style={styles.artifactExpandedArea}>
+              <Text style={styles.artifactMeta}>所属博物馆：{location.museumTitle}</Text>
+              <Text style={styles.artifactMeta}>所属城市：{location.cityName}</Text>
+              <Text style={styles.artifactFact}>趣味知识：{getArtifactFact(item)}</Text>
+              <Text style={styles.artifactToggleText}>收起 ↑</Text>
+            </View>
+          ) : (
+            <Text style={styles.artifactToggleText}>展开故事 ↓</Text>
+          )}
+        </View>
+      </Pressable>
+    </Animated.View>
   );
 }
 
@@ -2380,6 +2825,70 @@ function MagicMuseumPanel({
                   );
                 })}
               </ScrollView>
+            </View>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
+function CityMapPanel({
+  cityMapCompletedNodeIds,
+  cityMaps,
+}: {
+  cityMapCompletedNodeIds: string[];
+  cityMaps: CityMap[];
+}) {
+  return (
+    <View style={styles.cityMapPanel}>
+      <View style={styles.cityMapHero}>
+        <Text style={styles.cityMapTitle}>🗺️ 城市魔法地图</Text>
+        <Text style={styles.cityMapHint}>完成官方博物馆后，真实城市里的博物馆节点会自动点亮。</Text>
+      </View>
+
+      <View style={styles.cityMapList}>
+        {cityMaps.map((city) => {
+          const completedCount = city.museums.filter((museum) => cityMapCompletedNodeIds.includes(museum.id)).length;
+          const percent = Math.round((completedCount / city.museums.length) * 100);
+          const cityCompleted = completedCount === city.museums.length;
+
+          return (
+            <View key={city.id} style={[styles.cityMapCard, cityCompleted && styles.cityMapCardComplete]}>
+              <View style={styles.cityMapCardHeader}>
+                <View>
+                  <Text style={styles.cityMapCityName}>
+                    {city.emoji} {city.name}
+                  </Text>
+                  <Text style={styles.cityMapProgressText}>
+                    完成馆数：{completedCount} / {city.museums.length}
+                  </Text>
+                </View>
+                <Text style={styles.cityMapPercent}>{percent}%</Text>
+              </View>
+
+              <View style={styles.cityMapProgressTrack}>
+                <View style={[styles.cityMapProgressFill, { width: `${percent}%` as `${number}%` }]} />
+              </View>
+
+              {cityCompleted ? <Text style={styles.cityMapMaster}>🏆 城市探索大师</Text> : null}
+
+              <View style={styles.cityMapNodeList}>
+                {city.museums.map((museum) => {
+                  const isComplete = cityMapCompletedNodeIds.includes(museum.id);
+                  return (
+                    <View key={museum.id} style={[styles.cityMapNode, isComplete && styles.cityMapNodeComplete]}>
+                      <Text style={styles.cityMapNodeEmoji}>{isComplete ? museum.emoji : '🔒'}</Text>
+                      <Text numberOfLines={1} style={isComplete ? styles.cityMapNodeName : styles.cityMapNodeLockedName}>
+                        {museum.name}
+                      </Text>
+                      <Text style={isComplete ? styles.cityMapNodeStatus : styles.cityMapNodeLockedStatus}>
+                        {isComplete ? '已点亮' : '待探索'}
+                      </Text>
+                    </View>
+                  );
+                })}
+              </View>
             </View>
           );
         })}
@@ -4019,6 +4528,157 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     width: '100%',
   },
+  cityMapPanel: {
+    borderBottomWidth: 1,
+    borderColor: '#F3D8A6',
+    paddingBottom: 16,
+    paddingHorizontal: 18,
+    paddingTop: 16,
+  },
+  cityMapHero: {
+    borderRadius: 26,
+    borderWidth: 1,
+    borderColor: '#C084FC',
+    backgroundColor: '#F8EEFF',
+    paddingHorizontal: 16,
+    paddingVertical: 15,
+    shadowColor: '#A855F7',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.12,
+    shadowRadius: 18,
+  },
+  cityMapTitle: {
+    color: '#4C2D6F',
+    fontSize: 21,
+    fontWeight: '900',
+    lineHeight: 28,
+    textAlign: 'center',
+  },
+  cityMapHint: {
+    color: '#7C3AED',
+    fontSize: 13,
+    fontWeight: '800',
+    lineHeight: 19,
+    marginTop: 4,
+    textAlign: 'center',
+  },
+  cityMapList: {
+    gap: 14,
+    marginTop: 14,
+  },
+  cityMapCard: {
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: '#E9D5FF',
+    backgroundColor: '#FFFDF7',
+    overflow: 'hidden',
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    shadowColor: '#A855F7',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.08,
+    shadowRadius: 14,
+  },
+  cityMapCardComplete: {
+    borderColor: '#F7C948',
+    backgroundColor: '#FFF7D6',
+    shadowColor: '#F59E0B',
+    shadowOpacity: 0.16,
+  },
+  cityMapCardHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  cityMapCityName: {
+    color: '#4C2D6F',
+    fontSize: 18,
+    fontWeight: '900',
+    lineHeight: 24,
+  },
+  cityMapProgressText: {
+    color: '#9A6A19',
+    fontSize: 13,
+    fontWeight: '900',
+    lineHeight: 18,
+    marginTop: 2,
+  },
+  cityMapPercent: {
+    color: '#7C3AED',
+    fontSize: 19,
+    fontWeight: '900',
+    lineHeight: 25,
+  },
+  cityMapProgressTrack: {
+    height: 10,
+    borderRadius: 999,
+    backgroundColor: '#FDE68A',
+    marginTop: 10,
+    overflow: 'hidden',
+  },
+  cityMapProgressFill: {
+    height: '100%',
+    borderRadius: 999,
+    backgroundColor: '#A855F7',
+  },
+  cityMapMaster: {
+    color: '#C2410C',
+    fontSize: 15,
+    fontWeight: '900',
+    lineHeight: 21,
+    marginTop: 10,
+    textAlign: 'center',
+  },
+  cityMapNodeList: {
+    gap: 9,
+    marginTop: 12,
+  },
+  cityMapNode: {
+    alignItems: 'center',
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: '#E9D5FF',
+    backgroundColor: '#F7EEFF',
+    flexDirection: 'row',
+    gap: 9,
+    minHeight: 46,
+    paddingHorizontal: 11,
+    paddingVertical: 8,
+  },
+  cityMapNodeComplete: {
+    borderColor: '#F7C948',
+    backgroundColor: '#FFFFFF',
+  },
+  cityMapNodeEmoji: {
+    fontSize: 22,
+    lineHeight: 28,
+  },
+  cityMapNodeName: {
+    color: '#3B245F',
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '900',
+    lineHeight: 20,
+  },
+  cityMapNodeLockedName: {
+    color: '#8A6B9F',
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '900',
+    lineHeight: 20,
+  },
+  cityMapNodeStatus: {
+    color: '#7C3AED',
+    fontSize: 12,
+    fontWeight: '900',
+    lineHeight: 17,
+  },
+  cityMapNodeLockedStatus: {
+    color: '#9B7BB7',
+    fontSize: 12,
+    fontWeight: '900',
+    lineHeight: 17,
+  },
   badgeWallPanel: {
     borderBottomWidth: 1,
     borderColor: '#F3D8A6',
@@ -4534,6 +5194,114 @@ const styles = StyleSheet.create({
     gap: 10,
     paddingHorizontal: 18,
     paddingTop: 14,
+  },
+  artifactStoryCard: {
+    width: 236,
+    minHeight: 170,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: '#F8D58D',
+    backgroundColor: '#FFFFFF',
+    overflow: 'hidden',
+    paddingHorizontal: 13,
+    paddingVertical: 13,
+    shadowColor: '#F59E0B',
+    shadowOffset: { width: 0, height: 9 },
+    shadowOpacity: 0.13,
+    shadowRadius: 16,
+  },
+  artifactStoryCardRare: {
+    borderColor: '#93C5FD',
+    backgroundColor: '#EFF6FF',
+    shadowColor: '#2563EB',
+    shadowOpacity: 0.16,
+  },
+  artifactStoryCardEpic: {
+    borderColor: '#C084FC',
+    backgroundColor: '#FAF5FF',
+    shadowColor: '#A855F7',
+    shadowOpacity: 0.18,
+  },
+  artifactStoryCardLegendary: {
+    borderColor: '#F7C948',
+    backgroundColor: '#FFF7D6',
+    shadowColor: '#F59E0B',
+    shadowOpacity: 0.24,
+  },
+  artifactSparkle: {
+    color: '#F59E0B',
+    fontSize: 22,
+    lineHeight: 28,
+    position: 'absolute',
+    right: 12,
+    top: 10,
+    zIndex: 2,
+  },
+  artifactStoryTopRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 10,
+    paddingRight: 22,
+  },
+  artifactStoryEmoji: {
+    fontSize: 42,
+    lineHeight: 50,
+  },
+  artifactStoryNameBlock: {
+    flex: 1,
+  },
+  artifactStoryZh: {
+    color: '#3B245F',
+    fontSize: 17,
+    fontWeight: '900',
+    lineHeight: 23,
+  },
+  artifactStoryEn: {
+    color: '#7C3AED',
+    fontSize: 13,
+    fontWeight: '900',
+    lineHeight: 19,
+    marginTop: 1,
+  },
+  artifactRarity: {
+    alignSelf: 'flex-start',
+    borderRadius: 999,
+    backgroundColor: '#F5E8FF',
+    color: '#6D28D9',
+    fontSize: 12,
+    fontWeight: '900',
+    lineHeight: 17,
+    marginTop: 10,
+    overflow: 'hidden',
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+  },
+  artifactMeta: {
+    color: '#8A5E22',
+    fontSize: 12,
+    fontWeight: '800',
+    lineHeight: 18,
+    marginTop: 6,
+  },
+  artifactExpandedArea: {
+    borderTopWidth: 1,
+    borderColor: '#F3D8A6',
+    marginTop: 9,
+    paddingTop: 8,
+  },
+  artifactFact: {
+    color: '#4C2D6F',
+    fontSize: 13,
+    fontWeight: '900',
+    lineHeight: 19,
+    marginTop: 7,
+  },
+  artifactToggleText: {
+    color: '#7C3AED',
+    fontSize: 12,
+    fontWeight: '900',
+    lineHeight: 17,
+    marginTop: 9,
   },
   collectionItem: {
     alignItems: 'center',
