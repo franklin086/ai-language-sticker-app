@@ -55,6 +55,27 @@ type AchievementId =
   | 'animal_friend'
   | 'twenty_items';
 
+type DailyQuestId = 'animal_discovery' | 'traffic_discovery' | 'three_unique_artifacts';
+
+type DailyQuestState = {
+  date: string;
+  rewardedQuestIds: DailyQuestId[];
+};
+
+type DailyQuestDefinition = {
+  id: DailyQuestId;
+  title: string;
+  rewardLabel: string;
+  target: number;
+  type: 'animal' | 'traffic' | 'unique';
+};
+
+type DailyQuestProgress = DailyQuestDefinition & {
+  completed: boolean;
+  progress: number;
+  rewarded: boolean;
+};
+
 type AchievementDefinition = {
   encouragement?: string;
   emoji: string;
@@ -75,6 +96,15 @@ type MagicMuseum = {
   exhibits: MuseumExhibit[];
   id: string;
   title: string;
+};
+
+type MuseumArtifact = {
+  objectZh: string;
+  objectEn: string;
+  emoji: string;
+  museum: string;
+  rarity: string;
+  story: string;
 };
 
 type CityMuseumNode = {
@@ -133,6 +163,7 @@ type ShareCardData = {
 };
 
 const API_URL = 'http://localhost:8000/api/recognize';
+const DEBUG_MODE = false;
 const STREAK_STORAGE_KEY = 'ai-magic-camera-streak';
 const XP_STORAGE_KEY = 'ai-magic-camera-xp';
 const ACHIEVEMENTS_STORAGE_KEY = 'ai-magic-camera-achievements';
@@ -142,6 +173,7 @@ const CUSTOM_MUSEUMS_STORAGE_KEY = 'ai-magic-camera-custom-museums';
 const CURATOR_STORAGE_KEY = 'ai-magic-camera-curator';
 const CITY_MAP_STORAGE_KEY = 'ai-magic-camera-city-map';
 const COLLECTION_STORAGE_KEY = 'ai-magic-camera-collection';
+const DAILY_QUEST_STORAGE_KEY = 'ai-magic-camera-daily-quests';
 const ARTIFACT_STORY_STORAGE_KEY = 'ai-magic-camera-artifact-stories';
 const STICKER_TOTAL = 120;
 const XP_PER_LEVEL = 100;
@@ -202,6 +234,12 @@ const CHEST_REWARDS = [
   '🦉 小猫头鹰祝福',
 ];
 
+const DAILY_QUESTS: DailyQuestDefinition[] = [
+  { id: 'animal_discovery', rewardLabel: '奖励 20XP', target: 1, title: '发现 1 个动物', type: 'animal' },
+  { id: 'traffic_discovery', rewardLabel: '奖励 20XP', target: 1, title: '发现 1 个交通工具', type: 'traffic' },
+  { id: 'three_unique_artifacts', rewardLabel: '奖励宝箱', target: 3, title: '发现 3 个不同藏品', type: 'unique' },
+];
+
 const ACHIEVEMENTS: AchievementDefinition[] = [
   { emoji: '🌟', id: 'first_scan', title: '初次探索者' },
   { emoji: '🔎', id: 'five_items', title: '小小发现家' },
@@ -222,6 +260,67 @@ const ACTIVE_ACHIEVEMENTS: AchievementDefinition[] = [
   { emoji: '🎉', encouragement: '你完成了第一座官方博物馆！', id: 'one_official_museum', title: '博物馆新人' },
   { emoji: '👑', encouragement: '三座博物馆完成，你已经很像真正的馆长了！', id: 'three_official_museums', title: '博物馆达人' },
   { emoji: '✨', encouragement: '你开始创建自己的魔法博物馆了！', id: 'one_custom_museum', title: '小小馆长' },
+];
+
+const museumArtifacts: MuseumArtifact[] = [
+  { objectZh: '汽车', objectEn: 'Car', emoji: '🚗', museum: '交通博物馆', rarity: '稀有', story: '世界第一辆汽车诞生于1886年。' },
+  { objectZh: '公交车', objectEn: 'Bus', emoji: '🚌', museum: '交通博物馆', rarity: '普通', story: '公交车可以一次载很多人去城市里的不同地方。' },
+  { objectZh: '出租车', objectEn: 'Taxi', emoji: '🚕', museum: '交通博物馆', rarity: '普通', story: '出租车会把乘客送到他们想去的地方。' },
+  { objectZh: '警车', objectEn: 'Police Car', emoji: '🚓', museum: '交通博物馆', rarity: '稀有', story: '警车的警灯和警笛能提醒大家让出道路。' },
+  { objectZh: '消防车', objectEn: 'Fire Truck', emoji: '🚒', museum: '交通博物馆', rarity: '稀有', story: '消防车会带着水管和云梯赶去灭火救人。' },
+  { objectZh: '救护车', objectEn: 'Ambulance', emoji: '🚑', museum: '交通博物馆', rarity: '稀有', story: '救护车能把需要帮助的人快速送到医院。' },
+  { objectZh: '自行车', objectEn: 'Bicycle', emoji: '🚲', museum: '交通博物馆', rarity: '普通', story: '自行车不用汽油，骑起来还能锻炼身体。' },
+  { objectZh: '摩托车', objectEn: 'Motorcycle', emoji: '🏍️', museum: '交通博物馆', rarity: '稀有', story: '摩托车有两个轮子，转弯时会轻轻倾斜身体。' },
+  { objectZh: '火车', objectEn: 'Train', emoji: '🚂', museum: '交通博物馆', rarity: '史诗', story: '火车可以一次带很多人去很远的地方。' },
+  { objectZh: '高铁', objectEn: 'High-speed Train', emoji: '🚄', museum: '交通博物馆', rarity: '史诗', story: '高铁速度很快，让城市之间的旅行更轻松。' },
+  { objectZh: '地铁', objectEn: 'Subway', emoji: '🚇', museum: '交通博物馆', rarity: '稀有', story: '地铁通常在地下行驶，可以避开路面拥堵。' },
+  { objectZh: '飞机', objectEn: 'Airplane', emoji: '✈️', museum: '交通博物馆', rarity: '史诗', story: '第一架飞机在1903年成功飞行。' },
+  { objectZh: '直升机', objectEn: 'Helicopter', emoji: '🚁', museum: '交通博物馆', rarity: '史诗', story: '直升机可以垂直起飞和降落。' },
+  { objectZh: '轮船', objectEn: 'Ship', emoji: '🚢', museum: '交通博物馆', rarity: '史诗', story: '轮船能在海上运输巨大的货物。' },
+  { objectZh: '帆船', objectEn: 'Sailboat', emoji: '⛵', museum: '交通博物馆', rarity: '稀有', story: '帆船会借助风的力量在水面前进。' },
+  { objectZh: '潜水艇', objectEn: 'Submarine', emoji: '🚤', museum: '交通博物馆', rarity: '史诗', story: '潜水艇可以潜到海面下面探索神秘海洋。' },
+  { objectZh: '火箭', objectEn: 'Rocket', emoji: '🚀', museum: '交通博物馆', rarity: '传奇', story: '火箭能把宇航员送入太空。' },
+  { objectZh: '熊猫', objectEn: 'Panda', emoji: '🐼', museum: '动物博物馆', rarity: '传奇', story: '大熊猫主要生活在中国四川山区。' },
+  { objectZh: '狮子', objectEn: 'Lion', emoji: '🦁', museum: '动物博物馆', rarity: '史诗', story: '狮子的吼声最远可传8公里。' },
+  { objectZh: '老虎', objectEn: 'Tiger', emoji: '🐯', museum: '动物博物馆', rarity: '史诗', story: '老虎身上的条纹像每只老虎自己的身份证。' },
+  { objectZh: '大象', objectEn: 'Elephant', emoji: '🐘', museum: '动物博物馆', rarity: '史诗', story: '大象会用长鼻子喝水、搬东西和打招呼。' },
+  { objectZh: '长颈鹿', objectEn: 'Giraffe', emoji: '🦒', museum: '动物博物馆', rarity: '史诗', story: '长颈鹿是世界上最高的陆地动物。' },
+  { objectZh: '猴子', objectEn: 'Monkey', emoji: '🐒', museum: '动物博物馆', rarity: '稀有', story: '猴子很灵活，常常用尾巴保持平衡。' },
+  { objectZh: '企鹅', objectEn: 'Penguin', emoji: '🐧', museum: '动物博物馆', rarity: '稀有', story: '企鹅不会飞，但它们是很棒的游泳高手。' },
+  { objectZh: '海豚', objectEn: 'Dolphin', emoji: '🐬', museum: '动物博物馆', rarity: '稀有', story: '海豚会用声音互相交流和寻找食物。' },
+  { objectZh: '鲸鱼', objectEn: 'Whale', emoji: '🐋', museum: '动物博物馆', rarity: '史诗', story: '鲸鱼是海洋里体型巨大的哺乳动物。' },
+  { objectZh: '乌龟', objectEn: 'Turtle', emoji: '🐢', museum: '动物博物馆', rarity: '普通', story: '乌龟背上的壳像随身携带的小房子。' },
+  { objectZh: '猫', objectEn: 'Cat', emoji: '🐱', museum: '动物博物馆', rarity: '普通', story: '猫的胡须可以帮助它感知周围空间。' },
+  { objectZh: '狗', objectEn: 'Dog', emoji: '🐶', museum: '动物博物馆', rarity: '普通', story: '狗的嗅觉非常灵敏，能闻到人类闻不到的气味。' },
+  { objectZh: '兔子', objectEn: 'Rabbit', emoji: '🐰', museum: '动物博物馆', rarity: '普通', story: '兔子的长耳朵可以听到很细小的声音。' },
+  { objectZh: '松鼠', objectEn: 'Squirrel', emoji: '🐿️', museum: '动物博物馆', rarity: '稀有', story: '松鼠会把坚果藏起来，为冬天做准备。' },
+  { objectZh: '猫头鹰', objectEn: 'Owl', emoji: '🦉', museum: '动物博物馆', rarity: '稀有', story: '猫头鹰在夜晚也能看得很清楚。' },
+  { objectZh: '霸王龙', objectEn: 'Tyrannosaurus Rex', emoji: '🦖', museum: '恐龙博物馆', rarity: '传奇', story: '霸王龙曾经是地球上的顶级掠食者。' },
+  { objectZh: '三角龙', objectEn: 'Triceratops', emoji: '🦕', museum: '恐龙博物馆', rarity: '传奇', story: '三角龙头上有三只角，像戴着天然头盔。' },
+  { objectZh: '剑龙', objectEn: 'Stegosaurus', emoji: '🦕', museum: '恐龙博物馆', rarity: '史诗', story: '剑龙背上的骨板可能帮助它展示自己或调节体温。' },
+  { objectZh: '迅猛龙', objectEn: 'Velociraptor', emoji: '🦖', museum: '恐龙博物馆', rarity: '传奇', story: '迅猛龙行动敏捷，名字的意思是快速的掠夺者。' },
+  { objectZh: '腕龙', objectEn: 'Brachiosaurus', emoji: '🦕', museum: '恐龙博物馆', rarity: '史诗', story: '腕龙脖子很长，可以吃到高处的树叶。' },
+  { objectZh: '翼龙', objectEn: 'Pterosaur', emoji: '🦅', museum: '恐龙博物馆', rarity: '史诗', story: '翼龙会在古代天空中展开翅膀滑翔。' },
+  { objectZh: '太阳', objectEn: 'Sun', emoji: '☀️', museum: '自然博物馆', rarity: '传奇', story: '太阳给地球带来光和热。' },
+  { objectZh: '月亮', objectEn: 'Moon', emoji: '🌙', museum: '自然博物馆', rarity: '稀有', story: '月亮会反射太阳光，所以夜晚看起来会发亮。' },
+  { objectZh: '星星', objectEn: 'Star', emoji: '⭐', museum: '自然博物馆', rarity: '稀有', story: '星星其实是非常遥远的发光天体。' },
+  { objectZh: '彩虹', objectEn: 'Rainbow', emoji: '🌈', museum: '自然博物馆', rarity: '传奇', story: '彩虹常在阳光穿过雨滴后出现。' },
+  { objectZh: '云', objectEn: 'Cloud', emoji: '☁️', museum: '自然博物馆', rarity: '普通', story: '云是由许多小水滴或小冰晶组成的。' },
+  { objectZh: '雪花', objectEn: 'Snowflake', emoji: '❄️', museum: '自然博物馆', rarity: '稀有', story: '雪花通常有六个角，每一片都很特别。' },
+  { objectZh: '火山', objectEn: 'Volcano', emoji: '🌋', museum: '自然博物馆', rarity: '史诗', story: '火山喷发时会把地下的岩浆带到地表。' },
+  { objectZh: '瀑布', objectEn: 'Waterfall', emoji: '💦', museum: '自然博物馆', rarity: '史诗', story: '瀑布是河水从高处落下形成的壮观景象。' },
+  { objectZh: '河流', objectEn: 'River', emoji: '🌊', museum: '自然博物馆', rarity: '普通', story: '河流会把水从高处带向湖泊或大海。' },
+  { objectZh: '大海', objectEn: 'Ocean', emoji: '🌊', museum: '自然博物馆', rarity: '史诗', story: '大海覆盖了地球表面的大部分区域。' },
+  { objectZh: '森林', objectEn: 'Forest', emoji: '🌲', museum: '自然博物馆', rarity: '稀有', story: '森林是许多动物和植物共同生活的家园。' },
+  { objectZh: '树', objectEn: 'Tree', emoji: '🌳', museum: '自然博物馆', rarity: '普通', story: '树会吸收二氧化碳，并释放出氧气。' },
+  { objectZh: '花', objectEn: 'Flower', emoji: '🌸', museum: '自然博物馆', rarity: '普通', story: '花会用颜色和香味吸引小昆虫来帮忙传粉。' },
+  { objectZh: '电脑', objectEn: 'Computer', emoji: '💻', museum: '科技博物馆', rarity: '稀有', story: '电脑可以帮助人们计算、画画、学习和创造。' },
+  { objectZh: '手机', objectEn: 'Mobile Phone', emoji: '📱', museum: '科技博物馆', rarity: '稀有', story: '手机让人们可以随时通话、拍照和查资料。' },
+  { objectZh: '相机', objectEn: 'Camera', emoji: '📷', museum: '科技博物馆', rarity: '稀有', story: '相机可以把一瞬间的画面保存下来。' },
+  { objectZh: '电视', objectEn: 'Television', emoji: '📺', museum: '科技博物馆', rarity: '普通', story: '电视能把远处的影像和声音带到家里。' },
+  { objectZh: '机器人', objectEn: 'Robot', emoji: '🤖', museum: '科技博物馆', rarity: '史诗', story: '机器人可以帮助人类完成危险或重复的工作。' },
+  { objectZh: '卫星', objectEn: 'Satellite', emoji: '🛰️', museum: '科技博物馆', rarity: '史诗', story: '卫星在太空中帮助我们导航、通信和观察地球。' },
+  { objectZh: '望远镜', objectEn: 'Telescope', emoji: '🔭', museum: '科技博物馆', rarity: '稀有', story: '望远镜能帮助我们看见遥远的星星和星球。' },
 ];
 
 const MAGIC_MUSEUMS: MagicMuseum[] = [
@@ -338,6 +437,126 @@ const MUSEUM_BADGES: MuseumBadge[] = [
   { emoji: '🏺', id: 'badge-culture', museumId: 'culture', title: '文明探索者' },
   { emoji: '👑', id: 'badge-master', museumId: null, title: '博物馆大师' },
 ];
+
+const MUSEUM_ARTIFACT_MUSEUMS = [
+  { emoji: '🚗', id: 'traffic', title: '交通博物馆' },
+  { emoji: '🐼', id: 'animal', title: '动物博物馆' },
+  { emoji: '🦖', id: 'dinosaur', title: '恐龙博物馆' },
+  { emoji: '🌳', id: 'nature', title: '自然博物馆' },
+  { emoji: '💻', id: 'technology', title: '科技博物馆' },
+];
+
+const MUSEUM_ARTIFACT_BADGES: MuseumBadge[] = [
+  { emoji: '🦖', id: 'badge-dinosaur', museumId: 'dinosaur', title: '恐龙探索家' },
+];
+
+function normalizeMuseumArtifactText(value: string) {
+  return value.trim().toLowerCase();
+}
+
+function getMuseumArtifactMuseumMeta(museumTitle: string) {
+  return (
+    MUSEUM_ARTIFACT_MUSEUMS.find((museum) => museum.title === museumTitle) ?? {
+      emoji: '🏛️',
+      id: normalizeMuseumArtifactText(museumTitle).replace(/\s+/g, '-'),
+      title: museumTitle,
+    }
+  );
+}
+
+function getMuseumArtifactId(artifact: MuseumArtifact) {
+  return `${getMuseumArtifactMuseumMeta(artifact.museum).id}-${normalizeMuseumArtifactText(artifact.objectEn).replace(/\s+/g, '-')}`;
+}
+
+function getMuseumArtifactKeywords(artifact: MuseumArtifact) {
+  return [
+    artifact.objectEn,
+    artifact.objectZh,
+    normalizeMuseumArtifactText(artifact.objectEn),
+    normalizeMuseumArtifactText(artifact.objectZh),
+  ];
+}
+
+function buildMuseumArtifactExhibit(artifact: MuseumArtifact): MuseumExhibit {
+  return {
+    emoji: artifact.emoji,
+    id: getMuseumArtifactId(artifact),
+    keywords: getMuseumArtifactKeywords(artifact),
+    object_en: artifact.objectEn,
+    object_zh: artifact.objectZh,
+  };
+}
+
+function buildMuseumArtifactMuseums(): MagicMuseum[] {
+  return MUSEUM_ARTIFACT_MUSEUMS.map((museum) => ({
+    emoji: museum.emoji,
+    exhibits: museumArtifacts
+      .filter((artifact) => artifact.museum === museum.title)
+      .map((artifact) => buildMuseumArtifactExhibit(artifact)),
+    id: museum.id,
+    title: museum.title,
+  }));
+}
+
+function mergeMuseumExhibits(existingExhibits: MuseumExhibit[], nextExhibits: MuseumExhibit[]) {
+  const existingIds = new Set(existingExhibits.map((exhibit) => exhibit.id));
+  return [...existingExhibits, ...nextExhibits.filter((exhibit) => !existingIds.has(exhibit.id))];
+}
+
+function mergeMagicMuseumsWithArtifacts(baseMuseums: MagicMuseum[]) {
+  const artifactMuseums = buildMuseumArtifactMuseums();
+  const mergedMuseums = baseMuseums.map((museum) => {
+    const artifactMuseum = artifactMuseums.find((item) => item.id === museum.id);
+    if (!artifactMuseum) {
+      return museum;
+    }
+
+    return {
+      ...museum,
+      exhibits: mergeMuseumExhibits(museum.exhibits, artifactMuseum.exhibits),
+    };
+  });
+  const baseMuseumIds = new Set(baseMuseums.map((museum) => museum.id));
+  return [...mergedMuseums, ...artifactMuseums.filter((museum) => !baseMuseumIds.has(museum.id))];
+}
+
+const MAGIC_MUSEUMS_WITH_ARTIFACTS = mergeMagicMuseumsWithArtifacts(MAGIC_MUSEUMS);
+const MUSEUM_BADGES_WITH_ARTIFACTS = [...MUSEUM_BADGES, ...MUSEUM_ARTIFACT_BADGES];
+
+function findMuseumArtifact(item: RecognitionResult) {
+  const objectEn = normalizeMuseumArtifactText(item.object_en);
+  const objectZh = normalizeMuseumArtifactText(item.object_zh);
+  const exactMatch = museumArtifacts.find(
+    (artifact) =>
+      normalizeMuseumArtifactText(artifact.objectEn) === objectEn ||
+      normalizeMuseumArtifactText(artifact.objectZh) === objectZh,
+  );
+
+  if (exactMatch) {
+    return exactMatch;
+  }
+
+  const text = normalizeMuseumArtifactText(`${item.object_en} ${item.object_zh}`);
+  return [...museumArtifacts].sort((a, b) => b.objectEn.length - a.objectEn.length).find((artifact) =>
+    getMuseumArtifactKeywords(artifact).some((keyword) => text.includes(normalizeMuseumArtifactText(keyword))),
+  );
+}
+
+function getMuseumArtifactCategory(artifact: MuseumArtifact): StickerCategoryKey {
+  if (artifact.rarity === '传奇') {
+    return 'legendary';
+  }
+
+  if (artifact.rarity === '史诗') {
+    return 'epic';
+  }
+
+  if (artifact.rarity === '稀有') {
+    return 'rare';
+  }
+
+  return 'common';
+}
 
 const ARTIFACT_FACTS: { fact: string; keywords: string[] }[] = [
   { fact: '熊猫每天可以吃20公斤竹子。', keywords: ['panda', '熊猫', '鐔婄尗'] },
@@ -496,6 +715,47 @@ function saveStoredXp(xpState: XpState) {
   }
 }
 
+function readStoredDailyQuestState(): DailyQuestState {
+  const today = getDateKey(new Date());
+  if (Platform.OS !== 'web' || typeof window === 'undefined') {
+    return { date: today, rewardedQuestIds: [] };
+  }
+
+  try {
+    const rawValue = window.localStorage.getItem(DAILY_QUEST_STORAGE_KEY);
+    if (!rawValue) {
+      return { date: today, rewardedQuestIds: [] };
+    }
+
+    const parsed = JSON.parse(rawValue) as { date?: string; rewardedQuestIds?: string[] };
+    if (parsed.date !== today || !Array.isArray(parsed.rewardedQuestIds)) {
+      return { date: today, rewardedQuestIds: [] };
+    }
+
+    const validQuestIds = new Set(DAILY_QUESTS.map((quest) => quest.id));
+    return {
+      date: today,
+      rewardedQuestIds: parsed.rewardedQuestIds.filter((id): id is DailyQuestId =>
+        validQuestIds.has(id as DailyQuestId),
+      ),
+    };
+  } catch {
+    return { date: today, rewardedQuestIds: [] };
+  }
+}
+
+function saveStoredDailyQuestState(state: DailyQuestState) {
+  if (Platform.OS !== 'web' || typeof window === 'undefined') {
+    return;
+  }
+
+  try {
+    window.localStorage.setItem(DAILY_QUEST_STORAGE_KEY, JSON.stringify(state));
+  } catch {
+    // Daily quests are local encouragement. Recognition should continue if storage is blocked.
+  }
+}
+
 function readStoredAchievements(): AchievementId[] {
   if (Platform.OS !== 'web' || typeof window === 'undefined') {
     return [];
@@ -539,7 +799,7 @@ function getLegacyAchievementIds() {
 }
 
 function getAllMuseumExhibits() {
-  return MAGIC_MUSEUMS.flatMap((museum) => museum.exhibits);
+  return MAGIC_MUSEUMS_WITH_ARTIFACTS.flatMap((museum) => museum.exhibits);
 }
 
 function readStoredMuseumIds(): string[] {
@@ -593,7 +853,7 @@ function readStoredMuseumBadgeIds(): string[] {
       return [];
     }
 
-    const validIds = new Set(MUSEUM_BADGES.map((badge) => badge.id));
+    const validIds = new Set(MUSEUM_BADGES_WITH_ARTIFACTS.map((badge) => badge.id));
     return parsed.filter((id) => validIds.has(id));
   } catch {
     return [];
@@ -850,6 +1110,11 @@ function formatConfidence(confidence: string) {
 }
 
 function getMagicEmoji(result: RecognitionResult) {
+  const artifact = findMuseumArtifact(result);
+  if (artifact) {
+    return artifact.emoji;
+  }
+
   const text = `${result.object_en} ${result.object_zh}`.toLowerCase();
   const matchers: [string[], string][] = [
     [['apple', '苹果'], '🍎'],
@@ -881,6 +1146,11 @@ function getMagicEmoji(result: RecognitionResult) {
 }
 
 function getStickerCategory(item: RecognitionResult): StickerCategoryKey {
+  const artifact = findMuseumArtifact(item);
+  if (artifact) {
+    return getMuseumArtifactCategory(artifact);
+  }
+
   const text = `${item.object_en} ${item.object_zh}`.toLowerCase();
   const legendaryKeywords = ['panda', 'rocket', 'castle', 'dinosaur', 'dragon', 'unicorn', '熊猫', '火箭', '城堡', '恐龙', '龙'];
   const epicKeywords = ['fighter', 'airplane', 'plane', 'jet', 'robot', 'train', 'ship', '战斗机', '飞机', '机器人', '火车', '轮船'];
@@ -940,6 +1210,11 @@ function formatDiscoveredAt(discoveredAt: string) {
 }
 
 function getArtifactFact(item: RecognitionResult) {
+  const artifact = findMuseumArtifact(item);
+  if (artifact) {
+    return artifact.story;
+  }
+
   const text = `${item.object_en} ${item.object_zh}`.toLowerCase();
   const matchedFact = ARTIFACT_FACTS.find((fact) =>
     fact.keywords.some((keyword) => text.includes(keyword.toLowerCase())),
@@ -949,8 +1224,19 @@ function getArtifactFact(item: RecognitionResult) {
 }
 
 function getArtifactMuseumAndCity(item: RecognitionResult, cityMaps: CityMap[]) {
+  const artifact = findMuseumArtifact(item);
+  if (artifact) {
+    const museumMeta = getMuseumArtifactMuseumMeta(artifact.museum);
+    const matchedCity = cityMaps.find((city) => city.museums.some((museum) => museum.linkedMuseumId === museumMeta.id));
+
+    return {
+      cityName: matchedCity?.name ?? '魔法城市',
+      museumTitle: artifact.museum,
+    };
+  }
+
   const matchedExhibitId = getMatchedMuseumExhibitIds(item)[0];
-  const matchedMuseum = MAGIC_MUSEUMS.find((museum) =>
+  const matchedMuseum = MAGIC_MUSEUMS_WITH_ARTIFACTS.find((museum) =>
     museum.exhibits.some((exhibit) => exhibit.id === matchedExhibitId),
   );
   const matchedCity = matchedMuseum
@@ -961,6 +1247,92 @@ function getArtifactMuseumAndCity(item: RecognitionResult, cityMaps: CityMap[]) 
     cityName: matchedCity?.name ?? '魔法城市',
     museumTitle: matchedMuseum?.title ?? '魔法图鉴馆',
   };
+}
+
+function getMuseumProgressForResult(result: RecognitionResult, collection: CollectionItem[]) {
+  const artifact = findMuseumArtifact(result);
+  const museumId = artifact ? getMuseumArtifactMuseumMeta(artifact.museum).id : null;
+  const matchedExhibitId = museumId ? null : getMatchedMuseumExhibitIds(result)[0];
+  const matchedMuseum = museumId
+    ? MAGIC_MUSEUMS_WITH_ARTIFACTS.find((museum) => museum.id === museumId)
+    : MAGIC_MUSEUMS_WITH_ARTIFACTS.find((museum) =>
+        museum.exhibits.some((exhibit) => exhibit.id === matchedExhibitId),
+      );
+
+  if (!matchedMuseum) {
+    return null;
+  }
+
+  const collectedExhibitIds = new Set(collection.flatMap((item) => getMatchedMuseumExhibitIds(item)));
+  const foundCount = matchedMuseum.exhibits.filter((exhibit) => collectedExhibitIds.has(exhibit.id)).length;
+
+  return {
+    emoji: artifact ? getMuseumArtifactMuseumMeta(artifact.museum).emoji : matchedMuseum.emoji,
+    foundCount,
+    title: artifact?.museum ?? matchedMuseum.title,
+    totalCount: matchedMuseum.exhibits.length,
+  };
+}
+
+function getCollectionDiscoveryForExhibit(exhibit: MuseumExhibit, collection: CollectionItem[]) {
+  return collection.find((item) => getMatchedMuseumExhibitIds(item).includes(exhibit.id)) ?? null;
+}
+
+function getGalleryArtifactDetails(exhibit: MuseumExhibit, collection: CollectionItem[]) {
+  const discoveredItem = getCollectionDiscoveryForExhibit(exhibit, collection);
+  const itemForDetails = discoveredItem ?? {
+    confidence: 'high',
+    object_en: exhibit.object_en,
+    object_zh: exhibit.object_zh,
+  };
+
+  return {
+    discoveredAt: discoveredItem ? formatDiscoveredAt(discoveredItem.discoveredAt) : '尚未发现',
+    emoji: discoveredItem?.emoji ?? exhibit.emoji,
+    rarityLabel: getStickerCategoryLabel(getStickerCategory(itemForDetails)),
+    story: getArtifactFact(itemForDetails),
+  };
+}
+
+function getCollectionItemsForDate(collection: CollectionItem[], dateKey: string) {
+  return collection.filter((item) => getDateKey(new Date(item.discoveredAt)) === dateKey);
+}
+
+function collectionItemMatchesMuseum(item: CollectionItem, museumId: string) {
+  const artifact = findMuseumArtifact(item);
+  if (artifact && getMuseumArtifactMuseumMeta(artifact.museum).id === museumId) {
+    return true;
+  }
+
+  const matchedIds = getMatchedMuseumExhibitIds(item);
+  const matchedMuseum = MAGIC_MUSEUMS_WITH_ARTIFACTS.find((museum) => museum.id === museumId);
+  return Boolean(matchedMuseum?.exhibits.some((exhibit) => matchedIds.includes(exhibit.id)));
+}
+
+function getDailyQuestProgress(collection: CollectionItem[], dailyQuestState: DailyQuestState): DailyQuestProgress[] {
+  const todaysItems = getCollectionItemsForDate(collection, dailyQuestState.date);
+  const uniqueArtifactCount = new Set(
+    todaysItems.map((item) => (item.object_en || item.object_zh).trim().toLowerCase()).filter(Boolean),
+  ).size;
+
+  return DAILY_QUESTS.map((quest) => {
+    let progress = 0;
+
+    if (quest.type === 'animal') {
+      progress = todaysItems.filter((item) => collectionItemMatchesMuseum(item, 'animal')).length;
+    } else if (quest.type === 'traffic') {
+      progress = todaysItems.filter((item) => collectionItemMatchesMuseum(item, 'traffic')).length;
+    } else {
+      progress = uniqueArtifactCount;
+    }
+
+    return {
+      ...quest,
+      completed: progress >= quest.target,
+      progress: Math.min(progress, quest.target),
+      rewarded: dailyQuestState.rewardedQuestIds.includes(quest.id),
+    };
+  });
 }
 
 function buildShareCardData({
@@ -1029,7 +1401,7 @@ function getUnlockedAchievementIds(collection: CollectionItem[], streakDays: num
 }
 
 function getCompletedOfficialMuseumCount(collectedIds: string[]) {
-  return MAGIC_MUSEUMS.filter((museum) => getMuseumCollectedCount(museum, collectedIds) === museum.exhibits.length)
+  return MAGIC_MUSEUMS_WITH_ARTIFACTS.filter((museum) => getMuseumCollectedCount(museum, collectedIds) === museum.exhibits.length)
     .length;
 }
 
@@ -1099,7 +1471,7 @@ function getMuseumCollectedCount(museum: MagicMuseum, collectedIds: string[]) {
 }
 
 function isOfficialMuseumComplete(museumId: string, collectedIds: string[]) {
-  const museum = MAGIC_MUSEUMS.find((item) => item.id === museumId);
+  const museum = MAGIC_MUSEUMS_WITH_ARTIFACTS.find((item) => item.id === museumId);
   return Boolean(museum && getMuseumCollectedCount(museum, collectedIds) === museum.exhibits.length);
 }
 
@@ -1112,14 +1484,14 @@ function getCompletedCityMapNodeIds(collectedIds: string[]) {
 }
 
 function getUnlockedMuseumBadgeIds(collectedIds: string[]) {
-  const completedMuseumIds = MAGIC_MUSEUMS
+  const completedMuseumIds = MAGIC_MUSEUMS_WITH_ARTIFACTS
     .filter((museum) => getMuseumCollectedCount(museum, collectedIds) === museum.exhibits.length)
     .map((museum) => museum.id);
-  const badgeIds = MUSEUM_BADGES
+  const badgeIds = MUSEUM_BADGES_WITH_ARTIFACTS
     .filter((badge) => badge.museumId !== null && completedMuseumIds.includes(badge.museumId))
     .map((badge) => badge.id);
 
-  if (completedMuseumIds.length === MAGIC_MUSEUMS.length) {
+  if (completedMuseumIds.length === MAGIC_MUSEUMS_WITH_ARTIFACTS.length) {
     badgeIds.push('badge-master');
   }
 
@@ -1127,7 +1499,7 @@ function getUnlockedMuseumBadgeIds(collectedIds: string[]) {
 }
 
 function getMuseumBadge(id: string) {
-  return MUSEUM_BADGES.find((badge) => badge.id === id) ?? MUSEUM_BADGES[0];
+  return MUSEUM_BADGES_WITH_ARTIFACTS.find((badge) => badge.id === id) ?? MUSEUM_BADGES_WITH_ARTIFACTS[0];
 }
 
 function buildCustomMuseumItem(result: RecognitionResult): CustomMuseumItem {
@@ -1292,6 +1664,11 @@ export default function HomeScreen() {
   const [chestReward, setChestReward] = useState('');
   const [xpState, setXpState] = useState<XpState>({ currentXp: 0, level: 1 });
   const [showLevelUp, setShowLevelUp] = useState(false);
+  const [dailyQuestState, setDailyQuestState] = useState<DailyQuestState>({
+    date: getDateKey(new Date()),
+    rewardedQuestIds: [],
+  });
+  const [latestDailyQuestReward, setLatestDailyQuestReward] = useState('');
   const [unlockedAchievementIds, setUnlockedAchievementIds] = useState<AchievementId[]>([]);
   const [latestAchievement, setLatestAchievement] = useState<AchievementDefinition | null>(null);
   const [museumCollectedIds, setMuseumCollectedIds] = useState<string[]>([]);
@@ -1339,6 +1716,7 @@ export default function HomeScreen() {
     }
 
     setUnlockedAchievementIds(readStoredAchievements());
+    setDailyQuestState(readStoredDailyQuestState());
     setCollection(readStoredCollection());
     setExpandedArtifactIds(readStoredExpandedArtifactIds());
     setMuseumCollectedIds(readStoredMuseumIds());
@@ -1872,10 +2250,7 @@ export default function HomeScreen() {
     setChestOpened(true);
   };
 
-  const addXpForRecognition = (result: RecognitionResult) => {
-    const category = getStickerCategory(result);
-    const earnedXp = XP_REWARDS[category];
-
+  const addXpAmount = (earnedXp: number) => {
     setXpState((currentState) => {
       let nextXp = currentState.currentXp + earnedXp;
       let nextLevel = currentState.level;
@@ -1890,6 +2265,45 @@ export default function HomeScreen() {
       const nextState = { currentXp: nextXp, level: nextLevel };
       saveStoredXp(nextState);
       setShowLevelUp(didLevelUp);
+      return nextState;
+    });
+  };
+
+  const addXpForRecognition = (result: RecognitionResult) => {
+    const category = getStickerCategory(result);
+    addXpAmount(XP_REWARDS[category]);
+  };
+
+  const updateDailyQuestRewards = (nextCollection: CollectionItem[]) => {
+    setDailyQuestState((currentState) => {
+      const today = getDateKey(new Date());
+      const activeState = currentState.date === today ? currentState : { date: today, rewardedQuestIds: [] };
+      const questProgress = getDailyQuestProgress(nextCollection, activeState);
+      const newlyCompletedQuests = questProgress.filter((quest) => quest.completed && !quest.rewarded);
+
+      if (newlyCompletedQuests.length === 0) {
+        if (activeState !== currentState) {
+          saveStoredDailyQuestState(activeState);
+        }
+        return activeState;
+      }
+
+      newlyCompletedQuests.forEach((quest) => {
+        if (quest.id === 'three_unique_artifacts') {
+          openMagicChest(nextCollection.length + quest.target);
+        } else {
+          addXpAmount(20);
+        }
+      });
+
+      const nextState = {
+        date: today,
+        rewardedQuestIds: Array.from(
+          new Set([...activeState.rewardedQuestIds, ...newlyCompletedQuests.map((quest) => quest.id)]),
+        ),
+      };
+      saveStoredDailyQuestState(nextState);
+      setLatestDailyQuestReward(newlyCompletedQuests[0].rewardLabel);
       return nextState;
     });
   };
@@ -1991,6 +2405,7 @@ export default function HomeScreen() {
     setCollectionFeedback('');
     setNewestDiscoveryAt('');
     setChestOpened(false);
+    setLatestDailyQuestReward('');
 
     try {
       const formData = new FormData();
@@ -2098,6 +2513,7 @@ export default function HomeScreen() {
         setNewestDiscoveryAt(discoveredAt);
         animateCount();
         openMagicChest(nextCollection.length);
+        updateDailyQuestRewards(nextCollection);
         unlockAchievements({
           nextCollection,
           nextCustomMuseumCount: customMuseums.length,
@@ -2393,6 +2809,7 @@ export default function HomeScreen() {
             ) : recognitionResult ? (
               <>
                 <MagicWordCard
+                  collection={collection}
                   result={recognitionResult}
                   onShare={() => openShareCard('AI Magic Word Camera', 'I found a new magic artifact!', recognitionResult)}
                   onSpeakChinese={() => speakWord(recognitionResult.object_zh, 'zh')}
@@ -2400,7 +2817,7 @@ export default function HomeScreen() {
                   speakButtonScale={speakButtonScale}
                   speakingLanguage={speakingLanguage}
                 />
-                {debugResponse.status || debugResponse.rawText ? (
+                {DEBUG_MODE && (debugResponse.status || debugResponse.rawText) ? (
                   <DebugResponseCard
                     objectEn={debugResponse.objectEn}
                     objectZh={debugResponse.objectZh}
@@ -2409,7 +2826,7 @@ export default function HomeScreen() {
                   />
                 ) : null}
               </>
-            ) : debugResponse.status || debugResponse.rawText ? (
+            ) : DEBUG_MODE && (debugResponse.status || debugResponse.rawText) ? (
               <DebugResponseCard
                 objectEn={debugResponse.objectEn}
                 objectZh={debugResponse.objectZh}
@@ -2444,8 +2861,10 @@ export default function HomeScreen() {
             collection={collection}
             collectionMessage={collectionMessage}
             countScale={countScale}
+            dailyQuestState={dailyQuestState}
             expandedArtifactIds={expandedArtifactIds}
             feedback={collectionFeedback}
+            latestDailyQuestReward={latestDailyQuestReward}
             newestDiscoveryAt={newestDiscoveryAt}
             newItemOpacity={newItemOpacity}
             newItemScale={newItemScale}
@@ -2460,10 +2879,10 @@ export default function HomeScreen() {
             museumBadgeGlowScale={museumBadgeGlowScale}
             museumBadgeIds={museumBadgeIds}
             museumBadgeOpacity={museumBadgeOpacity}
-            museumBadges={MUSEUM_BADGES}
+            museumBadges={MUSEUM_BADGES_WITH_ARTIFACTS}
             museumBadgeScale={museumBadgeScale}
             museumBadgeTranslateY={museumBadgeTranslateY}
-            museums={MAGIC_MUSEUMS}
+            museums={MAGIC_MUSEUMS_WITH_ARTIFACTS}
             latestMuseumBadge={latestMuseumBadge}
             unlockGlowOpacity={unlockGlowOpacity}
             unlockGlowScale={unlockGlowScale}
@@ -2482,7 +2901,7 @@ export default function HomeScreen() {
           <CustomMuseumPanel
             customMuseums={customMuseums}
             museumCollectedIds={museumCollectedIds}
-            museums={MAGIC_MUSEUMS}
+            museums={MAGIC_MUSEUMS_WITH_ARTIFACTS}
             onAddOfficialExhibits={addOfficialMuseumExhibits}
             onChangeCustomMuseums={updateCustomMuseums}
             recognitionResult={recognitionResult}
@@ -2529,6 +2948,7 @@ export default function HomeScreen() {
 }
 
 function MagicWordCard({
+  collection,
   onShare,
   result,
   onSpeakChinese,
@@ -2536,6 +2956,7 @@ function MagicWordCard({
   speakButtonScale,
   speakingLanguage,
 }: {
+  collection: CollectionItem[];
   onShare: () => void;
   result: RecognitionResult;
   onSpeakChinese: () => void;
@@ -2543,6 +2964,8 @@ function MagicWordCard({
   speakButtonScale: Animated.AnimatedInterpolation<string | number>;
   speakingLanguage: 'zh' | 'en' | null;
 }) {
+  const museumProgress = getMuseumProgressForResult(result, collection);
+
   return (
     <View style={styles.wordCard}>
       <Text style={styles.foundTitle}>{COPY.found}</Text>
@@ -2556,6 +2979,20 @@ function MagicWordCard({
       <Text style={styles.confidenceLine}>
         {COPY.confidence}: {formatConfidence(result.confidence)}
       </Text>
+      <View style={styles.artifactStoryBox}>
+        <Text style={styles.artifactStoryTitle}>📖 藏品故事</Text>
+        <Text style={styles.artifactStoryText}>{getArtifactFact(result)}</Text>
+      </View>
+      {museumProgress ? (
+        <View style={styles.museumProgressBox}>
+          <Text style={styles.museumProgressTitle}>
+            {museumProgress.emoji} {museumProgress.title}
+          </Text>
+          <Text style={styles.museumProgressText}>
+            已发现 {museumProgress.foundCount} / {museumProgress.totalCount}
+          </Text>
+        </View>
+      ) : null}
       <Pressable style={({ pressed }) => [styles.shareButton, pressed && styles.shareButtonPressed]} onPress={onShare}>
         <Text style={styles.shareButtonText}>📸 生成分享卡</Text>
       </Pressable>
@@ -2575,6 +3012,156 @@ function MagicWordCard({
       </View>
     </View>
   );
+}
+
+function drawRoundedRect(
+  context: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  radius: number,
+) {
+  context.beginPath();
+  context.moveTo(x + radius, y);
+  context.lineTo(x + width - radius, y);
+  context.quadraticCurveTo(x + width, y, x + width, y + radius);
+  context.lineTo(x + width, y + height - radius);
+  context.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+  context.lineTo(x + radius, y + height);
+  context.quadraticCurveTo(x, y + height, x, y + height - radius);
+  context.lineTo(x, y + radius);
+  context.quadraticCurveTo(x, y, x + radius, y);
+  context.closePath();
+}
+
+function drawCenteredText(
+  context: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  y: number,
+  maxWidth: number,
+  lineHeight: number,
+  maxLines = 2,
+) {
+  const chars = Array.from(text);
+  const lines: string[] = [];
+  let currentLine = '';
+
+  chars.forEach((char) => {
+    const nextLine = `${currentLine}${char}`;
+    if (context.measureText(nextLine).width > maxWidth && currentLine) {
+      lines.push(currentLine);
+      currentLine = char;
+    } else {
+      currentLine = nextLine;
+    }
+  });
+
+  if (currentLine) {
+    lines.push(currentLine);
+  }
+
+  lines.slice(0, maxLines).forEach((line, index) => {
+    context.fillText(line, x, y + index * lineHeight);
+  });
+}
+
+function getShareCardFileName(objectZh: string) {
+  const fallbackName = '魔法藏品';
+  const safeName = (objectZh || fallbackName).replace(/[\\/:*?"<>|]/g, '-').trim() || fallbackName;
+  return `magic-card-${safeName}.png`;
+}
+
+function saveShareCardAsPng(data: ShareCardData) {
+  if (Platform.OS !== 'web' || typeof document === 'undefined') {
+    Alert.alert('Save share image', 'Saving PNG is currently available on web.');
+    return;
+  }
+
+  const canvas = document.createElement('canvas');
+  canvas.width = 900;
+  canvas.height = 1200;
+  const context = canvas.getContext('2d');
+
+  if (!context) {
+    return;
+  }
+
+  context.fillStyle = '#FFF4DC';
+  context.fillRect(0, 0, canvas.width, canvas.height);
+
+  const glow = context.createRadialGradient(450, 350, 30, 450, 350, 430);
+  glow.addColorStop(0, 'rgba(250, 204, 21, 0.72)');
+  glow.addColorStop(0.55, 'rgba(168, 85, 247, 0.24)');
+  glow.addColorStop(1, 'rgba(255, 244, 220, 0)');
+  context.fillStyle = glow;
+  context.fillRect(0, 0, canvas.width, canvas.height);
+
+  drawRoundedRect(context, 90, 80, 720, 1040, 56);
+  context.fillStyle = '#FFF9EB';
+  context.fill();
+  context.lineWidth = 6;
+  context.strokeStyle = '#F7C948';
+  context.stroke();
+
+  context.textAlign = 'center';
+  context.fillStyle = '#6D28D9';
+  context.font = '900 46px Arial, sans-serif';
+  context.fillText('AI魔法识字相机', 450, 175);
+
+  context.fillStyle = '#F59E0B';
+  context.font = '900 34px Arial, sans-serif';
+  context.fillText('✨', 175, 170);
+  context.fillText('🌟', 720, 205);
+  context.fillText('✨', 205, 975);
+
+  context.fillStyle = '#FFF1B8';
+  drawRoundedRect(context, 315, 230, 270, 270, 62);
+  context.fill();
+  context.lineWidth = 4;
+  context.strokeStyle = '#F7C948';
+  context.stroke();
+
+  context.font = '110px "Apple Color Emoji", "Segoe UI Emoji", sans-serif';
+  context.fillText(data.emoji, 450, 405);
+
+  context.fillStyle = '#3B245F';
+  context.font = '900 58px Arial, sans-serif';
+  drawCenteredText(context, data.objectZh, 450, 570, 600, 66, 2);
+
+  context.fillStyle = '#7C3AED';
+  context.font = '900 38px Arial, sans-serif';
+  drawCenteredText(context, data.objectEn, 450, 675, 610, 46, 2);
+
+  context.fillStyle = '#FFFFFF';
+  drawRoundedRect(context, 145, 745, 285, 110, 30);
+  context.fill();
+  drawRoundedRect(context, 470, 745, 285, 110, 30);
+  context.fill();
+
+  context.fillStyle = '#8A6B9F';
+  context.font = '900 22px Arial, sans-serif';
+  context.fillText('稀有度', 287, 790);
+  context.fillText('馆长等级', 612, 790);
+
+  context.fillStyle = '#4C2D6F';
+  context.font = '900 26px Arial, sans-serif';
+  drawCenteredText(context, data.rarityLabel, 287, 828, 240, 32, 1);
+  drawCenteredText(context, data.curatorTitle, 612, 828, 240, 32, 1);
+
+  context.fillStyle = '#8A5E22';
+  context.font = '900 27px Arial, sans-serif';
+  drawCenteredText(context, `所属博物馆：${data.museumTitle}`, 450, 925, 610, 36, 2);
+
+  context.fillStyle = '#6D28D9';
+  context.font = '900 32px Arial, sans-serif';
+  drawCenteredText(context, data.encouragement, 450, 1030, 620, 42, 2);
+
+  const link = document.createElement('a');
+  link.download = getShareCardFileName(data.objectZh);
+  link.href = canvas.toDataURL('image/png');
+  link.click();
 }
 
 function ShareCardPreview({ data, onClose }: { data: ShareCardData; onClose: () => void }) {
@@ -2609,9 +3196,21 @@ function ShareCardPreview({ data, onClose }: { data: ShareCardData; onClose: () 
           <Text style={styles.sharePreviewEncouragement}>{data.encouragement}</Text>
         </View>
 
-        <Pressable style={({ pressed }) => [styles.sharePreviewCloseButton, pressed && styles.shareButtonPressed]} onPress={onClose}>
-          <Text style={styles.sharePreviewCloseText}>关闭</Text>
-        </Pressable>
+        <View style={styles.sharePreviewActions}>
+          <Pressable
+            style={({ pressed }) => [styles.sharePreviewSaveButton, pressed && styles.shareButtonPressed]}
+            onPress={() => saveShareCardAsPng(data)}
+          >
+            <Text style={styles.sharePreviewSaveText}>💾 保存分享图</Text>
+          </Pressable>
+
+          <Pressable
+            style={({ pressed }) => [styles.sharePreviewCloseButton, pressed && styles.shareButtonPressed]}
+            onPress={onClose}
+          >
+            <Text style={styles.sharePreviewCloseText}>关闭</Text>
+          </Pressable>
+        </View>
       </View>
     </View>
   );
@@ -2708,8 +3307,10 @@ function MagicCollection({
   collection,
   collectionMessage,
   countScale,
+  dailyQuestState,
   expandedArtifactIds,
   feedback,
+  latestDailyQuestReward,
   newestDiscoveryAt,
   newItemOpacity,
   newItemScale,
@@ -2757,8 +3358,10 @@ function MagicCollection({
   collection: CollectionItem[];
   collectionMessage: string;
   countScale: Animated.AnimatedInterpolation<string | number>;
+  dailyQuestState: DailyQuestState;
   expandedArtifactIds: string[];
   feedback: 'new' | 'known' | '';
+  latestDailyQuestReward: string;
   newestDiscoveryAt: string;
   newItemOpacity: Animated.AnimatedInterpolation<string | number>;
   newItemScale: Animated.AnimatedInterpolation<string | number>;
@@ -2813,6 +3416,11 @@ function MagicCollection({
         xpState={xpState}
       />
 
+      <DailyQuestPanel
+        latestDailyQuestReward={latestDailyQuestReward}
+        questProgress={getDailyQuestProgress(collection, dailyQuestState)}
+      />
+
       <AchievementPanel
         achievementGlowScale={achievementGlowScale}
         achievementOpacity={achievementOpacity}
@@ -2824,6 +3432,8 @@ function MagicCollection({
       />
 
       <MagicMuseumPanel museumCollectedIds={museumCollectedIds} museums={museums} />
+
+      <CollectionGallery collection={collection} museums={museums} />
 
       <CityMapPanel cityMapCompletedNodeIds={cityMapCompletedNodeIds} cityMaps={cityMaps} />
 
@@ -3142,6 +3752,156 @@ function MagicMuseumPanel({
           );
         })}
       </View>
+    </View>
+  );
+}
+
+function CollectionGallery({
+  collection,
+  museums,
+}: {
+  collection: CollectionItem[];
+  museums: MagicMuseum[];
+}) {
+  const firstExhibit = museums[0]?.exhibits[0] ?? null;
+  const [selectedExhibitId, setSelectedExhibitId] = useState(firstExhibit?.id ?? '');
+  const selectedMuseum =
+    museums.find((museum) => museum.exhibits.some((exhibit) => exhibit.id === selectedExhibitId)) ?? museums[0];
+  const selectedExhibit =
+    selectedMuseum?.exhibits.find((exhibit) => exhibit.id === selectedExhibitId) ?? selectedMuseum?.exhibits[0];
+  const selectedDetails = selectedExhibit ? getGalleryArtifactDetails(selectedExhibit, collection) : null;
+
+  if (!selectedMuseum || !selectedExhibit || !selectedDetails) {
+    return null;
+  }
+
+  return (
+    <View style={styles.galleryPanel}>
+      <View style={styles.galleryHeader}>
+        <Text style={styles.galleryTitle}>📚 我的图鉴</Text>
+        <Text style={styles.gallerySubtitle}>点击藏品查看故事和发现记录</Text>
+      </View>
+
+      <View style={styles.galleryMuseumList}>
+        {museums.map((museum) => {
+          const collectedCount = getMuseumCollectedCount(
+            museum,
+            museum.exhibits
+              .filter((exhibit) => getCollectionDiscoveryForExhibit(exhibit, collection))
+              .map((exhibit) => exhibit.id),
+          );
+          const museumPercent = Math.round((collectedCount / museum.exhibits.length) * 100);
+
+          return (
+            <View key={museum.id} style={styles.galleryMuseumCard}>
+              <View style={styles.galleryMuseumHeader}>
+                <Text style={styles.galleryMuseumTitle}>
+                  {museum.emoji} {museum.title}
+                </Text>
+                <Text style={styles.galleryMuseumCount}>
+                  {collectedCount} / {museum.exhibits.length} · {museumPercent}%
+                </Text>
+              </View>
+              <View style={styles.galleryProgressTrack}>
+                <View style={[styles.galleryProgressFill, { width: `${museumPercent}%` as `${number}%` }]} />
+              </View>
+              <ScrollView
+                contentContainerStyle={styles.galleryArtifactList}
+                horizontal
+                showsHorizontalScrollIndicator={false}
+              >
+                {museum.exhibits.map((exhibit) => {
+                  const discoveredItem = getCollectionDiscoveryForExhibit(exhibit, collection);
+                  const isSelected = exhibit.id === selectedExhibit.id;
+
+                  return (
+                    <Pressable
+                      key={exhibit.id}
+                      onPress={() => setSelectedExhibitId(exhibit.id)}
+                      style={[
+                        styles.galleryArtifactCard,
+                        !discoveredItem && styles.galleryArtifactLocked,
+                        isSelected && styles.galleryArtifactSelected,
+                      ]}
+                    >
+                      <Text style={styles.galleryArtifactEmoji}>{discoveredItem ? exhibit.emoji : '🔒'}</Text>
+                      <Text numberOfLines={1} style={styles.galleryArtifactZh}>
+                        {discoveredItem ? exhibit.object_zh : '未发现'}
+                      </Text>
+                      <Text numberOfLines={1} style={styles.galleryArtifactEn}>
+                        {discoveredItem ? exhibit.object_en : 'Mystery'}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
+            </View>
+          );
+        })}
+      </View>
+
+      <View style={styles.galleryDetailCard}>
+        <Text style={styles.galleryDetailEmoji}>{selectedDetails.emoji}</Text>
+        <Text style={styles.galleryDetailZh}>{selectedExhibit.object_zh}</Text>
+        <Text style={styles.galleryDetailEn}>{selectedExhibit.object_en}</Text>
+        <Text style={styles.galleryDetailMeta}>博物馆：{selectedMuseum.title}</Text>
+        <Text style={styles.galleryDetailMeta}>稀有度：{selectedDetails.rarityLabel}</Text>
+        <Text style={styles.galleryDetailMeta}>首次发现：{selectedDetails.discoveredAt}</Text>
+        <View style={styles.galleryStoryBox}>
+          <Text style={styles.galleryStoryTitle}>📖 藏品故事</Text>
+          <Text style={styles.galleryStoryText}>{selectedDetails.story}</Text>
+        </View>
+      </View>
+    </View>
+  );
+}
+
+function DailyQuestPanel({
+  latestDailyQuestReward,
+  questProgress,
+}: {
+  latestDailyQuestReward: string;
+  questProgress: DailyQuestProgress[];
+}) {
+  const completedCount = questProgress.filter((quest) => quest.completed).length;
+
+  return (
+    <View style={styles.dailyQuestPanel}>
+      <View style={styles.dailyQuestHeader}>
+        <Text style={styles.dailyQuestTitle}>✨ 每日探索任务</Text>
+        <Text style={styles.dailyQuestSummary}>
+          今日完成：{completedCount} / {questProgress.length}
+        </Text>
+      </View>
+
+      <View style={styles.dailyQuestList}>
+        {questProgress.map((quest) => (
+          <View key={quest.id} style={[styles.dailyQuestCard, quest.completed && styles.dailyQuestCardComplete]}>
+            <View style={styles.dailyQuestCardHeader}>
+              <Text style={styles.dailyQuestName}>{quest.title}</Text>
+              <Text style={styles.dailyQuestStatus}>{quest.completed ? '🎉 任务完成' : `${quest.progress} / ${quest.target}`}</Text>
+            </View>
+            <View style={styles.dailyQuestTrack}>
+              <View
+                style={[
+                  styles.dailyQuestFill,
+                  { width: `${Math.min(100, (quest.progress / quest.target) * 100)}%` as `${number}%` },
+                ]}
+              />
+            </View>
+            <Text style={styles.dailyQuestReward}>
+              {quest.rewarded ? `已领取：${quest.rewardLabel}` : quest.rewardLabel}
+            </Text>
+          </View>
+        ))}
+      </View>
+
+      {latestDailyQuestReward ? (
+        <View style={styles.dailyQuestRewardToast}>
+          <Text style={styles.dailyQuestRewardToastTitle}>🎉 任务完成</Text>
+          <Text style={styles.dailyQuestRewardToastText}>获得：{latestDailyQuestReward}</Text>
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -4129,6 +4889,56 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     textAlign: 'center',
   },
+  artifactStoryBox: {
+    alignSelf: 'stretch',
+    backgroundColor: '#FFF7D6',
+    borderColor: '#FFD66B',
+    borderRadius: 18,
+    borderWidth: 1,
+    marginTop: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  artifactStoryTitle: {
+    color: '#7C3AED',
+    fontSize: 15,
+    fontWeight: '900',
+    lineHeight: 20,
+    marginBottom: 6,
+    textAlign: 'center',
+  },
+  artifactStoryText: {
+    color: '#5B3A15',
+    fontSize: 14,
+    fontWeight: '800',
+    lineHeight: 21,
+    textAlign: 'center',
+  },
+  museumProgressBox: {
+    alignSelf: 'stretch',
+    backgroundColor: '#F5E8FF',
+    borderColor: '#C084FC',
+    borderRadius: 18,
+    borderWidth: 1,
+    marginTop: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  museumProgressTitle: {
+    color: '#5B21B6',
+    fontSize: 15,
+    fontWeight: '900',
+    lineHeight: 20,
+    marginBottom: 4,
+    textAlign: 'center',
+  },
+  museumProgressText: {
+    color: '#7C2D12',
+    fontSize: 14,
+    fontWeight: '900',
+    lineHeight: 20,
+    textAlign: 'center',
+  },
   sharePreviewOverlay: {
     ...StyleSheet.absoluteFillObject,
     alignItems: 'center',
@@ -4284,6 +5094,34 @@ const styles = StyleSheet.create({
     marginTop: 12,
     textAlign: 'center',
   },
+  sharePreviewActions: {
+    alignItems: 'center',
+    gap: 10,
+    marginTop: 14,
+    width: '100%',
+  },
+  sharePreviewSaveButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 44,
+    borderRadius: 999,
+    backgroundColor: '#F5E8FF',
+    borderWidth: 1,
+    borderColor: '#C084FC',
+    paddingHorizontal: 22,
+    paddingVertical: 10,
+    shadowColor: '#A855F7',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.14,
+    shadowRadius: 14,
+  },
+  sharePreviewSaveText: {
+    color: '#6D28D9',
+    fontSize: 14,
+    fontWeight: '900',
+    lineHeight: 20,
+    textAlign: 'center',
+  },
   sharePreviewCloseButton: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -4292,7 +5130,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#E9D5FF',
-    marginTop: 14,
     paddingHorizontal: 24,
     paddingVertical: 9,
     shadowColor: '#4C2D6F',
@@ -4481,6 +5318,116 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
     paddingHorizontal: 18,
     paddingTop: 18,
+  },
+  dailyQuestPanel: {
+    borderBottomWidth: 1,
+    borderColor: '#F3D8A6',
+    gap: 12,
+    paddingBottom: 16,
+    paddingHorizontal: 18,
+    paddingTop: 16,
+  },
+  dailyQuestHeader: {
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: '#C084FC',
+    backgroundColor: '#F5E8FF',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  dailyQuestTitle: {
+    color: '#4C2D6F',
+    fontSize: 20,
+    fontWeight: '900',
+    lineHeight: 27,
+    textAlign: 'center',
+  },
+  dailyQuestSummary: {
+    color: '#7C3AED',
+    fontSize: 13,
+    fontWeight: '900',
+    lineHeight: 18,
+    marginTop: 4,
+    textAlign: 'center',
+  },
+  dailyQuestList: {
+    gap: 10,
+  },
+  dailyQuestCard: {
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: '#E9D5FF',
+    backgroundColor: '#FFFDF7',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  dailyQuestCardComplete: {
+    borderColor: '#F7C948',
+    backgroundColor: '#FFFBEB',
+    shadowColor: '#F59E0B',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 14,
+  },
+  dailyQuestCardHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 10,
+    justifyContent: 'space-between',
+  },
+  dailyQuestName: {
+    color: '#3B245F',
+    flex: 1,
+    fontSize: 15,
+    fontWeight: '900',
+    lineHeight: 21,
+  },
+  dailyQuestStatus: {
+    color: '#7C3AED',
+    fontSize: 13,
+    fontWeight: '900',
+    lineHeight: 18,
+  },
+  dailyQuestTrack: {
+    height: 9,
+    borderRadius: 999,
+    backgroundColor: '#FDE68A',
+    marginTop: 10,
+    overflow: 'hidden',
+  },
+  dailyQuestFill: {
+    height: '100%',
+    borderRadius: 999,
+    backgroundColor: '#A855F7',
+  },
+  dailyQuestReward: {
+    color: '#8A5E22',
+    fontSize: 12,
+    fontWeight: '900',
+    lineHeight: 17,
+    marginTop: 7,
+  },
+  dailyQuestRewardToast: {
+    alignItems: 'center',
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: '#F7C948',
+    backgroundColor: '#FFF7D6',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  dailyQuestRewardToastTitle: {
+    color: '#8B3A10',
+    fontSize: 17,
+    fontWeight: '900',
+    lineHeight: 23,
+  },
+  dailyQuestRewardToastText: {
+    color: '#7C3AED',
+    fontSize: 13,
+    fontWeight: '900',
+    lineHeight: 19,
+    marginTop: 3,
   },
   streakCard: {
     alignItems: 'center',
@@ -5156,6 +6103,193 @@ const styles = StyleSheet.create({
     marginTop: 2,
     textAlign: 'center',
     width: '100%',
+  },
+  galleryPanel: {
+    borderBottomWidth: 1,
+    borderColor: '#F3D8A6',
+    paddingBottom: 16,
+    paddingHorizontal: 18,
+    paddingTop: 16,
+  },
+  galleryHeader: {
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: '#C084FC',
+    backgroundColor: '#F5E8FF',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  galleryTitle: {
+    color: '#4C2D6F',
+    fontSize: 20,
+    fontWeight: '900',
+    lineHeight: 27,
+    textAlign: 'center',
+  },
+  gallerySubtitle: {
+    color: '#7C3AED',
+    fontSize: 13,
+    fontWeight: '900',
+    lineHeight: 18,
+    marginTop: 4,
+    textAlign: 'center',
+  },
+  galleryMuseumList: {
+    gap: 12,
+    marginTop: 14,
+  },
+  galleryMuseumCard: {
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: '#E9D5FF',
+    backgroundColor: '#FFFDF7',
+    overflow: 'hidden',
+    paddingBottom: 12,
+    paddingTop: 12,
+  },
+  galleryMuseumHeader: {
+    gap: 4,
+    paddingHorizontal: 14,
+  },
+  galleryMuseumTitle: {
+    color: '#3B245F',
+    fontSize: 16,
+    fontWeight: '900',
+    lineHeight: 22,
+  },
+  galleryMuseumCount: {
+    color: '#8A5E22',
+    fontSize: 13,
+    fontWeight: '900',
+    lineHeight: 18,
+  },
+  galleryProgressTrack: {
+    height: 9,
+    borderRadius: 999,
+    backgroundColor: '#FDE68A',
+    marginHorizontal: 14,
+    marginTop: 10,
+    overflow: 'hidden',
+  },
+  galleryProgressFill: {
+    height: '100%',
+    borderRadius: 999,
+    backgroundColor: '#A855F7',
+  },
+  galleryArtifactList: {
+    gap: 10,
+    paddingHorizontal: 14,
+    paddingTop: 12,
+  },
+  galleryArtifactCard: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 92,
+    minHeight: 108,
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: '#F8D58D',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 9,
+    paddingVertical: 10,
+  },
+  galleryArtifactLocked: {
+    borderColor: '#E9D5FF',
+    backgroundColor: '#F7EEFF',
+    borderStyle: 'dashed',
+  },
+  galleryArtifactSelected: {
+    borderColor: '#A855F7',
+    borderWidth: 2,
+    shadowColor: '#A855F7',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.16,
+    shadowRadius: 14,
+  },
+  galleryArtifactEmoji: {
+    fontSize: 33,
+    lineHeight: 41,
+    marginBottom: 5,
+  },
+  galleryArtifactZh: {
+    color: '#3B245F',
+    fontSize: 13,
+    fontWeight: '900',
+    lineHeight: 18,
+    textAlign: 'center',
+    width: '100%',
+  },
+  galleryArtifactEn: {
+    color: '#7C3AED',
+    fontSize: 11,
+    fontWeight: '900',
+    lineHeight: 16,
+    marginTop: 2,
+    textAlign: 'center',
+    width: '100%',
+  },
+  galleryDetailCard: {
+    alignItems: 'center',
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: '#F8D58D',
+    backgroundColor: '#FFFBEB',
+    marginTop: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+  },
+  galleryDetailEmoji: {
+    fontSize: 50,
+    lineHeight: 60,
+    marginBottom: 6,
+  },
+  galleryDetailZh: {
+    color: '#3B245F',
+    fontSize: 22,
+    fontWeight: '900',
+    lineHeight: 29,
+    textAlign: 'center',
+  },
+  galleryDetailEn: {
+    color: '#7C3AED',
+    fontSize: 16,
+    fontWeight: '900',
+    lineHeight: 22,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  galleryDetailMeta: {
+    color: '#7C2D12',
+    fontSize: 13,
+    fontWeight: '900',
+    lineHeight: 19,
+    marginTop: 3,
+    textAlign: 'center',
+  },
+  galleryStoryBox: {
+    alignSelf: 'stretch',
+    backgroundColor: '#FFFFFF',
+    borderColor: '#FDE68A',
+    borderRadius: 18,
+    borderWidth: 1,
+    marginTop: 12,
+    paddingHorizontal: 13,
+    paddingVertical: 11,
+  },
+  galleryStoryTitle: {
+    color: '#7C3AED',
+    fontSize: 14,
+    fontWeight: '900',
+    lineHeight: 19,
+    marginBottom: 5,
+    textAlign: 'center',
+  },
+  galleryStoryText: {
+    color: '#5B3A15',
+    fontSize: 13,
+    fontWeight: '800',
+    lineHeight: 20,
+    textAlign: 'center',
   },
   achievementBadgeHint: {
     color: '#7C3AED',
