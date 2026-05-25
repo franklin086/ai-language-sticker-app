@@ -59,6 +59,7 @@ type DailyQuestId = 'animal_discovery' | 'traffic_discovery' | 'three_unique_art
 
 type DailyQuestState = {
   date: string;
+  discoveredArtifactIds: string[];
   rewardedQuestIds: DailyQuestId[];
 };
 
@@ -718,29 +719,36 @@ function saveStoredXp(xpState: XpState) {
 function readStoredDailyQuestState(): DailyQuestState {
   const today = getDateKey(new Date());
   if (Platform.OS !== 'web' || typeof window === 'undefined') {
-    return { date: today, rewardedQuestIds: [] };
+    return { date: today, discoveredArtifactIds: [], rewardedQuestIds: [] };
   }
 
   try {
     const rawValue = window.localStorage.getItem(DAILY_QUEST_STORAGE_KEY);
     if (!rawValue) {
-      return { date: today, rewardedQuestIds: [] };
+      return { date: today, discoveredArtifactIds: [], rewardedQuestIds: [] };
     }
 
-    const parsed = JSON.parse(rawValue) as { date?: string; rewardedQuestIds?: string[] };
+    const parsed = JSON.parse(rawValue) as {
+      date?: string;
+      discoveredArtifactIds?: string[];
+      rewardedQuestIds?: string[];
+    };
     if (parsed.date !== today || !Array.isArray(parsed.rewardedQuestIds)) {
-      return { date: today, rewardedQuestIds: [] };
+      return { date: today, discoveredArtifactIds: [], rewardedQuestIds: [] };
     }
 
     const validQuestIds = new Set(DAILY_QUESTS.map((quest) => quest.id));
     return {
       date: today,
+      discoveredArtifactIds: Array.isArray(parsed.discoveredArtifactIds)
+        ? Array.from(new Set(parsed.discoveredArtifactIds.filter((id) => typeof id === 'string' && id.trim())))
+        : [],
       rewardedQuestIds: parsed.rewardedQuestIds.filter((id): id is DailyQuestId =>
         validQuestIds.has(id as DailyQuestId),
       ),
     };
   } catch {
-    return { date: today, rewardedQuestIds: [] };
+    return { date: today, discoveredArtifactIds: [], rewardedQuestIds: [] };
   }
 }
 
@@ -1309,11 +1317,21 @@ function collectionItemMatchesMuseum(item: CollectionItem, museumId: string) {
   return Boolean(matchedMuseum?.exhibits.some((exhibit) => matchedIds.includes(exhibit.id)));
 }
 
+function getDailyQuestArtifactIds(item: CollectionItem) {
+  const matchedExhibitIds = getMatchedMuseumExhibitIds(item);
+  if (matchedExhibitIds.length > 0) {
+    return matchedExhibitIds;
+  }
+
+  const fallbackId = (item.object_en || item.object_zh).trim().toLowerCase();
+  return fallbackId ? [`custom-${fallbackId}`] : [];
+}
+
 function getDailyQuestProgress(collection: CollectionItem[], dailyQuestState: DailyQuestState): DailyQuestProgress[] {
   const todaysItems = getCollectionItemsForDate(collection, dailyQuestState.date);
-  const uniqueArtifactCount = new Set(
-    todaysItems.map((item) => (item.object_en || item.object_zh).trim().toLowerCase()).filter(Boolean),
-  ).size;
+  const uniqueArtifactCount =
+    dailyQuestState.discoveredArtifactIds.length ||
+    new Set(todaysItems.flatMap((item) => getDailyQuestArtifactIds(item))).size;
 
   return DAILY_QUESTS.map((quest) => {
     let progress = 0;
@@ -1666,6 +1684,7 @@ export default function HomeScreen() {
   const [showLevelUp, setShowLevelUp] = useState(false);
   const [dailyQuestState, setDailyQuestState] = useState<DailyQuestState>({
     date: getDateKey(new Date()),
+    discoveredArtifactIds: [],
     rewardedQuestIds: [],
   });
   const [latestDailyQuestReward, setLatestDailyQuestReward] = useState('');
@@ -2277,14 +2296,21 @@ export default function HomeScreen() {
   const updateDailyQuestRewards = (nextCollection: CollectionItem[]) => {
     setDailyQuestState((currentState) => {
       const today = getDateKey(new Date());
-      const activeState = currentState.date === today ? currentState : { date: today, rewardedQuestIds: [] };
+      const todaysArtifactIds = Array.from(
+        new Set(getCollectionItemsForDate(nextCollection, today).flatMap((item) => getDailyQuestArtifactIds(item))),
+      );
+      const activeState =
+        currentState.date === today
+          ? {
+              ...currentState,
+              discoveredArtifactIds: Array.from(new Set([...currentState.discoveredArtifactIds, ...todaysArtifactIds])),
+            }
+          : { date: today, discoveredArtifactIds: todaysArtifactIds, rewardedQuestIds: [] };
       const questProgress = getDailyQuestProgress(nextCollection, activeState);
       const newlyCompletedQuests = questProgress.filter((quest) => quest.completed && !quest.rewarded);
 
       if (newlyCompletedQuests.length === 0) {
-        if (activeState !== currentState) {
-          saveStoredDailyQuestState(activeState);
-        }
+        saveStoredDailyQuestState(activeState);
         return activeState;
       }
 
@@ -2298,6 +2324,7 @@ export default function HomeScreen() {
 
       const nextState = {
         date: today,
+        discoveredArtifactIds: activeState.discoveredArtifactIds,
         rewardedQuestIds: Array.from(
           new Set([...activeState.rewardedQuestIds, ...newlyCompletedQuests.map((quest) => quest.id)]),
         ),
@@ -2485,9 +2512,15 @@ export default function HomeScreen() {
         );
 
         if (alreadyDiscovered) {
+          const dailyQuestItem = {
+            ...recognizedData,
+            discoveredAt: new Date().toISOString(),
+            emoji: getMagicEmoji(recognizedData),
+          };
           setCollectionMessage(COPY.collectionKnown);
           setCollectionFeedback('known');
           setNewestDiscoveryAt('');
+          updateDailyQuestRewards([dailyQuestItem, ...currentCollection]);
           unlockAchievements({
             nextCollection: currentCollection,
             nextCustomMuseumCount: customMuseums.length,
@@ -3864,6 +3897,7 @@ function DailyQuestPanel({
   questProgress: DailyQuestProgress[];
 }) {
   const completedCount = questProgress.filter((quest) => quest.completed).length;
+  const allComplete = questProgress.length > 0 && completedCount === questProgress.length;
 
   return (
     <View style={styles.dailyQuestPanel}>
@@ -3895,6 +3929,13 @@ function DailyQuestPanel({
           </View>
         ))}
       </View>
+
+      {allComplete ? (
+        <View style={styles.dailyQuestCompleteBanner}>
+          <Text style={styles.dailyQuestCompleteTitle}>✨ 今日探索完成！</Text>
+          <Text style={styles.dailyQuestCompleteText}>明天还有新的魔法任务等你来发现。</Text>
+        </View>
+      ) : null}
 
       {latestDailyQuestReward ? (
         <View style={styles.dailyQuestRewardToast}>
@@ -5406,6 +5447,34 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     lineHeight: 17,
     marginTop: 7,
+  },
+  dailyQuestCompleteBanner: {
+    alignItems: 'center',
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: '#C084FC',
+    backgroundColor: '#FAF5FF',
+    marginTop: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    shadowColor: '#A855F7',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+  },
+  dailyQuestCompleteTitle: {
+    color: '#6D28D9',
+    fontSize: 17,
+    fontWeight: '900',
+    lineHeight: 23,
+  },
+  dailyQuestCompleteText: {
+    color: '#8A5E22',
+    fontSize: 12,
+    fontWeight: '900',
+    lineHeight: 18,
+    marginTop: 3,
+    textAlign: 'center',
   },
   dailyQuestRewardToast: {
     alignItems: 'center',
