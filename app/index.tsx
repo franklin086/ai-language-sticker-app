@@ -78,6 +78,20 @@ type DailyQuestProgress = DailyQuestDefinition & {
   rewarded: boolean;
 };
 
+type LimitedEventState = {
+  badgeIds: string[];
+  completedEventIds: string[];
+};
+
+type LimitedEventProgress = {
+  badgeId: string;
+  badgeTitle: string;
+  completed: boolean;
+  eventId: string;
+  progress: number;
+  target: number;
+};
+
 type AchievementDefinition = {
   encouragement?: string;
   emoji: string;
@@ -177,6 +191,7 @@ const CURATOR_STORAGE_KEY = 'ai-magic-camera-curator';
 const CITY_MAP_STORAGE_KEY = 'ai-magic-camera-city-map';
 const COLLECTION_STORAGE_KEY = 'ai-magic-camera-collection';
 const DAILY_QUEST_STORAGE_KEY = 'ai-magic-camera-daily-quests';
+const LIMITED_EVENT_STORAGE_KEY = 'ai-magic-camera-limited-events';
 const ARTIFACT_STORY_STORAGE_KEY = 'ai-magic-camera-artifact-stories';
 const STICKER_TOTAL = 120;
 const XP_PER_LEVEL = 100;
@@ -242,6 +257,14 @@ const DAILY_QUESTS: DailyQuestDefinition[] = [
   { id: 'traffic_discovery', rewardLabel: '奖励 20XP', target: 1, title: '发现 1 个交通工具', type: 'traffic' },
   { id: 'three_unique_artifacts', rewardLabel: '奖励宝箱', target: 3, title: '发现 3 个不同藏品', type: 'unique' },
 ];
+
+const ANIMAL_EXPLORATION_EVENT = {
+  badgeId: 'limited-badge-animal-explorer',
+  badgeTitle: '🐾 动物探索家',
+  eventId: 'animal-exploration-week',
+  target: 3,
+  xpReward: 50,
+};
 
 const ACHIEVEMENTS: AchievementDefinition[] = [
   { emoji: '🌟', id: 'first_scan', title: '初次探索者' },
@@ -763,6 +786,43 @@ function saveStoredDailyQuestState(state: DailyQuestState) {
     window.localStorage.setItem(DAILY_QUEST_STORAGE_KEY, JSON.stringify(state));
   } catch {
     // Daily quests are local encouragement. Recognition should continue if storage is blocked.
+  }
+}
+
+function readStoredLimitedEventState(): LimitedEventState {
+  if (Platform.OS !== 'web' || typeof window === 'undefined') {
+    return { badgeIds: [], completedEventIds: [] };
+  }
+
+  try {
+    const rawValue = window.localStorage.getItem(LIMITED_EVENT_STORAGE_KEY);
+    if (!rawValue) {
+      return { badgeIds: [], completedEventIds: [] };
+    }
+
+    const parsed = JSON.parse(rawValue) as { badgeIds?: string[]; completedEventIds?: string[] };
+    return {
+      badgeIds: Array.isArray(parsed.badgeIds)
+        ? Array.from(new Set(parsed.badgeIds.filter((id) => typeof id === 'string' && id.trim())))
+        : [],
+      completedEventIds: Array.isArray(parsed.completedEventIds)
+        ? Array.from(new Set(parsed.completedEventIds.filter((id) => typeof id === 'string' && id.trim())))
+        : [],
+    };
+  } catch {
+    return { badgeIds: [], completedEventIds: [] };
+  }
+}
+
+function saveStoredLimitedEventState(state: LimitedEventState) {
+  if (Platform.OS !== 'web' || typeof window === 'undefined') {
+    return;
+  }
+
+  try {
+    window.localStorage.setItem(LIMITED_EVENT_STORAGE_KEY, JSON.stringify(state));
+  } catch {
+    // Limited events are local rewards. Recognition should continue if storage is blocked.
   }
 }
 
@@ -1387,6 +1447,24 @@ function getDailyQuestProgress(collection: CollectionItem[], dailyQuestState: Da
   });
 }
 
+function getLimitedEventProgress(collection: CollectionItem[], limitedEventState: LimitedEventState): LimitedEventProgress {
+  const animalArtifactIds = new Set(
+    collection.filter((item) => collectionItemMatchesMuseum(item, 'animal')).flatMap((item) => getDailyQuestArtifactIds(item)),
+  );
+  const progress = Math.min(animalArtifactIds.size, ANIMAL_EXPLORATION_EVENT.target);
+
+  return {
+    badgeId: ANIMAL_EXPLORATION_EVENT.badgeId,
+    badgeTitle: ANIMAL_EXPLORATION_EVENT.badgeTitle,
+    completed:
+      progress >= ANIMAL_EXPLORATION_EVENT.target ||
+      limitedEventState.completedEventIds.includes(ANIMAL_EXPLORATION_EVENT.eventId),
+    eventId: ANIMAL_EXPLORATION_EVENT.eventId,
+    progress,
+    target: ANIMAL_EXPLORATION_EVENT.target,
+  };
+}
+
 function buildShareCardData({
   curatorTitle,
   encouragement,
@@ -1724,6 +1802,11 @@ export default function HomeScreen() {
     rewardedQuestIds: [],
   });
   const [latestDailyQuestReward, setLatestDailyQuestReward] = useState('');
+  const [limitedEventState, setLimitedEventState] = useState<LimitedEventState>({
+    badgeIds: [],
+    completedEventIds: [],
+  });
+  const [latestLimitedEventReward, setLatestLimitedEventReward] = useState('');
   const [unlockedAchievementIds, setUnlockedAchievementIds] = useState<AchievementId[]>([]);
   const [latestAchievement, setLatestAchievement] = useState<AchievementDefinition | null>(null);
   const [museumCollectedIds, setMuseumCollectedIds] = useState<string[]>([]);
@@ -1772,6 +1855,7 @@ export default function HomeScreen() {
 
     setUnlockedAchievementIds(readStoredAchievements());
     setDailyQuestState(readStoredDailyQuestState());
+    setLimitedEventState(readStoredLimitedEventState());
     setCollection(readStoredCollection());
     setExpandedArtifactIds(readStoredExpandedArtifactIds());
     setMuseumCollectedIds(readStoredMuseumIds());
@@ -2329,6 +2413,26 @@ export default function HomeScreen() {
     addXpAmount(XP_REWARDS[category]);
   };
 
+  const completeLimitedEventIfReady = (nextCollection: CollectionItem[]) => {
+    setLimitedEventState((currentState) => {
+      const progress = getLimitedEventProgress(nextCollection, currentState);
+      if (!progress.completed || currentState.completedEventIds.includes(progress.eventId)) {
+        return currentState;
+      }
+
+      addXpAmount(ANIMAL_EXPLORATION_EVENT.xpReward);
+      openMagicChest(nextCollection.length + ANIMAL_EXPLORATION_EVENT.target);
+      setLatestLimitedEventReward(ANIMAL_EXPLORATION_EVENT.badgeTitle);
+
+      const nextState = {
+        badgeIds: Array.from(new Set([...currentState.badgeIds, progress.badgeId])),
+        completedEventIds: Array.from(new Set([...currentState.completedEventIds, progress.eventId])),
+      };
+      saveStoredLimitedEventState(nextState);
+      return nextState;
+    });
+  };
+
   const updateDailyQuestRewards = (nextCollection: CollectionItem[]) => {
     setDailyQuestState((currentState) => {
       const today = getDateKey(new Date());
@@ -2743,6 +2847,12 @@ export default function HomeScreen() {
     });
   }, [collection, customMuseums.length, museumCollectedIds, streakDays]);
 
+  useEffect(() => {
+    completeLimitedEventIfReady(collection);
+    // Limited event rewards are guarded by completedEventIds; collection changes are the only trigger we need.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [collection]);
+
   return (
     <SafeAreaView style={styles.screen}>
       <ScrollView contentContainerStyle={styles.content}>
@@ -2934,6 +3044,8 @@ export default function HomeScreen() {
             expandedArtifactIds={expandedArtifactIds}
             feedback={collectionFeedback}
             latestDailyQuestReward={latestDailyQuestReward}
+            latestLimitedEventReward={latestLimitedEventReward}
+            limitedEventState={limitedEventState}
             newestDiscoveryAt={newestDiscoveryAt}
             newItemOpacity={newItemOpacity}
             newItemScale={newItemScale}
@@ -3408,6 +3520,8 @@ function MagicCollection({
   expandedArtifactIds,
   feedback,
   latestDailyQuestReward,
+  latestLimitedEventReward,
+  limitedEventState,
   newestDiscoveryAt,
   newItemOpacity,
   newItemScale,
@@ -3464,6 +3578,8 @@ function MagicCollection({
   expandedArtifactIds: string[];
   feedback: 'new' | 'known' | '';
   latestDailyQuestReward: string;
+  latestLimitedEventReward: string;
+  limitedEventState: LimitedEventState;
   newestDiscoveryAt: string;
   newItemOpacity: Animated.AnimatedInterpolation<string | number>;
   newItemScale: Animated.AnimatedInterpolation<string | number>;
@@ -3526,6 +3642,11 @@ function MagicCollection({
       <DailyQuestPanel
         latestDailyQuestReward={latestDailyQuestReward}
         questProgress={getDailyQuestProgress(collection, dailyQuestState)}
+      />
+
+      <LimitedEventPanel
+        latestLimitedEventReward={latestLimitedEventReward}
+        progress={getLimitedEventProgress(collection, limitedEventState)}
       />
 
       <AchievementPanel
@@ -4157,6 +4278,43 @@ function DailyQuestPanel({
         <View style={styles.dailyQuestRewardToast}>
           <Text style={styles.dailyQuestRewardToastTitle}>🎉 任务完成</Text>
           <Text style={styles.dailyQuestRewardToastText}>获得：{latestDailyQuestReward}</Text>
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+function LimitedEventPanel({
+  latestLimitedEventReward,
+  progress,
+}: {
+  latestLimitedEventReward: string;
+  progress: LimitedEventProgress;
+}) {
+  const percent = Math.min(100, (progress.progress / progress.target) * 100);
+
+  return (
+    <View style={styles.limitedEventPanel}>
+      <View style={[styles.limitedEventCard, progress.completed && styles.limitedEventCardComplete]}>
+        <Text style={styles.limitedEventKicker}>本周活动</Text>
+        <Text style={styles.limitedEventTitle}>🐾 动物探索周</Text>
+        <Text style={styles.limitedEventText}>发现 3 个动物类藏品</Text>
+        <Text style={styles.limitedEventProgress}>
+          当前进度：{progress.progress} / {progress.target}
+        </Text>
+        <View style={styles.limitedEventTrack}>
+          <View style={[styles.limitedEventFill, { width: `${percent}%` as `${number}%` }]} />
+        </View>
+        <Text style={styles.limitedEventReward}>奖励：50 XP · 🐾 动物探索家 · 宝箱一次</Text>
+        <Text style={progress.completed ? styles.limitedEventDone : styles.limitedEventTodo}>
+          {progress.completed ? '已完成' : '继续寻找动物藏品'}
+        </Text>
+      </View>
+
+      {latestLimitedEventReward ? (
+        <View style={styles.limitedEventToast}>
+          <Text style={styles.limitedEventToastTitle}>🎉 限定活动完成！</Text>
+          <Text style={styles.limitedEventToastText}>获得：{latestLimitedEventReward}</Text>
         </View>
       ) : null}
     </View>
@@ -5815,6 +5973,121 @@ const styles = StyleSheet.create({
     lineHeight: 23,
   },
   dailyQuestRewardToastText: {
+    color: '#7C3AED',
+    fontSize: 13,
+    fontWeight: '900',
+    lineHeight: 19,
+    marginTop: 3,
+  },
+  limitedEventPanel: {
+    borderBottomWidth: 1,
+    borderColor: '#F3D8A6',
+    gap: 12,
+    paddingBottom: 16,
+    paddingHorizontal: 18,
+    paddingTop: 16,
+  },
+  limitedEventCard: {
+    borderRadius: 26,
+    borderWidth: 1,
+    borderColor: '#86EFAC',
+    backgroundColor: '#F0FDF4',
+    paddingHorizontal: 16,
+    paddingVertical: 15,
+    shadowColor: '#22C55E',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.12,
+    shadowRadius: 18,
+  },
+  limitedEventCardComplete: {
+    borderColor: '#F7C948',
+    backgroundColor: '#FFFBEB',
+    shadowColor: '#F59E0B',
+    shadowOpacity: 0.18,
+  },
+  limitedEventKicker: {
+    color: '#15803D',
+    fontSize: 13,
+    fontWeight: '900',
+    lineHeight: 18,
+    textAlign: 'center',
+  },
+  limitedEventTitle: {
+    color: '#3B245F',
+    fontSize: 22,
+    fontWeight: '900',
+    lineHeight: 30,
+    marginTop: 2,
+    textAlign: 'center',
+  },
+  limitedEventText: {
+    color: '#166534',
+    fontSize: 14,
+    fontWeight: '900',
+    lineHeight: 20,
+    marginTop: 4,
+    textAlign: 'center',
+  },
+  limitedEventProgress: {
+    color: '#7C3AED',
+    fontSize: 15,
+    fontWeight: '900',
+    lineHeight: 21,
+    marginTop: 8,
+    textAlign: 'center',
+  },
+  limitedEventTrack: {
+    height: 11,
+    borderRadius: 999,
+    backgroundColor: '#DCFCE7',
+    marginTop: 10,
+    overflow: 'hidden',
+  },
+  limitedEventFill: {
+    height: '100%',
+    borderRadius: 999,
+    backgroundColor: '#22C55E',
+  },
+  limitedEventReward: {
+    color: '#8A5E22',
+    fontSize: 13,
+    fontWeight: '900',
+    lineHeight: 19,
+    marginTop: 10,
+    textAlign: 'center',
+  },
+  limitedEventDone: {
+    color: '#DB2777',
+    fontSize: 14,
+    fontWeight: '900',
+    lineHeight: 20,
+    marginTop: 7,
+    textAlign: 'center',
+  },
+  limitedEventTodo: {
+    color: '#15803D',
+    fontSize: 13,
+    fontWeight: '900',
+    lineHeight: 18,
+    marginTop: 7,
+    textAlign: 'center',
+  },
+  limitedEventToast: {
+    alignItems: 'center',
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: '#F7C948',
+    backgroundColor: '#FFF7D6',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  limitedEventToastTitle: {
+    color: '#8B3A10',
+    fontSize: 17,
+    fontWeight: '900',
+    lineHeight: 23,
+  },
+  limitedEventToastText: {
     color: '#7C3AED',
     fontSize: 13,
     fontWeight: '900',
