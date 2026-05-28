@@ -7,6 +7,7 @@ import {
   Animated,
   Easing,
   Image,
+  Modal,
   Platform,
   Pressable,
   SafeAreaView,
@@ -2927,7 +2928,12 @@ export default function HomeScreen() {
             xpLevelUpScale={xpLevelUpScale}
             xpState={xpState}
             unlockedAchievementIds={unlockedAchievementIds}
+            onShareArtifact={(item) => openShareCard('AI Magic Encyclopedia', 'I found a new magic artifact!', item)}
             onToggleArtifactStory={toggleArtifactStory}
+            onSpeakArtifactChinese={(text) => speakWord(text, 'zh')}
+            onSpeakArtifactEnglish={(text) => speakWord(text, 'en')}
+            speakButtonScale={speakButtonScale}
+            speakingLanguage={speakingLanguage}
             onShareMuseumBadge={(badge) => openShareCard(`${badge.emoji} ${badge.title}`, '这座博物馆被你点亮了，真了不起！')}
           />
 
@@ -3373,8 +3379,13 @@ function MagicCollection({
   xpLevelUpScale,
   xpState,
   unlockedAchievementIds,
+  onShareArtifact,
   onShareMuseumBadge,
+  onSpeakArtifactChinese,
+  onSpeakArtifactEnglish,
   onToggleArtifactStory,
+  speakButtonScale,
+  speakingLanguage,
 }: {
   achievementGlowScale: Animated.AnimatedInterpolation<string | number>;
   achievementOpacity: Animated.AnimatedInterpolation<string | number>;
@@ -3424,8 +3435,13 @@ function MagicCollection({
   xpLevelUpScale: Animated.AnimatedInterpolation<string | number>;
   xpState: XpState;
   unlockedAchievementIds: AchievementId[];
+  onShareArtifact: (item: CollectionItem) => void;
   onShareMuseumBadge: (badge: MuseumBadge) => void;
+  onSpeakArtifactChinese: (text: string) => void;
+  onSpeakArtifactEnglish: (text: string) => void;
   onToggleArtifactStory: (artifactId: string) => void;
+  speakButtonScale: Animated.AnimatedInterpolation<string | number>;
+  speakingLanguage: 'zh' | 'en' | null;
 }) {
   const collectedCount = collection.length;
   const completionPercent = Math.min(100, Math.round((collectedCount / STICKER_TOTAL) * 100));
@@ -3466,7 +3482,15 @@ function MagicCollection({
 
       <MagicMuseumPanel museumCollectedIds={museumCollectedIds} museums={museums} />
 
-      <CollectionGallery collection={collection} museums={museums} />
+      <CollectionGallery
+        collection={collection}
+        museums={museums}
+        onShareArtifact={onShareArtifact}
+        onSpeakArtifactChinese={onSpeakArtifactChinese}
+        onSpeakArtifactEnglish={onSpeakArtifactEnglish}
+        speakButtonScale={speakButtonScale}
+        speakingLanguage={speakingLanguage}
+      />
 
       <CityMapPanel cityMapCompletedNodeIds={cityMapCompletedNodeIds} cityMaps={cityMaps} />
 
@@ -3792,12 +3816,28 @@ function MagicMuseumPanel({
 function CollectionGallery({
   collection,
   museums,
+  onShareArtifact,
+  onSpeakArtifactChinese,
+  onSpeakArtifactEnglish,
+  speakButtonScale,
+  speakingLanguage,
 }: {
   collection: CollectionItem[];
   museums: MagicMuseum[];
+  onShareArtifact: (item: CollectionItem) => void;
+  onSpeakArtifactChinese: (text: string) => void;
+  onSpeakArtifactEnglish: (text: string) => void;
+  speakButtonScale: Animated.AnimatedInterpolation<string | number>;
+  speakingLanguage: 'zh' | 'en' | null;
 }) {
   const firstExhibit = museums[0]?.exhibits[0] ?? null;
   const [selectedExhibitId, setSelectedExhibitId] = useState(firstExhibit?.id ?? '');
+  const [detailArtifact, setDetailArtifact] = useState<{
+    exhibit: MuseumExhibit;
+    item: CollectionItem;
+    museum: MagicMuseum;
+  } | null>(null);
+  const [lockedHint, setLockedHint] = useState('');
   const selectedMuseum =
     museums.find((museum) => museum.exhibits.some((exhibit) => exhibit.id === selectedExhibitId)) ?? museums[0];
   const selectedExhibit =
@@ -3814,6 +3854,12 @@ function CollectionGallery({
         <Text style={styles.galleryTitle}>📚 我的图鉴</Text>
         <Text style={styles.gallerySubtitle}>点击藏品查看故事和发现记录</Text>
       </View>
+
+      {lockedHint ? (
+        <View style={styles.galleryHintPill}>
+          <Text style={styles.galleryHintText}>{lockedHint}</Text>
+        </View>
+      ) : null}
 
       <View style={styles.galleryMuseumList}>
         {museums.map((museum) => {
@@ -3850,7 +3896,16 @@ function CollectionGallery({
                   return (
                     <Pressable
                       key={exhibit.id}
-                      onPress={() => setSelectedExhibitId(exhibit.id)}
+                      onPress={() => {
+                        setSelectedExhibitId(exhibit.id);
+                        if (!discoveredItem) {
+                          setLockedHint('继续探索，发现后解锁！');
+                          return;
+                        }
+
+                        setLockedHint('');
+                        setDetailArtifact({ exhibit, item: discoveredItem, museum });
+                      }}
                       style={[
                         styles.galleryArtifactCard,
                         !discoveredItem && styles.galleryArtifactLocked,
@@ -3885,7 +3940,90 @@ function CollectionGallery({
           <Text style={styles.galleryStoryText}>{selectedDetails.story}</Text>
         </View>
       </View>
+      {detailArtifact ? (
+        <ArtifactDetailModal
+          exhibit={detailArtifact.exhibit}
+          item={detailArtifact.item}
+          museum={detailArtifact.museum}
+          onClose={() => setDetailArtifact(null)}
+          onShare={() => onShareArtifact(detailArtifact.item)}
+          onSpeakChinese={() => onSpeakArtifactChinese(detailArtifact.item.object_zh || detailArtifact.exhibit.object_zh)}
+          onSpeakEnglish={() => onSpeakArtifactEnglish(detailArtifact.item.object_en || detailArtifact.exhibit.object_en)}
+          speakButtonScale={speakButtonScale}
+          speakingLanguage={speakingLanguage}
+        />
+      ) : null}
     </View>
+  );
+}
+
+function ArtifactDetailModal({
+  exhibit,
+  item,
+  museum,
+  onClose,
+  onShare,
+  onSpeakChinese,
+  onSpeakEnglish,
+  speakButtonScale,
+  speakingLanguage,
+}: {
+  exhibit: MuseumExhibit;
+  item: CollectionItem;
+  museum: MagicMuseum;
+  onClose: () => void;
+  onShare: () => void;
+  onSpeakChinese: () => void;
+  onSpeakEnglish: () => void;
+  speakButtonScale: Animated.AnimatedInterpolation<string | number>;
+  speakingLanguage: 'zh' | 'en' | null;
+}) {
+  const details = getGalleryArtifactDetails(exhibit, [item]);
+
+  return (
+    <Modal animationType="fade" onRequestClose={onClose} transparent visible>
+      <View style={styles.artifactDetailOverlay}>
+        <Pressable style={styles.artifactDetailBackdrop} onPress={onClose} />
+        <View style={styles.artifactDetailCard}>
+          <Text style={[styles.artifactDetailSparkle, styles.artifactDetailSparkleOne]}>✨</Text>
+          <Text style={[styles.artifactDetailSparkle, styles.artifactDetailSparkleTwo]}>🌟</Text>
+          <Text style={styles.artifactDetailKicker}>Magic Encyclopedia</Text>
+          <Text style={styles.artifactDetailEmoji}>{details.emoji}</Text>
+          <Text style={styles.artifactDetailZh}>{item.object_zh || exhibit.object_zh}</Text>
+          <Text style={styles.artifactDetailEn}>{item.object_en || exhibit.object_en}</Text>
+          <View style={styles.artifactDetailInfoBox}>
+            <Text style={styles.artifactDetailMeta}>所属博物馆：{museum.title}</Text>
+            <Text style={styles.artifactDetailMeta}>稀有度：{details.rarityLabel}</Text>
+            <Text style={styles.artifactDetailMeta}>首次发现：{formatDiscoveredAt(item.discoveredAt)}</Text>
+            <Text style={styles.artifactDetailMeta}>Confidence：{formatConfidence(item.confidence)}</Text>
+          </View>
+          <View style={styles.artifactDetailStoryBox}>
+            <Text style={styles.artifactDetailStoryTitle}>📖 藏品故事</Text>
+            <Text style={styles.artifactDetailStoryText}>{details.story}</Text>
+          </View>
+          <View style={styles.artifactDetailSpeechRow}>
+            <SpeechButton
+              active={speakingLanguage === 'zh'}
+              label="🔊 中文发音"
+              onPress={onSpeakChinese}
+              scale={speakButtonScale}
+            />
+            <SpeechButton
+              active={speakingLanguage === 'en'}
+              label="🔊 English"
+              onPress={onSpeakEnglish}
+              scale={speakButtonScale}
+            />
+          </View>
+          <Pressable style={({ pressed }) => [styles.shareButton, pressed && styles.shareButtonPressed]} onPress={onShare}>
+            <Text style={styles.shareButtonText}>📸 生成分享卡</Text>
+          </Pressable>
+          <Pressable style={({ pressed }) => [styles.artifactDetailCloseButton, pressed && styles.shareButtonPressed]} onPress={onClose}>
+            <Text style={styles.artifactDetailCloseText}>关闭</Text>
+          </Pressable>
+        </View>
+      </View>
+    </Modal>
   );
 }
 
@@ -6203,6 +6341,24 @@ const styles = StyleSheet.create({
     marginTop: 4,
     textAlign: 'center',
   },
+  galleryHintPill: {
+    alignItems: 'center',
+    alignSelf: 'center',
+    backgroundColor: '#FFF7D6',
+    borderColor: '#F7C948',
+    borderRadius: 999,
+    borderWidth: 1,
+    marginTop: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+  },
+  galleryHintText: {
+    color: '#8B3A10',
+    fontSize: 13,
+    fontWeight: '900',
+    lineHeight: 18,
+    textAlign: 'center',
+  },
   galleryMuseumList: {
     gap: 12,
     marginTop: 14,
@@ -6357,6 +6513,141 @@ const styles = StyleSheet.create({
     color: '#5B3A15',
     fontSize: 13,
     fontWeight: '800',
+    lineHeight: 20,
+    textAlign: 'center',
+  },
+  artifactDetailOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 18,
+    zIndex: 80,
+  },
+  artifactDetailBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(76, 45, 111, 0.46)',
+  },
+  artifactDetailCard: {
+    alignItems: 'center',
+    width: '100%',
+    maxWidth: 390,
+    borderRadius: 30,
+    borderWidth: 1,
+    borderColor: '#F8D58D',
+    backgroundColor: '#FFFDF7',
+    paddingHorizontal: 20,
+    paddingVertical: 20,
+    shadowColor: '#A855F7',
+    shadowOffset: { width: 0, height: 18 },
+    shadowOpacity: 0.24,
+    shadowRadius: 30,
+  },
+  artifactDetailSparkle: {
+    position: 'absolute',
+    color: '#F59E0B',
+    fontSize: 22,
+    fontWeight: '900',
+  },
+  artifactDetailSparkleOne: {
+    left: 22,
+    top: 20,
+  },
+  artifactDetailSparkleTwo: {
+    right: 22,
+    top: 34,
+  },
+  artifactDetailKicker: {
+    color: '#7C3AED',
+    fontSize: 14,
+    fontWeight: '900',
+    lineHeight: 20,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  artifactDetailEmoji: {
+    fontSize: 62,
+    lineHeight: 74,
+    marginBottom: 6,
+  },
+  artifactDetailZh: {
+    color: '#3B245F',
+    fontSize: 27,
+    fontWeight: '900',
+    lineHeight: 34,
+    textAlign: 'center',
+  },
+  artifactDetailEn: {
+    color: '#7C3AED',
+    fontSize: 18,
+    fontWeight: '900',
+    lineHeight: 25,
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  artifactDetailInfoBox: {
+    alignSelf: 'stretch',
+    backgroundColor: '#F5E8FF',
+    borderColor: '#E9D5FF',
+    borderRadius: 18,
+    borderWidth: 1,
+    paddingHorizontal: 13,
+    paddingVertical: 11,
+  },
+  artifactDetailMeta: {
+    color: '#5B21B6',
+    fontSize: 13,
+    fontWeight: '900',
+    lineHeight: 20,
+    textAlign: 'center',
+  },
+  artifactDetailStoryBox: {
+    alignSelf: 'stretch',
+    backgroundColor: '#FFF7D6',
+    borderColor: '#F7C948',
+    borderRadius: 18,
+    borderWidth: 1,
+    marginTop: 12,
+    paddingHorizontal: 13,
+    paddingVertical: 11,
+  },
+  artifactDetailStoryTitle: {
+    color: '#7C3AED',
+    fontSize: 15,
+    fontWeight: '900',
+    lineHeight: 20,
+    marginBottom: 5,
+    textAlign: 'center',
+  },
+  artifactDetailStoryText: {
+    color: '#5B3A15',
+    fontSize: 14,
+    fontWeight: '800',
+    lineHeight: 21,
+    textAlign: 'center',
+  },
+  artifactDetailSpeechRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    justifyContent: 'center',
+    marginTop: 13,
+  },
+  artifactDetailCloseButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 40,
+    borderRadius: 999,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E9D5FF',
+    marginTop: 10,
+    paddingHorizontal: 24,
+    paddingVertical: 8,
+  },
+  artifactDetailCloseText: {
+    color: '#6D28D9',
+    fontSize: 14,
+    fontWeight: '900',
     lineHeight: 20,
     textAlign: 'center',
   },
