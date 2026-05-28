@@ -92,6 +92,14 @@ type LimitedEventProgress = {
   target: number;
 };
 
+type CompanionState = {
+  level: number;
+  mood: string;
+  title: string;
+  unlockedMessages: string[];
+  xp: number;
+};
+
 type AchievementDefinition = {
   encouragement?: string;
   emoji: string;
@@ -192,9 +200,11 @@ const CITY_MAP_STORAGE_KEY = 'ai-magic-camera-city-map';
 const COLLECTION_STORAGE_KEY = 'ai-magic-camera-collection';
 const DAILY_QUEST_STORAGE_KEY = 'ai-magic-camera-daily-quests';
 const LIMITED_EVENT_STORAGE_KEY = 'ai-magic-camera-limited-events';
+const COMPANION_STORAGE_KEY = 'ai-magic-camera-companion';
 const ARTIFACT_STORY_STORAGE_KEY = 'ai-magic-camera-artifact-stories';
 const STICKER_TOTAL = 120;
 const XP_PER_LEVEL = 100;
+const COMPANION_XP_PER_LEVEL = 100;
 
 const XP_REWARDS: Record<StickerCategoryKey, number> = {
   common: 10,
@@ -264,6 +274,14 @@ const ANIMAL_EXPLORATION_EVENT = {
   eventId: 'animal-exploration-week',
   target: 3,
   xpReward: 50,
+};
+
+const DEFAULT_COMPANION_STATE: CompanionState = {
+  level: 1,
+  mood: '好奇',
+  title: '小小助手',
+  unlockedMessages: ['我们一起探索世界吧！'],
+  xp: 0,
 };
 
 const ACHIEVEMENTS: AchievementDefinition[] = [
@@ -823,6 +841,68 @@ function saveStoredLimitedEventState(state: LimitedEventState) {
     window.localStorage.setItem(LIMITED_EVENT_STORAGE_KEY, JSON.stringify(state));
   } catch {
     // Limited events are local rewards. Recognition should continue if storage is blocked.
+  }
+}
+
+function getCompanionTitle(level: number) {
+  if (level >= 10) {
+    return '传奇魔法伙伴';
+  }
+
+  if (level >= 5) {
+    return '博物馆守护者';
+  }
+
+  if (level >= 3) {
+    return '探索伙伴';
+  }
+
+  if (level >= 2) {
+    return '魔法朋友';
+  }
+
+  return '小小助手';
+}
+
+function readStoredCompanionState(): CompanionState {
+  if (Platform.OS !== 'web' || typeof window === 'undefined') {
+    return DEFAULT_COMPANION_STATE;
+  }
+
+  try {
+    const rawValue = window.localStorage.getItem(COMPANION_STORAGE_KEY);
+    if (!rawValue) {
+      return DEFAULT_COMPANION_STATE;
+    }
+
+    const parsed = JSON.parse(rawValue) as Partial<CompanionState>;
+    const level = typeof parsed.level === 'number' ? Math.max(1, parsed.level) : DEFAULT_COMPANION_STATE.level;
+    return {
+      level,
+      mood: typeof parsed.mood === 'string' && parsed.mood.trim() ? parsed.mood : DEFAULT_COMPANION_STATE.mood,
+      title: getCompanionTitle(level),
+      unlockedMessages: Array.isArray(parsed.unlockedMessages)
+        ? parsed.unlockedMessages.filter((message) => typeof message === 'string' && message.trim())
+        : DEFAULT_COMPANION_STATE.unlockedMessages,
+      xp:
+        typeof parsed.xp === 'number'
+          ? Math.max(0, Math.min(COMPANION_XP_PER_LEVEL - 1, parsed.xp))
+          : DEFAULT_COMPANION_STATE.xp,
+    };
+  } catch {
+    return DEFAULT_COMPANION_STATE;
+  }
+}
+
+function saveStoredCompanionState(state: CompanionState) {
+  if (Platform.OS !== 'web' || typeof window === 'undefined') {
+    return;
+  }
+
+  try {
+    window.localStorage.setItem(COMPANION_STORAGE_KEY, JSON.stringify(state));
+  } catch {
+    // Companion growth is local encouragement. Recognition should continue if storage is blocked.
   }
 }
 
@@ -1807,6 +1887,9 @@ export default function HomeScreen() {
     completedEventIds: [],
   });
   const [latestLimitedEventReward, setLatestLimitedEventReward] = useState('');
+  const [companionState, setCompanionState] = useState<CompanionState>(DEFAULT_COMPANION_STATE);
+  const [companionMessage, setCompanionMessage] = useState('我们一起探索世界吧！');
+  const [latestCompanionTitle, setLatestCompanionTitle] = useState('');
   const [unlockedAchievementIds, setUnlockedAchievementIds] = useState<AchievementId[]>([]);
   const [latestAchievement, setLatestAchievement] = useState<AchievementDefinition | null>(null);
   const [museumCollectedIds, setMuseumCollectedIds] = useState<string[]>([]);
@@ -1856,6 +1939,9 @@ export default function HomeScreen() {
     setUnlockedAchievementIds(readStoredAchievements());
     setDailyQuestState(readStoredDailyQuestState());
     setLimitedEventState(readStoredLimitedEventState());
+    const storedCompanion = readStoredCompanionState();
+    setCompanionState(storedCompanion);
+    setCompanionMessage(storedCompanion.unlockedMessages[storedCompanion.unlockedMessages.length - 1] ?? '我们一起探索世界吧！');
     setCollection(readStoredCollection());
     setExpandedArtifactIds(readStoredExpandedArtifactIds());
     setMuseumCollectedIds(readStoredMuseumIds());
@@ -2413,6 +2499,35 @@ export default function HomeScreen() {
     addXpAmount(XP_REWARDS[category]);
   };
 
+  const addCompanionXp = (earnedXp: number, message: string, mood: string) => {
+    setCompanionMessage(message);
+    setCompanionState((currentState) => {
+      let nextXp = currentState.xp + earnedXp;
+      let nextLevel = currentState.level;
+
+      while (nextXp >= COMPANION_XP_PER_LEVEL) {
+        nextXp -= COMPANION_XP_PER_LEVEL;
+        nextLevel += 1;
+      }
+
+      const nextTitle = getCompanionTitle(nextLevel);
+      const nextState = {
+        level: nextLevel,
+        mood,
+        title: nextTitle,
+        unlockedMessages: Array.from(new Set([...currentState.unlockedMessages, message])),
+        xp: nextXp,
+      };
+      saveStoredCompanionState(nextState);
+
+      if (nextLevel > currentState.level) {
+        setLatestCompanionTitle(nextTitle);
+      }
+
+      return nextState;
+    });
+  };
+
   const completeLimitedEventIfReady = (nextCollection: CollectionItem[]) => {
     setLimitedEventState((currentState) => {
       const progress = getLimitedEventProgress(nextCollection, currentState);
@@ -2421,6 +2536,7 @@ export default function HomeScreen() {
       }
 
       addXpAmount(ANIMAL_EXPLORATION_EVENT.xpReward);
+      addCompanionXp(30, '我们获得了限定徽章！', '骄傲');
       openMagicChest(nextCollection.length + ANIMAL_EXPLORATION_EVENT.target);
       setLatestLimitedEventReward(ANIMAL_EXPLORATION_EVENT.badgeTitle);
 
@@ -2460,6 +2576,7 @@ export default function HomeScreen() {
         } else {
           addXpAmount(20);
         }
+        addCompanionXp(20, '今天的探索任务完成啦！', '开心');
       });
 
       const nextState = {
@@ -2643,6 +2760,10 @@ export default function HomeScreen() {
           ? streakDays + 1
           : 1;
       addXpForRecognition(recognizedData);
+      addCompanionXp(5, '哇！你又发现了新东西！', '兴奋');
+      if (getStickerCategory(recognizedData) === 'legendary') {
+        addCompanionXp(50, '这是超级稀有的发现！', '惊喜');
+      }
       collectMuseumExhibits(recognizedData);
 
       setCollection((currentCollection) => {
@@ -2891,11 +3012,30 @@ export default function HomeScreen() {
             <Text style={styles.companionAvatar}>🦉</Text>
             <View style={styles.companionBubble}>
               <Text style={styles.companionName}>小猫头鹰</Text>
+              <Text style={styles.companionLevel}>
+                Lv{companionState.level} · {companionState.title}
+              </Text>
+              <Text style={styles.companionMood}>心情：{companionState.mood}</Text>
+              <View style={styles.companionXpTrack}>
+                <View
+                  style={[
+                    styles.companionXpFill,
+                    { width: `${Math.min(100, (companionState.xp / COMPANION_XP_PER_LEVEL) * 100)}%` as `${number}%` },
+                  ]}
+                />
+              </View>
+              <Text style={styles.companionMessage}>{companionMessage}</Text>
               <Text style={styles.companionMessage}>
                 {isRecognizing ? '我正在帮你看这是什么...' : '每天回来，都会有新的魔法奖励！'}
               </Text>
             </View>
           </Animated.View>
+          {latestCompanionTitle ? (
+            <View style={styles.companionLevelToast}>
+              <Text style={styles.companionLevelToastTitle}>🎉 伙伴升级！</Text>
+              <Text style={styles.companionLevelToastText}>获得新称号：{latestCompanionTitle}</Text>
+            </View>
+          ) : null}
 
           <Animated.View
             style={[
@@ -5062,12 +5202,61 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '900',
   },
+  companionLevel: {
+    color: '#3B245F',
+    fontSize: 14,
+    fontWeight: '900',
+    lineHeight: 20,
+    marginTop: 2,
+  },
+  companionMood: {
+    color: '#A05A16',
+    fontSize: 12,
+    fontWeight: '900',
+    lineHeight: 17,
+    marginTop: 2,
+  },
+  companionXpTrack: {
+    height: 8,
+    borderRadius: 999,
+    backgroundColor: '#FDE68A',
+    marginTop: 7,
+    overflow: 'hidden',
+  },
+  companionXpFill: {
+    height: '100%',
+    borderRadius: 999,
+    backgroundColor: '#A855F7',
+  },
   companionMessage: {
     color: '#6B4A82',
     fontSize: 13,
     fontWeight: '800',
     lineHeight: 19,
     marginTop: 2,
+  },
+  companionLevelToast: {
+    alignItems: 'center',
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: '#F7C948',
+    backgroundColor: '#FFF7D6',
+    marginBottom: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  companionLevelToastTitle: {
+    color: '#8B3A10',
+    fontSize: 17,
+    fontWeight: '900',
+    lineHeight: 23,
+  },
+  companionLevelToastText: {
+    color: '#7C3AED',
+    fontSize: 13,
+    fontWeight: '900',
+    lineHeight: 19,
+    marginTop: 3,
   },
   photoGlowFrame: {
     width: '100%',
