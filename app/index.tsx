@@ -159,6 +159,7 @@ type ShareCardData = {
   museumTitle: string;
   objectEn: string;
   objectZh: string;
+  rarityCategory: StickerCategoryKey;
   rarityLabel: string;
   title: string;
   curatorTitle: string;
@@ -1204,6 +1205,38 @@ function getStickerCategoryLabel(categoryKey: StickerCategoryKey) {
   return '⚪ 普通';
 }
 
+function getRarityVisualStyles(category: StickerCategoryKey) {
+  if (category === 'legendary') {
+    return {
+      card: styles.rarityCardLegendary,
+      emojiStage: styles.rarityEmojiLegendary,
+      label: styles.rarityLabelLegendary,
+    };
+  }
+
+  if (category === 'epic') {
+    return {
+      card: styles.rarityCardEpic,
+      emojiStage: styles.rarityEmojiEpic,
+      label: styles.rarityLabelEpic,
+    };
+  }
+
+  if (category === 'rare') {
+    return {
+      card: styles.rarityCardRare,
+      emojiStage: styles.rarityEmojiRare,
+      label: styles.rarityLabelRare,
+    };
+  }
+
+  return {
+    card: styles.rarityCardCommon,
+    emojiStage: styles.rarityEmojiCommon,
+    label: styles.rarityLabelCommon,
+  };
+}
+
 function formatDiscoveredAt(discoveredAt: string) {
   const date = new Date(discoveredAt);
   if (Number.isNaN(date.getTime())) {
@@ -1366,6 +1399,7 @@ function buildShareCardData({
   title: string;
 }): ShareCardData {
   const location = getArtifactMuseumAndCity(result, CITY_MAPS);
+  const rarityCategory = getStickerCategory(result);
   return {
     curatorTitle,
     encouragement,
@@ -1373,7 +1407,8 @@ function buildShareCardData({
     museumTitle: location.museumTitle,
     objectEn: result.object_en || 'magic discovery',
     objectZh: result.object_zh || '魔法发现',
-    rarityLabel: getStickerCategoryLabel(getStickerCategory(result)),
+    rarityCategory,
+    rarityLabel: getStickerCategoryLabel(rarityCategory),
     title,
   };
 }
@@ -3004,12 +3039,26 @@ function MagicWordCard({
   speakingLanguage: 'zh' | 'en' | null;
 }) {
   const museumProgress = getMuseumProgressForResult(result, collection);
+  const rarityCategory = getStickerCategory(result);
+  const rarityVisual = getRarityVisualStyles(rarityCategory);
 
   return (
-    <View style={styles.wordCard}>
+    <View style={[styles.wordCard, rarityVisual.card]}>
+      {rarityCategory === 'legendary' ? (
+        <View style={styles.legendaryBanner}>
+          <Text style={styles.legendaryBannerTitle}>🌈 LEGENDARY!</Text>
+          <Text style={styles.legendaryBannerText}>✨ 传奇发现！</Text>
+        </View>
+      ) : null}
       <Text style={styles.foundTitle}>{COPY.found}</Text>
       <Text style={styles.celebrateText}>{COPY.celebrate}</Text>
-      <View style={styles.emojiStage}>
+      <View style={[styles.emojiStage, rarityVisual.emojiStage]}>
+        {rarityCategory === 'legendary' ? (
+          <Text style={[styles.raritySparkle, styles.raritySparkleOne]}>✨</Text>
+        ) : null}
+        {rarityCategory === 'legendary' ? (
+          <Text style={[styles.raritySparkle, styles.raritySparkleTwo]}>🌟</Text>
+        ) : null}
         <Text style={styles.magicEmoji}>{getMagicEmoji(result)}</Text>
       </View>
       <Text style={styles.chineseWord}>{result.object_zh || '未命名藏品'}</Text>
@@ -3204,6 +3253,9 @@ function saveShareCardAsPng(data: ShareCardData) {
 }
 
 function ShareCardPreview({ data, onClose }: { data: ShareCardData; onClose: () => void }) {
+  const rarityCategory = data.rarityCategory;
+  const rarityVisual = getRarityVisualStyles(rarityCategory);
+
   return (
     <View style={styles.sharePreviewOverlay}>
       <View style={styles.sharePreviewBackdrop} />
@@ -3213,10 +3265,16 @@ function ShareCardPreview({ data, onClose }: { data: ShareCardData; onClose: () 
         <Text style={[styles.sharePreviewSparkle, styles.sharePreviewSparkleTwo]}>🌟</Text>
         <Text style={[styles.sharePreviewSparkle, styles.sharePreviewSparkleThree]}>✨</Text>
 
-        <View style={styles.sharePreviewCard}>
+        <View style={[styles.sharePreviewCard, rarityVisual.card]}>
+          {rarityCategory === 'legendary' ? (
+            <View style={styles.legendaryBanner}>
+              <Text style={styles.legendaryBannerTitle}>🌈 LEGENDARY!</Text>
+              <Text style={styles.legendaryBannerText}>✨ 传奇发现！</Text>
+            </View>
+          ) : null}
           <Text style={styles.sharePreviewBrand}>AI魔法识字相机</Text>
           <Text style={styles.sharePreviewTitle}>{data.title}</Text>
-          <View style={styles.sharePreviewEmojiStage}>
+          <View style={[styles.sharePreviewEmojiStage, rarityVisual.emojiStage]}>
             <Text style={styles.sharePreviewEmoji}>{data.emoji}</Text>
           </View>
           <Text style={styles.sharePreviewZh}>{data.objectZh}</Text>
@@ -3892,6 +3950,9 @@ function CollectionGallery({
                 {museum.exhibits.map((exhibit) => {
                   const discoveredItem = getCollectionDiscoveryForExhibit(exhibit, collection);
                   const isSelected = exhibit.id === selectedExhibit.id;
+                  const artifactRarityVisual = discoveredItem
+                    ? getRarityVisualStyles(getStickerCategory(discoveredItem))
+                    : null;
 
                   return (
                     <Pressable
@@ -3908,6 +3969,7 @@ function CollectionGallery({
                       }}
                       style={[
                         styles.galleryArtifactCard,
+                        artifactRarityVisual?.card,
                         !discoveredItem && styles.galleryArtifactLocked,
                         isSelected && styles.galleryArtifactSelected,
                       ]}
@@ -3979,16 +4041,32 @@ function ArtifactDetailModal({
   speakingLanguage: 'zh' | 'en' | null;
 }) {
   const details = getGalleryArtifactDetails(exhibit, [item]);
+  const rarityCategory = getStickerCategory(item);
+  const rarityVisual = getRarityVisualStyles(rarityCategory);
 
   return (
     <Modal animationType="fade" onRequestClose={onClose} transparent visible>
       <View style={styles.artifactDetailOverlay}>
         <Pressable style={styles.artifactDetailBackdrop} onPress={onClose} />
-        <View style={styles.artifactDetailCard}>
+        <View style={[styles.artifactDetailCard, rarityVisual.card]}>
+          {rarityCategory === 'legendary' ? (
+            <View style={styles.legendaryBanner}>
+              <Text style={styles.legendaryBannerTitle}>🌈 LEGENDARY!</Text>
+              <Text style={styles.legendaryBannerText}>✨ 传奇发现！</Text>
+            </View>
+          ) : null}
           <Text style={[styles.artifactDetailSparkle, styles.artifactDetailSparkleOne]}>✨</Text>
           <Text style={[styles.artifactDetailSparkle, styles.artifactDetailSparkleTwo]}>🌟</Text>
           <Text style={styles.artifactDetailKicker}>Magic Encyclopedia</Text>
-          <Text style={styles.artifactDetailEmoji}>{details.emoji}</Text>
+          <View style={[styles.artifactDetailEmojiStage, rarityVisual.emojiStage]}>
+            {rarityCategory === 'legendary' ? (
+              <Text style={[styles.raritySparkle, styles.raritySparkleOne]}>✨</Text>
+            ) : null}
+            {rarityCategory === 'legendary' ? (
+              <Text style={[styles.raritySparkle, styles.raritySparkleTwo]}>🌟</Text>
+            ) : null}
+            <Text style={styles.artifactDetailEmoji}>{details.emoji}</Text>
+          </View>
           <Text style={styles.artifactDetailZh}>{item.object_zh || exhibit.object_zh}</Text>
           <Text style={styles.artifactDetailEn}>{item.object_en || exhibit.object_en}</Text>
           <View style={styles.artifactDetailInfoBox}>
@@ -4973,6 +5051,113 @@ const styles = StyleSheet.create({
   resultCardSuccess: {
     borderColor: '#F7C948',
     backgroundColor: '#FFF9E8',
+  },
+  rarityCardCommon: {
+    borderColor: '#F6D9A8',
+    backgroundColor: '#FFFDF7',
+    shadowColor: '#F59E0B',
+    shadowOpacity: 0.1,
+  },
+  rarityCardRare: {
+    borderColor: '#60A5FA',
+    backgroundColor: '#EFF6FF',
+    shadowColor: '#3B82F6',
+    shadowOpacity: 0.26,
+    shadowRadius: 24,
+  },
+  rarityCardEpic: {
+    borderColor: '#C084FC',
+    backgroundColor: '#FAF5FF',
+    shadowColor: '#A855F7',
+    shadowOpacity: 0.3,
+    shadowRadius: 28,
+  },
+  rarityCardLegendary: {
+    borderColor: '#F472B6',
+    backgroundColor: '#FFF7ED',
+    shadowColor: '#F59E0B',
+    shadowOpacity: 0.34,
+    shadowRadius: 34,
+  },
+  rarityEmojiCommon: {
+    backgroundColor: '#FFF7D6',
+    borderColor: '#FDE68A',
+  },
+  rarityEmojiRare: {
+    backgroundColor: '#DBEAFE',
+    borderColor: '#60A5FA',
+    shadowColor: '#3B82F6',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.42,
+    shadowRadius: 18,
+  },
+  rarityEmojiEpic: {
+    backgroundColor: '#F5E8FF',
+    borderColor: '#F7C948',
+    shadowColor: '#A855F7',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.48,
+    shadowRadius: 22,
+  },
+  rarityEmojiLegendary: {
+    backgroundColor: '#FFF1F2',
+    borderColor: '#22D3EE',
+    shadowColor: '#F472B6',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.58,
+    shadowRadius: 28,
+  },
+  rarityLabelCommon: {
+    color: '#8A5E22',
+  },
+  rarityLabelRare: {
+    color: '#2563EB',
+  },
+  rarityLabelEpic: {
+    color: '#7E22CE',
+  },
+  rarityLabelLegendary: {
+    color: '#DB2777',
+  },
+  legendaryBanner: {
+    alignItems: 'center',
+    alignSelf: 'stretch',
+    backgroundColor: '#FFF1F2',
+    borderColor: '#F472B6',
+    borderRadius: 20,
+    borderWidth: 1,
+    marginBottom: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
+  legendaryBannerTitle: {
+    color: '#DB2777',
+    fontSize: 18,
+    fontWeight: '900',
+    lineHeight: 24,
+    textAlign: 'center',
+  },
+  legendaryBannerText: {
+    color: '#7C3AED',
+    fontSize: 14,
+    fontWeight: '900',
+    lineHeight: 20,
+    marginTop: 2,
+    textAlign: 'center',
+  },
+  raritySparkle: {
+    position: 'absolute',
+    color: '#F59E0B',
+    fontSize: 20,
+    fontWeight: '900',
+  },
+  raritySparkleOne: {
+    left: 10,
+    top: 8,
+  },
+  raritySparkleTwo: {
+    right: 10,
+    bottom: 8,
   },
   loadingState: {
     flexDirection: 'row',
@@ -6564,10 +6749,18 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     textAlign: 'center',
   },
+  artifactDetailEmojiStage: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 118,
+    height: 118,
+    borderRadius: 38,
+    borderWidth: 1,
+    marginBottom: 8,
+  },
   artifactDetailEmoji: {
     fontSize: 62,
     lineHeight: 74,
-    marginBottom: 6,
   },
   artifactDetailZh: {
     color: '#3B245F',
