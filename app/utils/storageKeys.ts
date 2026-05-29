@@ -1,0 +1,13 @@
+export const STREAK_STORAGE_KEY = 'ai-magic-camera-streak';
+export const XP_STORAGE_KEY = 'ai-magic-camera-xp';
+export const ACHIEVEMENTS_STORAGE_KEY = 'ai-magic-camera-achievements';
+export const MUSEUM_STORAGE_KEY = 'ai-magic-camera-museum';
+export const MUSEUM_BADGES_STORAGE_KEY = 'ai-magic-camera-museum-badges';
+export const CUSTOM_MUSEUMS_STORAGE_KEY = 'ai-magic-camera-custom-museums';
+export const CURATOR_STORAGE_KEY = 'ai-magic-camera-curator';
+export const CITY_MAP_STORAGE_KEY = 'ai-magic-camera-city-map';
+export const COLLECTION_STORAGE_KEY = 'ai-magic-camera-collection';
+export const DAILY_QUEST_STORAGE_KEY = 'ai-magic-camera-daily-quests';
+export const LIMITED_EVENT_STORAGE_KEY = 'ai-magic-camera-limited-events';
+export const COMPANION_STORAGE_KEY = 'ai-magic-camera-companion';
+export const ARTIFACT_STORY_STORAGE_KEY = 'ai-magic-camera-artifact-stories';
