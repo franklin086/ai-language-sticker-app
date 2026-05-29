@@ -1179,7 +1179,7 @@ function formatDiscoveredAt(discoveredAt: string) {
 
 function getArtifactFact(item: RecognitionResult) {
   const artifact = findMuseumArtifact(item);
-  if (artifact) {
+  if (artifact?.story) {
     return artifact.story;
   }
 
@@ -1187,8 +1187,52 @@ function getArtifactFact(item: RecognitionResult) {
   const matchedFact = ARTIFACT_FACTS.find((fact) =>
     fact.keywords.some((keyword) => text.includes(keyword.toLowerCase())),
   );
+  if (matchedFact?.fact) {
+    return matchedFact.fact;
+  }
 
-  return matchedFact?.fact ?? '每一次发现，都会让你的魔法图鉴变得更丰富。';
+  const objectFallbackFacts = [
+    { fact: '狗的嗅觉非常灵敏，能闻到人类闻不到的气味。', keywords: ['dog', 'puppy', '狗', '小狗'] },
+    { fact: '鸟类拥有轻盈的身体和羽毛，很多鸟可以在天空中飞行。', keywords: ['bird', '鸟', '小鸟'] },
+    { fact: '汽车让人们出行更方便，也改变了城市交通。', keywords: ['car', 'vehicle', '汽车', '轿车'] },
+    { fact: '船能在水面航行，帮助人们跨越江河湖海。', keywords: ['ship', 'boat', 'sailboat', '船', '轮船', '帆船'] },
+  ];
+  const matchedObjectFallback = objectFallbackFacts.find((fact) =>
+    fact.keywords.some((keyword) => text.includes(keyword.toLowerCase())),
+  );
+  if (matchedObjectFallback) {
+    return matchedObjectFallback.fact;
+  }
+
+  const matchedMuseum =
+    artifact?.museum ??
+    MAGIC_MUSEUMS_WITH_ARTIFACTS.find((museum) =>
+      museum.exhibits.some((exhibit) =>
+        exhibit.keywords.some((keyword) => text.includes(keyword.toLowerCase())),
+      ),
+    )?.title;
+
+  if (matchedMuseum?.includes('动物')) {
+    return '它是动物世界里很有特点的一员，值得仔细观察。';
+  }
+
+  if (matchedMuseum?.includes('交通')) {
+    return '它帮助人们移动、旅行，也改变了城市的样子。';
+  }
+
+  if (matchedMuseum?.includes('自然')) {
+    return '它来自自然世界，藏着许多值得探索的小秘密。';
+  }
+
+  if (matchedMuseum?.includes('科技')) {
+    return '它体现了人类发明和创造的力量。';
+  }
+
+  if (matchedMuseum?.includes('文化')) {
+    return '它承载着人类历史、艺术与文明的记忆。';
+  }
+
+  return '这是一次特别发现，正在点亮你的魔法收藏。';
 }
 
 function getArtifactMuseumAndCity(item: RecognitionResult, cityMaps: CityMap[]) {
