@@ -1,4 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
+import { ArtifactDetailModal } from './components/ArtifactDetailModal';
+import { CompanionCard } from './components/CompanionCard';
+import { DailyQuestPanel } from './components/DailyQuestPanel';
+import { LimitedEventPanel } from './components/LimitedEventPanel';
+import { ShareCardPreview, type ShareCardData } from './components/ShareCardPreview';
 import { MUSEUM_ARTIFACT_BADGES } from './data/museumArtifacts';
 import {
   findMuseumArtifact,
@@ -30,7 +35,6 @@ import {
   Animated,
   Easing,
   Image,
-  Modal,
   Platform,
   Pressable,
   SafeAreaView,
@@ -187,18 +191,6 @@ type CuratorProfile = {
   avatar: string;
   name: string;
   title: string;
-};
-
-type ShareCardData = {
-  encouragement: string;
-  emoji: string;
-  museumTitle: string;
-  objectEn: string;
-  objectZh: string;
-  rarityCategory: StickerCategoryKey;
-  rarityLabel: string;
-  title: string;
-  curatorTitle: string;
 };
 
 const API_URL = 'http://localhost:8000/api/recognize';
@@ -2794,42 +2786,16 @@ export default function HomeScreen() {
             xpState={xpState}
           />
 
-          <Animated.View
-            style={[
-              styles.companionCard,
-              {
-                opacity: floatOpacity,
-                transform: [{ translateY: floatTranslateY }],
-              },
-            ]}
-          >
-            <Text style={styles.companionAvatar}>🦉</Text>
-            <View style={styles.companionBubble}>
-              <Text style={styles.companionName}>小猫头鹰</Text>
-              <Text style={styles.companionLevel}>
-                Lv{companionState.level} · {companionState.title}
-              </Text>
-              <Text style={styles.companionMood}>心情：{companionState.mood}</Text>
-              <View style={styles.companionXpTrack}>
-                <View
-                  style={[
-                    styles.companionXpFill,
-                    { width: `${Math.min(100, (companionState.xp / COMPANION_XP_PER_LEVEL) * 100)}%` as `${number}%` },
-                  ]}
-                />
-              </View>
-              <Text style={styles.companionMessage}>{companionMessage}</Text>
-              <Text style={styles.companionMessage}>
-                {isRecognizing ? '我正在帮你看这是什么...' : '每天回来，都会有新的魔法奖励！'}
-              </Text>
-            </View>
-          </Animated.View>
-          {latestCompanionTitle ? (
-            <View style={styles.companionLevelToast}>
-              <Text style={styles.companionLevelToastTitle}>🎉 伙伴升级！</Text>
-              <Text style={styles.companionLevelToastText}>获得新称号：{latestCompanionTitle}</Text>
-            </View>
-          ) : null}
+                    <CompanionCard
+            companionMessage={companionMessage}
+            companionState={companionState}
+            companionXpPerLevel={COMPANION_XP_PER_LEVEL}
+            floatOpacity={floatOpacity}
+            floatTranslateY={floatTranslateY}
+            isRecognizing={isRecognizing}
+            latestCompanionTitle={latestCompanionTitle}
+            styles={styles}
+          />
 
           <Animated.View
             style={[
@@ -3062,7 +3028,7 @@ export default function HomeScreen() {
           </View>
         </View>
       </ScrollView>
-      {shareCard ? <ShareCardPreview data={shareCard} onClose={() => setShareCard(null)} /> : null}
+      {shareCard ? <ShareCardPreview data={shareCard} onClose={() => setShareCard(null)} onSave={saveShareCardAsPng} styles={styles} /> : null}
     </SafeAreaView>
   );
 }
@@ -3298,67 +3264,6 @@ function saveShareCardAsPng(data: ShareCardData) {
   link.click();
 }
 
-function ShareCardPreview({ data, onClose }: { data: ShareCardData; onClose: () => void }) {
-  const rarityCategory = data.rarityCategory;
-  const rarityVisual = getRarityVisualStyles(rarityCategory, styles);
-
-  return (
-    <View style={styles.sharePreviewOverlay}>
-      <View style={styles.sharePreviewBackdrop} />
-      <View style={styles.sharePreviewShell}>
-        <View pointerEvents="none" style={styles.sharePreviewGlow} />
-        <Text style={[styles.sharePreviewSparkle, styles.sharePreviewSparkleOne]}>✨</Text>
-        <Text style={[styles.sharePreviewSparkle, styles.sharePreviewSparkleTwo]}>🌟</Text>
-        <Text style={[styles.sharePreviewSparkle, styles.sharePreviewSparkleThree]}>✨</Text>
-
-        <View style={[styles.sharePreviewCard, rarityVisual.card]}>
-          {rarityCategory === 'legendary' ? (
-            <View style={styles.legendaryBanner}>
-              <Text style={styles.legendaryBannerTitle}>🌈 LEGENDARY!</Text>
-              <Text style={styles.legendaryBannerText}>✨ 传奇发现！</Text>
-            </View>
-          ) : null}
-          <Text style={styles.sharePreviewBrand}>AI魔法识字相机</Text>
-          <Text style={styles.sharePreviewTitle}>{data.title}</Text>
-          <View style={[styles.sharePreviewEmojiStage, rarityVisual.emojiStage]}>
-            <Text style={styles.sharePreviewEmoji}>{data.emoji}</Text>
-          </View>
-          <Text style={styles.sharePreviewZh}>{data.objectZh}</Text>
-          <Text style={styles.sharePreviewEn}>{data.objectEn}</Text>
-          <View style={styles.sharePreviewInfoGrid}>
-            <View style={styles.sharePreviewInfoPill}>
-              <Text style={styles.sharePreviewInfoLabel}>稀有度</Text>
-              <Text style={styles.sharePreviewInfoValue}>{data.rarityLabel}</Text>
-            </View>
-            <View style={styles.sharePreviewInfoPill}>
-              <Text style={styles.sharePreviewInfoLabel}>馆长等级</Text>
-              <Text style={styles.sharePreviewInfoValue}>{data.curatorTitle}</Text>
-            </View>
-          </View>
-          <Text style={styles.sharePreviewMuseum}>所属博物馆：{data.museumTitle}</Text>
-          <Text style={styles.sharePreviewEncouragement}>{data.encouragement}</Text>
-        </View>
-
-        <View style={styles.sharePreviewActions}>
-          <Pressable
-            style={({ pressed }) => [styles.sharePreviewSaveButton, pressed && styles.shareButtonPressed]}
-            onPress={() => saveShareCardAsPng(data)}
-          >
-            <Text style={styles.sharePreviewSaveText}>💾 保存分享图</Text>
-          </Pressable>
-
-          <Pressable
-            style={({ pressed }) => [styles.sharePreviewCloseButton, pressed && styles.shareButtonPressed]}
-            onPress={onClose}
-          >
-            <Text style={styles.sharePreviewCloseText}>关闭</Text>
-          </Pressable>
-        </View>
-      </View>
-    </View>
-  );
-}
-
 function SpeechButton({
   active,
   label,
@@ -3576,11 +3481,13 @@ function MagicCollection({
       <DailyQuestPanel
         latestDailyQuestReward={latestDailyQuestReward}
         questProgress={getDailyQuestProgress(collection, dailyQuestState)}
+        styles={styles}
       />
 
       <LimitedEventPanel
         latestLimitedEventReward={latestLimitedEventReward}
         progress={getLimitedEventProgress(collection, limitedEventState)}
+        styles={styles}
       />
 
       <AchievementPanel
@@ -4068,188 +3975,12 @@ function CollectionGallery({
           onSpeakEnglish={() => onSpeakArtifactEnglish(detailArtifact.item.object_en || detailArtifact.exhibit.object_en)}
           speakButtonScale={speakButtonScale}
           speakingLanguage={speakingLanguage}
+          styles={styles}
+          getGalleryArtifactDetails={getGalleryArtifactDetails}
+          getStickerCategory={getStickerCategory}
+          formatDiscoveredAt={formatDiscoveredAt}
+          formatConfidence={formatConfidence}
         />
-      ) : null}
-    </View>
-  );
-}
-
-function ArtifactDetailModal({
-  exhibit,
-  item,
-  museum,
-  onClose,
-  onShare,
-  onSpeakChinese,
-  onSpeakEnglish,
-  speakButtonScale,
-  speakingLanguage,
-}: {
-  exhibit: MuseumExhibit;
-  item: CollectionItem;
-  museum: MagicMuseum;
-  onClose: () => void;
-  onShare: () => void;
-  onSpeakChinese: () => void;
-  onSpeakEnglish: () => void;
-  speakButtonScale: Animated.AnimatedInterpolation<string | number>;
-  speakingLanguage: 'zh' | 'en' | null;
-}) {
-  const details = getGalleryArtifactDetails(exhibit, [item]);
-  const rarityCategory = getStickerCategory(item);
-  const rarityVisual = getRarityVisualStyles(rarityCategory, styles);
-
-  return (
-    <Modal animationType="fade" onRequestClose={onClose} transparent visible>
-      <View style={styles.artifactDetailOverlay}>
-        <Pressable style={styles.artifactDetailBackdrop} onPress={onClose} />
-        <View style={[styles.artifactDetailCard, rarityVisual.card]}>
-          {rarityCategory === 'legendary' ? (
-            <View style={styles.legendaryBanner}>
-              <Text style={styles.legendaryBannerTitle}>🌈 LEGENDARY!</Text>
-              <Text style={styles.legendaryBannerText}>✨ 传奇发现！</Text>
-            </View>
-          ) : null}
-          <Text style={[styles.artifactDetailSparkle, styles.artifactDetailSparkleOne]}>✨</Text>
-          <Text style={[styles.artifactDetailSparkle, styles.artifactDetailSparkleTwo]}>🌟</Text>
-          <Text style={styles.artifactDetailKicker}>Magic Encyclopedia</Text>
-          <View style={[styles.artifactDetailEmojiStage, rarityVisual.emojiStage]}>
-            {rarityCategory === 'legendary' ? (
-              <Text style={[styles.raritySparkle, styles.raritySparkleOne]}>✨</Text>
-            ) : null}
-            {rarityCategory === 'legendary' ? (
-              <Text style={[styles.raritySparkle, styles.raritySparkleTwo]}>🌟</Text>
-            ) : null}
-            <Text style={styles.artifactDetailEmoji}>{details.emoji}</Text>
-          </View>
-          <Text style={styles.artifactDetailZh}>{item.object_zh || exhibit.object_zh}</Text>
-          <Text style={styles.artifactDetailEn}>{item.object_en || exhibit.object_en}</Text>
-          <View style={styles.artifactDetailInfoBox}>
-            <Text style={styles.artifactDetailMeta}>所属博物馆：{museum.title}</Text>
-            <Text style={styles.artifactDetailMeta}>稀有度：{details.rarityLabel}</Text>
-            <Text style={styles.artifactDetailMeta}>首次发现：{formatDiscoveredAt(item.discoveredAt)}</Text>
-            <Text style={styles.artifactDetailMeta}>Confidence：{formatConfidence(item.confidence)}</Text>
-          </View>
-          <View style={styles.artifactDetailStoryBox}>
-            <Text style={styles.artifactDetailStoryTitle}>📖 藏品故事</Text>
-            <Text style={styles.artifactDetailStoryText}>{details.story}</Text>
-          </View>
-          <View style={styles.artifactDetailSpeechRow}>
-            <SpeechButton
-              active={speakingLanguage === 'zh'}
-              label="🔊 中文发音"
-              onPress={onSpeakChinese}
-              scale={speakButtonScale}
-            />
-            <SpeechButton
-              active={speakingLanguage === 'en'}
-              label="🔊 English"
-              onPress={onSpeakEnglish}
-              scale={speakButtonScale}
-            />
-          </View>
-          <Pressable style={({ pressed }) => [styles.shareButton, pressed && styles.shareButtonPressed]} onPress={onShare}>
-            <Text style={styles.shareButtonText}>📸 生成分享卡</Text>
-          </Pressable>
-          <Pressable style={({ pressed }) => [styles.artifactDetailCloseButton, pressed && styles.shareButtonPressed]} onPress={onClose}>
-            <Text style={styles.artifactDetailCloseText}>关闭</Text>
-          </Pressable>
-        </View>
-      </View>
-    </Modal>
-  );
-}
-
-function DailyQuestPanel({
-  latestDailyQuestReward,
-  questProgress,
-}: {
-  latestDailyQuestReward: string;
-  questProgress: DailyQuestProgress[];
-}) {
-  const completedCount = questProgress.filter((quest) => quest.completed).length;
-  const allComplete = questProgress.length > 0 && completedCount === questProgress.length;
-
-  return (
-    <View style={styles.dailyQuestPanel}>
-      <View style={styles.dailyQuestHeader}>
-        <Text style={styles.dailyQuestTitle}>✨ 每日探索任务</Text>
-        <Text style={styles.dailyQuestSummary}>
-          今日完成：{completedCount} / {questProgress.length}
-        </Text>
-      </View>
-
-      <View style={styles.dailyQuestList}>
-        {questProgress.map((quest) => (
-          <View key={quest.id} style={[styles.dailyQuestCard, quest.completed && styles.dailyQuestCardComplete]}>
-            <View style={styles.dailyQuestCardHeader}>
-              <Text style={styles.dailyQuestName}>{quest.title}</Text>
-              <Text style={styles.dailyQuestStatus}>{quest.completed ? '🎉 任务完成' : `${quest.progress} / ${quest.target}`}</Text>
-            </View>
-            <View style={styles.dailyQuestTrack}>
-              <View
-                style={[
-                  styles.dailyQuestFill,
-                  { width: `${Math.min(100, (quest.progress / quest.target) * 100)}%` as `${number}%` },
-                ]}
-              />
-            </View>
-            <Text style={styles.dailyQuestReward}>
-              {quest.rewarded ? `已领取：${quest.rewardLabel}` : quest.rewardLabel}
-            </Text>
-          </View>
-        ))}
-      </View>
-
-      {allComplete ? (
-        <View style={styles.dailyQuestCompleteBanner}>
-          <Text style={styles.dailyQuestCompleteTitle}>✨ 今日探索完成！</Text>
-          <Text style={styles.dailyQuestCompleteText}>明天还有新的魔法任务等你来发现。</Text>
-        </View>
-      ) : null}
-
-      {latestDailyQuestReward ? (
-        <View style={styles.dailyQuestRewardToast}>
-          <Text style={styles.dailyQuestRewardToastTitle}>🎉 任务完成</Text>
-          <Text style={styles.dailyQuestRewardToastText}>获得：{latestDailyQuestReward}</Text>
-        </View>
-      ) : null}
-    </View>
-  );
-}
-
-function LimitedEventPanel({
-  latestLimitedEventReward,
-  progress,
-}: {
-  latestLimitedEventReward: string;
-  progress: LimitedEventProgress;
-}) {
-  const percent = Math.min(100, (progress.progress / progress.target) * 100);
-
-  return (
-    <View style={styles.limitedEventPanel}>
-      <View style={[styles.limitedEventCard, progress.completed && styles.limitedEventCardComplete]}>
-        <Text style={styles.limitedEventKicker}>本周活动</Text>
-        <Text style={styles.limitedEventTitle}>🐾 动物探索周</Text>
-        <Text style={styles.limitedEventText}>发现 3 个动物类藏品</Text>
-        <Text style={styles.limitedEventProgress}>
-          当前进度：{progress.progress} / {progress.target}
-        </Text>
-        <View style={styles.limitedEventTrack}>
-          <View style={[styles.limitedEventFill, { width: `${percent}%` as `${number}%` }]} />
-        </View>
-        <Text style={styles.limitedEventReward}>奖励：50 XP · 🐾 动物探索家 · 宝箱一次</Text>
-        <Text style={progress.completed ? styles.limitedEventDone : styles.limitedEventTodo}>
-          {progress.completed ? '已完成' : '继续寻找动物藏品'}
-        </Text>
-      </View>
-
-      {latestLimitedEventReward ? (
-        <View style={styles.limitedEventToast}>
-          <Text style={styles.limitedEventToastTitle}>🎉 限定活动完成！</Text>
-          <Text style={styles.limitedEventToastText}>获得：{latestLimitedEventReward}</Text>
-        </View>
       ) : null}
     </View>
   );
