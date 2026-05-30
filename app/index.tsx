@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ArtifactDetailModal } from './components/ArtifactDetailModal';
 import { AchievementPanel } from './components/AchievementPanel';
 import { CompanionCard } from './components/CompanionCard';
@@ -9,6 +9,10 @@ import { MuseumSection } from './components/MuseumSection';
 import { ShareCardPreview, type ShareCardData } from './components/ShareCardPreview';
 import { TreasureChestPanel } from './components/TreasureChestPanel';
 import { MUSEUM_ARTIFACT_BADGES } from './data/museumArtifacts';
+import { useAchievements } from './hooks/useAchievements';
+import { useCompanion } from './hooks/useCompanion';
+import { useDailyQuest, type DailyQuestProgress } from './hooks/useDailyQuest';
+import { useTreasureChest } from './hooks/useTreasureChest';
 import {
   findMuseumArtifact,
   getMuseumArtifactCategory,
@@ -17,14 +21,11 @@ import {
 } from './utils/artifactHelpers';
 import { getRarityVisualStyles } from './utils/rarity';
 import {
-  ACHIEVEMENTS_STORAGE_KEY,
   ARTIFACT_STORY_STORAGE_KEY,
   CITY_MAP_STORAGE_KEY,
   COLLECTION_STORAGE_KEY,
-  COMPANION_STORAGE_KEY,
   CURATOR_STORAGE_KEY,
   CUSTOM_MUSEUMS_STORAGE_KEY,
-  DAILY_QUEST_STORAGE_KEY,
   LIMITED_EVENT_STORAGE_KEY,
   MUSEUM_BADGES_STORAGE_KEY,
   MUSEUM_STORAGE_KEY,
@@ -87,28 +88,6 @@ type AchievementId =
   | 'animal_friend'
   | 'twenty_items';
 
-type DailyQuestId = 'animal_discovery' | 'traffic_discovery' | 'three_unique_artifacts';
-
-type DailyQuestState = {
-  date: string;
-  discoveredArtifactIds: string[];
-  rewardedQuestIds: DailyQuestId[];
-};
-
-type DailyQuestDefinition = {
-  id: DailyQuestId;
-  title: string;
-  rewardLabel: string;
-  target: number;
-  type: 'animal' | 'traffic' | 'unique';
-};
-
-type DailyQuestProgress = DailyQuestDefinition & {
-  completed: boolean;
-  progress: number;
-  rewarded: boolean;
-};
-
 type LimitedEventState = {
   badgeIds: string[];
   completedEventIds: string[];
@@ -121,14 +100,6 @@ type LimitedEventProgress = {
   eventId: string;
   progress: number;
   target: number;
-};
-
-type CompanionState = {
-  level: number;
-  mood: string;
-  title: string;
-  unlockedMessages: string[];
-  xp: number;
 };
 
 type AchievementDefinition = {
@@ -201,7 +172,6 @@ const API_URL = 'http://localhost:8000/api/recognize';
 const DEBUG_MODE = false;
 const STICKER_TOTAL = 120;
 const XP_PER_LEVEL = 100;
-const COMPANION_XP_PER_LEVEL = 100;
 
 const XP_REWARDS: Record<StickerCategoryKey, number> = {
   common: 10,
@@ -251,34 +221,12 @@ const COPY = {
   album: '🖼️ 从相册选择',
 };
 
-const CHEST_REWARDS = [
-  '🌟 星星徽章',
-  '👑 新称号',
-  '🪄 魔法能量',
-  '✨ 幸运水晶',
-  '🦉 小猫头鹰祝福',
-];
-
-const DAILY_QUESTS: DailyQuestDefinition[] = [
-  { id: 'animal_discovery', rewardLabel: '奖励 20XP', target: 1, title: '发现 1 个动物', type: 'animal' },
-  { id: 'traffic_discovery', rewardLabel: '奖励 20XP', target: 1, title: '发现 1 个交通工具', type: 'traffic' },
-  { id: 'three_unique_artifacts', rewardLabel: '奖励宝箱', target: 3, title: '发现 3 个不同藏品', type: 'unique' },
-];
-
 const ANIMAL_EXPLORATION_EVENT = {
   badgeId: 'limited-badge-animal-explorer',
   badgeTitle: '🐾 动物探索家',
   eventId: 'animal-exploration-week',
   target: 3,
   xpReward: 50,
-};
-
-const DEFAULT_COMPANION_STATE: CompanionState = {
-  level: 1,
-  mood: '好奇',
-  title: '小小助手',
-  unlockedMessages: ['我们一起探索世界吧！'],
-  xp: 0,
 };
 
 const ACHIEVEMENTS: AchievementDefinition[] = [
@@ -581,54 +529,6 @@ function saveStoredXp(xpState: XpState) {
   }
 }
 
-function readStoredDailyQuestState(): DailyQuestState {
-  const today = getDateKey(new Date());
-  if (Platform.OS !== 'web' || typeof window === 'undefined') {
-    return { date: today, discoveredArtifactIds: [], rewardedQuestIds: [] };
-  }
-
-  try {
-    const rawValue = window.localStorage.getItem(DAILY_QUEST_STORAGE_KEY);
-    if (!rawValue) {
-      return { date: today, discoveredArtifactIds: [], rewardedQuestIds: [] };
-    }
-
-    const parsed = JSON.parse(rawValue) as {
-      date?: string;
-      discoveredArtifactIds?: string[];
-      rewardedQuestIds?: string[];
-    };
-    if (parsed.date !== today || !Array.isArray(parsed.rewardedQuestIds)) {
-      return { date: today, discoveredArtifactIds: [], rewardedQuestIds: [] };
-    }
-
-    const validQuestIds = new Set(DAILY_QUESTS.map((quest) => quest.id));
-    return {
-      date: today,
-      discoveredArtifactIds: Array.isArray(parsed.discoveredArtifactIds)
-        ? Array.from(new Set(parsed.discoveredArtifactIds.filter((id) => typeof id === 'string' && id.trim())))
-        : [],
-      rewardedQuestIds: parsed.rewardedQuestIds.filter((id): id is DailyQuestId =>
-        validQuestIds.has(id as DailyQuestId),
-      ),
-    };
-  } catch {
-    return { date: today, discoveredArtifactIds: [], rewardedQuestIds: [] };
-  }
-}
-
-function saveStoredDailyQuestState(state: DailyQuestState) {
-  if (Platform.OS !== 'web' || typeof window === 'undefined') {
-    return;
-  }
-
-  try {
-    window.localStorage.setItem(DAILY_QUEST_STORAGE_KEY, JSON.stringify(state));
-  } catch {
-    // Daily quests are local encouragement. Recognition should continue if storage is blocked.
-  }
-}
-
 function readStoredLimitedEventState(): LimitedEventState {
   if (Platform.OS !== 'web' || typeof window === 'undefined') {
     return { badgeIds: [], completedEventIds: [] };
@@ -663,106 +563,6 @@ function saveStoredLimitedEventState(state: LimitedEventState) {
     window.localStorage.setItem(LIMITED_EVENT_STORAGE_KEY, JSON.stringify(state));
   } catch {
     // Limited events are local rewards. Recognition should continue if storage is blocked.
-  }
-}
-
-function getCompanionTitle(level: number) {
-  if (level >= 10) {
-    return '传奇魔法伙伴';
-  }
-
-  if (level >= 5) {
-    return '博物馆守护者';
-  }
-
-  if (level >= 3) {
-    return '探索伙伴';
-  }
-
-  if (level >= 2) {
-    return '魔法朋友';
-  }
-
-  return '小小助手';
-}
-
-function readStoredCompanionState(): CompanionState {
-  if (Platform.OS !== 'web' || typeof window === 'undefined') {
-    return DEFAULT_COMPANION_STATE;
-  }
-
-  try {
-    const rawValue = window.localStorage.getItem(COMPANION_STORAGE_KEY);
-    if (!rawValue) {
-      return DEFAULT_COMPANION_STATE;
-    }
-
-    const parsed = JSON.parse(rawValue) as Partial<CompanionState>;
-    const level = typeof parsed.level === 'number' ? Math.max(1, parsed.level) : DEFAULT_COMPANION_STATE.level;
-    return {
-      level,
-      mood: typeof parsed.mood === 'string' && parsed.mood.trim() ? parsed.mood : DEFAULT_COMPANION_STATE.mood,
-      title: getCompanionTitle(level),
-      unlockedMessages: Array.isArray(parsed.unlockedMessages)
-        ? parsed.unlockedMessages.filter((message) => typeof message === 'string' && message.trim())
-        : DEFAULT_COMPANION_STATE.unlockedMessages,
-      xp:
-        typeof parsed.xp === 'number'
-          ? Math.max(0, Math.min(COMPANION_XP_PER_LEVEL - 1, parsed.xp))
-          : DEFAULT_COMPANION_STATE.xp,
-    };
-  } catch {
-    return DEFAULT_COMPANION_STATE;
-  }
-}
-
-function saveStoredCompanionState(state: CompanionState) {
-  if (Platform.OS !== 'web' || typeof window === 'undefined') {
-    return;
-  }
-
-  try {
-    window.localStorage.setItem(COMPANION_STORAGE_KEY, JSON.stringify(state));
-  } catch {
-    // Companion growth is local encouragement. Recognition should continue if storage is blocked.
-  }
-}
-
-function readStoredAchievements(): AchievementId[] {
-  if (Platform.OS !== 'web' || typeof window === 'undefined') {
-    return [];
-  }
-
-  try {
-    const rawValue = window.localStorage.getItem(ACHIEVEMENTS_STORAGE_KEY);
-    if (!rawValue) {
-      return [];
-    }
-
-    const parsed = JSON.parse(rawValue) as string[];
-    if (!Array.isArray(parsed)) {
-      return [];
-    }
-
-    const validIds = new Set(ACTIVE_ACHIEVEMENTS.map((achievement) => achievement.id));
-    const legacyIds = getLegacyAchievementIds();
-    return parsed.filter(
-      (id): id is AchievementId => validIds.has(id as AchievementId) || legacyIds.has(id as AchievementId),
-    );
-  } catch {
-    return [];
-  }
-}
-
-function saveStoredAchievements(achievementIds: AchievementId[]) {
-  if (Platform.OS !== 'web' || typeof window === 'undefined') {
-    return;
-  }
-
-  try {
-    window.localStorage.setItem(ACHIEVEMENTS_STORAGE_KEY, JSON.stringify(achievementIds));
-  } catch {
-    // Achievements are local encouragement. Recognition should continue if storage is blocked.
   }
 }
 
@@ -1310,10 +1110,6 @@ function getGalleryArtifactDetails(exhibit: MuseumExhibit, collection: Collectio
   };
 }
 
-function getCollectionItemsForDate(collection: CollectionItem[], dateKey: string) {
-  return collection.filter((item) => getDateKey(new Date(item.discoveredAt)) === dateKey);
-}
-
 function collectionItemMatchesMuseum(item: CollectionItem, museumId: string) {
   const artifact = findMuseumArtifact(item);
   if (artifact && getMuseumArtifactMuseumMeta(artifact.museum).id === museumId) {
@@ -1333,32 +1129,6 @@ function getDailyQuestArtifactIds(item: CollectionItem) {
 
   const fallbackId = (item.object_en || item.object_zh).trim().toLowerCase();
   return fallbackId ? [`custom-${fallbackId}`] : [];
-}
-
-function getDailyQuestProgress(collection: CollectionItem[], dailyQuestState: DailyQuestState): DailyQuestProgress[] {
-  const todaysItems = getCollectionItemsForDate(collection, dailyQuestState.date);
-  const uniqueArtifactCount =
-    dailyQuestState.discoveredArtifactIds.length ||
-    new Set(todaysItems.flatMap((item) => getDailyQuestArtifactIds(item))).size;
-
-  return DAILY_QUESTS.map((quest) => {
-    let progress = 0;
-
-    if (quest.type === 'animal') {
-      progress = todaysItems.filter((item) => collectionItemMatchesMuseum(item, 'animal')).length;
-    } else if (quest.type === 'traffic') {
-      progress = todaysItems.filter((item) => collectionItemMatchesMuseum(item, 'traffic')).length;
-    } else {
-      progress = uniqueArtifactCount;
-    }
-
-    return {
-      ...quest,
-      completed: progress >= quest.target,
-      progress: Math.min(progress, quest.target),
-      rewarded: dailyQuestState.rewardedQuestIds.includes(quest.id),
-    };
-  });
 }
 
 function getLimitedEventProgress(collection: CollectionItem[], limitedEventState: LimitedEventState): LimitedEventProgress {
@@ -1498,10 +1268,6 @@ function getActiveUnlockedAchievementIds({
   }
 
   return unlockedIds;
-}
-
-function getAchievement(id: AchievementId) {
-  return ACTIVE_ACHIEVEMENTS.find((achievement) => achievement.id === id) ?? ACTIVE_ACHIEVEMENTS[0];
 }
 
 function getMatchedMuseumExhibitIds(result: RecognitionResult) {
@@ -1706,26 +1472,41 @@ export default function HomeScreen() {
   const [expandedArtifactIds, setExpandedArtifactIds] = useState<string[]>([]);
   const [streakDays, setStreakDays] = useState(0);
   const [lastStreakDate, setLastStreakDate] = useState('');
-  const [chestOpened, setChestOpened] = useState(false);
-  const [chestReward, setChestReward] = useState('');
+  const {
+    chestGlowScale,
+    chestOpened,
+    chestOpacity,
+    chestReward,
+    chestScale,
+    openMagicChest,
+    setChestOpened,
+  } = useTreasureChest();
   const [xpState, setXpState] = useState<XpState>({ currentXp: 0, level: 1 });
   const [showLevelUp, setShowLevelUp] = useState(false);
-  const [dailyQuestState, setDailyQuestState] = useState<DailyQuestState>({
-    date: getDateKey(new Date()),
-    discoveredArtifactIds: [],
-    rewardedQuestIds: [],
-  });
-  const [latestDailyQuestReward, setLatestDailyQuestReward] = useState('');
+  const { clearLatestDailyQuestReward, dailyQuestProgress, latestDailyQuestReward, updateDailyQuestRewards } =
+    useDailyQuest({
+      collection,
+      getArtifactIds: getDailyQuestArtifactIds,
+      itemMatchesMuseum: collectionItemMatchesMuseum,
+    });
   const [limitedEventState, setLimitedEventState] = useState<LimitedEventState>({
     badgeIds: [],
     completedEventIds: [],
   });
   const [latestLimitedEventReward, setLatestLimitedEventReward] = useState('');
-  const [companionState, setCompanionState] = useState<CompanionState>(DEFAULT_COMPANION_STATE);
-  const [companionMessage, setCompanionMessage] = useState('我们一起探索世界吧！');
-  const [latestCompanionTitle, setLatestCompanionTitle] = useState('');
-  const [unlockedAchievementIds, setUnlockedAchievementIds] = useState<AchievementId[]>([]);
-  const [latestAchievement, setLatestAchievement] = useState<AchievementDefinition | null>(null);
+  const { addCompanionXp, companionMessage, companionState, companionXpPerLevel, latestCompanionTitle } = useCompanion();
+  const {
+    achievementGlowScale,
+    achievementOpacity,
+    achievementScale,
+    achievementTranslateY,
+    latestAchievement,
+    unlockAchievementIds,
+    unlockedAchievementIds,
+  } = useAchievements<AchievementId, AchievementDefinition>({
+    achievements: ACTIVE_ACHIEVEMENTS,
+    legacyAchievementIds: Array.from(getLegacyAchievementIds()),
+  });
   const [museumCollectedIds, setMuseumCollectedIds] = useState<string[]>([]);
   const [museumBadgeIds, setMuseumBadgeIds] = useState<string[]>([]);
   const [latestMuseumBadge, setLatestMuseumBadge] = useState<MuseumBadge | null>(null);
@@ -1747,9 +1528,7 @@ export default function HomeScreen() {
   const resultAppearValue = useRef(new Animated.Value(0));
   const errorAppearValue = useRef(new Animated.Value(0));
   const unlockValue = useRef(new Animated.Value(0));
-  const chestValue = useRef(new Animated.Value(0));
   const xpLevelUpValue = useRef(new Animated.Value(0));
-  const achievementValue = useRef(new Animated.Value(0));
   const museumBadgeValue = useRef(new Animated.Value(0));
   const countBounceValue = useRef(new Animated.Value(0));
   const streakBounceValue = useRef(new Animated.Value(0));
@@ -1770,12 +1549,7 @@ export default function HomeScreen() {
       setXpState(storedXp);
     }
 
-    setUnlockedAchievementIds(readStoredAchievements());
-    setDailyQuestState(readStoredDailyQuestState());
     setLimitedEventState(readStoredLimitedEventState());
-    const storedCompanion = readStoredCompanionState();
-    setCompanionState(storedCompanion);
-    setCompanionMessage(storedCompanion.unlockedMessages[storedCompanion.unlockedMessages.length - 1] ?? '我们一起探索世界吧！');
     setCollection(readStoredCollection());
     setExpandedArtifactIds(readStoredExpandedArtifactIds());
     setMuseumCollectedIds(readStoredMuseumIds());
@@ -1993,29 +1767,6 @@ export default function HomeScreen() {
   }, [collectionFeedback, newestDiscoveryAt]);
 
   useEffect(() => {
-    if (!chestOpened) {
-      chestValue.current.setValue(0);
-      return;
-    }
-
-    chestValue.current.setValue(0);
-    Animated.sequence([
-      Animated.timing(chestValue.current, {
-        toValue: 1,
-        duration: 620,
-        easing: Easing.out(Easing.back(1.9)),
-        useNativeDriver: true,
-      }),
-      Animated.timing(chestValue.current, {
-        toValue: 0.92,
-        duration: 900,
-        easing: Easing.inOut(Easing.quad),
-        useNativeDriver: true,
-      }),
-    ]).start();
-  }, [chestOpened, chestReward]);
-
-  useEffect(() => {
     if (!showLevelUp) {
       xpLevelUpValue.current.setValue(0);
       return;
@@ -2037,29 +1788,6 @@ export default function HomeScreen() {
       }),
     ]).start();
   }, [showLevelUp, xpState.level]);
-
-  useEffect(() => {
-    if (!latestAchievement) {
-      achievementValue.current.setValue(0);
-      return;
-    }
-
-    achievementValue.current.setValue(0);
-    Animated.sequence([
-      Animated.timing(achievementValue.current, {
-        toValue: 1,
-        duration: 620,
-        easing: Easing.out(Easing.back(1.9)),
-        useNativeDriver: true,
-      }),
-      Animated.timing(achievementValue.current, {
-        toValue: 0.94,
-        duration: 1000,
-        easing: Easing.inOut(Easing.quad),
-        useNativeDriver: true,
-      }),
-    ]).start();
-  }, [latestAchievement]);
 
   useEffect(() => {
     if (!latestMuseumBadge) {
@@ -2164,18 +1892,6 @@ export default function HomeScreen() {
     inputRange: [0, 0.68, 1],
     outputRange: [0.9, 1.06, 1],
   });
-  const chestOpacity = chestValue.current.interpolate({
-    inputRange: [0, 0.22, 1],
-    outputRange: [0, 1, 1],
-  });
-  const chestScale = chestValue.current.interpolate({
-    inputRange: [0, 0.58, 1],
-    outputRange: [0.82, 1.08, 1],
-  });
-  const chestGlowScale = chestValue.current.interpolate({
-    inputRange: [0, 0.72, 1],
-    outputRange: [0.65, 1.42, 1.16],
-  });
   const xpLevelUpOpacity = xpLevelUpValue.current.interpolate({
     inputRange: [0, 0.22, 1],
     outputRange: [0, 1, 1],
@@ -2185,22 +1901,6 @@ export default function HomeScreen() {
     outputRange: [0.82, 1.08, 1],
   });
   const xpLevelUpGlowScale = xpLevelUpValue.current.interpolate({
-    inputRange: [0, 0.72, 1],
-    outputRange: [0.65, 1.42, 1.16],
-  });
-  const achievementOpacity = achievementValue.current.interpolate({
-    inputRange: [0, 0.22, 1],
-    outputRange: [0, 1, 1],
-  });
-  const achievementScale = achievementValue.current.interpolate({
-    inputRange: [0, 0.58, 1],
-    outputRange: [0.82, 1.08, 1],
-  });
-  const achievementTranslateY = achievementValue.current.interpolate({
-    inputRange: [0, 1],
-    outputRange: [18, 0],
-  });
-  const achievementGlowScale = achievementValue.current.interpolate({
     inputRange: [0, 0.72, 1],
     outputRange: [0.65, 1.42, 1.16],
   });
@@ -2303,12 +2003,6 @@ export default function HomeScreen() {
     ]).start();
   };
 
-  const openMagicChest = (nextCount: number) => {
-    const reward = CHEST_REWARDS[(Date.now() + nextCount) % CHEST_REWARDS.length];
-    setChestReward(reward);
-    setChestOpened(true);
-  };
-
   const addXpAmount = (earnedXp: number) => {
     setXpState((currentState) => {
       let nextXp = currentState.currentXp + earnedXp;
@@ -2333,35 +2027,6 @@ export default function HomeScreen() {
     addXpAmount(XP_REWARDS[category]);
   };
 
-  const addCompanionXp = (earnedXp: number, message: string, mood: string) => {
-    setCompanionMessage(message);
-    setCompanionState((currentState) => {
-      let nextXp = currentState.xp + earnedXp;
-      let nextLevel = currentState.level;
-
-      while (nextXp >= COMPANION_XP_PER_LEVEL) {
-        nextXp -= COMPANION_XP_PER_LEVEL;
-        nextLevel += 1;
-      }
-
-      const nextTitle = getCompanionTitle(nextLevel);
-      const nextState = {
-        level: nextLevel,
-        mood,
-        title: nextTitle,
-        unlockedMessages: Array.from(new Set([...currentState.unlockedMessages, message])),
-        xp: nextXp,
-      };
-      saveStoredCompanionState(nextState);
-
-      if (nextLevel > currentState.level) {
-        setLatestCompanionTitle(nextTitle);
-      }
-
-      return nextState;
-    });
-  };
-
   const completeLimitedEventIfReady = (nextCollection: CollectionItem[]) => {
     setLimitedEventState((currentState) => {
       const progress = getLimitedEventProgress(nextCollection, currentState);
@@ -2383,50 +2048,7 @@ export default function HomeScreen() {
     });
   };
 
-  const updateDailyQuestRewards = (nextCollection: CollectionItem[]) => {
-    setDailyQuestState((currentState) => {
-      const today = getDateKey(new Date());
-      const todaysArtifactIds = Array.from(
-        new Set(getCollectionItemsForDate(nextCollection, today).flatMap((item) => getDailyQuestArtifactIds(item))),
-      );
-      const activeState =
-        currentState.date === today
-          ? {
-              ...currentState,
-              discoveredArtifactIds: Array.from(new Set([...currentState.discoveredArtifactIds, ...todaysArtifactIds])),
-            }
-          : { date: today, discoveredArtifactIds: todaysArtifactIds, rewardedQuestIds: [] };
-      const questProgress = getDailyQuestProgress(nextCollection, activeState);
-      const newlyCompletedQuests = questProgress.filter((quest) => quest.completed && !quest.rewarded);
-
-      if (newlyCompletedQuests.length === 0) {
-        saveStoredDailyQuestState(activeState);
-        return activeState;
-      }
-
-      newlyCompletedQuests.forEach((quest) => {
-        if (quest.id === 'three_unique_artifacts') {
-          openMagicChest(nextCollection.length + quest.target);
-        } else {
-          addXpAmount(20);
-        }
-        addCompanionXp(20, '今天的探索任务完成啦！', '开心');
-      });
-
-      const nextState = {
-        date: today,
-        discoveredArtifactIds: activeState.discoveredArtifactIds,
-        rewardedQuestIds: Array.from(
-          new Set([...activeState.rewardedQuestIds, ...newlyCompletedQuests.map((quest) => quest.id)]),
-        ),
-      };
-      saveStoredDailyQuestState(nextState);
-      setLatestDailyQuestReward(newlyCompletedQuests[0].rewardLabel);
-      return nextState;
-    });
-  };
-
-  const unlockAchievements = ({
+  const unlockAchievements = useCallback(({
     nextCollection,
     nextCustomMuseumCount,
     nextMuseumCollectedIds,
@@ -2444,18 +2066,8 @@ export default function HomeScreen() {
       streakDays: nextStreakDays,
     });
 
-    setUnlockedAchievementIds((currentIds) => {
-      const newIds = candidateIds.filter((id) => !currentIds.includes(id));
-      if (newIds.length === 0) {
-        return currentIds;
-      }
-
-      const nextIds = [...currentIds, ...newIds];
-      saveStoredAchievements(nextIds);
-      setLatestAchievement(getAchievement(newIds[0]));
-      return nextIds;
-    });
-  };
+    unlockAchievementIds(candidateIds);
+  }, [unlockAchievementIds]);
 
   const unlockMuseumBadges = (nextIds: string[]) => {
     const candidateBadgeIds = getUnlockedMuseumBadgeIds(nextIds);
@@ -2523,7 +2135,7 @@ export default function HomeScreen() {
     setCollectionFeedback('');
     setNewestDiscoveryAt('');
     setChestOpened(false);
-    setLatestDailyQuestReward('');
+    clearLatestDailyQuestReward();
 
     try {
       const formData = new FormData();
@@ -2615,7 +2227,11 @@ export default function HomeScreen() {
           setCollectionMessage(COPY.collectionKnown);
           setCollectionFeedback('known');
           setNewestDiscoveryAt('');
-          updateDailyQuestRewards([dailyQuestItem, ...currentCollection]);
+          updateDailyQuestRewards([dailyQuestItem, ...currentCollection], {
+            addCompanionXp,
+            addXpAmount,
+            openMagicChest,
+          });
           unlockAchievements({
             nextCollection: currentCollection,
             nextCustomMuseumCount: customMuseums.length,
@@ -2641,7 +2257,11 @@ export default function HomeScreen() {
         setNewestDiscoveryAt(discoveredAt);
         animateCount();
         openMagicChest(nextCollection.length);
-        updateDailyQuestRewards(nextCollection);
+        updateDailyQuestRewards(nextCollection, {
+          addCompanionXp,
+          addXpAmount,
+          openMagicChest,
+        });
         unlockAchievements({
           nextCollection,
           nextCustomMuseumCount: customMuseums.length,
@@ -2800,7 +2420,7 @@ export default function HomeScreen() {
       nextMuseumCollectedIds: museumCollectedIds,
       nextStreakDays: streakDays,
     });
-  }, [collection, customMuseums.length, museumCollectedIds, streakDays]);
+  }, [collection, customMuseums.length, museumCollectedIds, streakDays, unlockAchievements]);
 
   useEffect(() => {
     completeLimitedEventIfReady(collection);
@@ -2837,7 +2457,7 @@ export default function HomeScreen() {
                     <CompanionCard
             companionMessage={companionMessage}
             companionState={companionState}
-            companionXpPerLevel={COMPANION_XP_PER_LEVEL}
+            companionXpPerLevel={companionXpPerLevel}
             floatOpacity={floatOpacity}
             floatTranslateY={floatTranslateY}
             isRecognizing={isRecognizing}
@@ -2998,7 +2618,7 @@ export default function HomeScreen() {
             collection={collection}
             collectionMessage={collectionMessage}
             countScale={countScale}
-            dailyQuestState={dailyQuestState}
+            dailyQuestProgress={dailyQuestProgress}
             expandedArtifactIds={expandedArtifactIds}
             feedback={collectionFeedback}
             latestDailyQuestReward={latestDailyQuestReward}
@@ -3305,7 +2925,7 @@ function MagicCollection({
   collection,
   collectionMessage,
   countScale,
-  dailyQuestState,
+  dailyQuestProgress,
   expandedArtifactIds,
   feedback,
   latestDailyQuestReward,
@@ -3363,7 +2983,7 @@ function MagicCollection({
   collection: CollectionItem[];
   collectionMessage: string;
   countScale: Animated.AnimatedInterpolation<string | number>;
-  dailyQuestState: DailyQuestState;
+  dailyQuestProgress: DailyQuestProgress[];
   expandedArtifactIds: string[];
   feedback: 'new' | 'known' | '';
   latestDailyQuestReward: string;
@@ -3430,7 +3050,7 @@ function MagicCollection({
 
       <DailyQuestPanel
         latestDailyQuestReward={latestDailyQuestReward}
-        questProgress={getDailyQuestProgress(collection, dailyQuestState)}
+        questProgress={dailyQuestProgress}
         styles={styles}
       />
 
