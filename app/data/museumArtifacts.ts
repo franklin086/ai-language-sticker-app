@@ -5,6 +5,7 @@ export type MuseumArtifact = {
   museum: string;
   rarity: string;
   story: string;
+  aliases?: string[];
 };
 
 export type MuseumBadgeData = {
@@ -73,6 +74,22 @@ export const museumArtifacts: MuseumArtifact[] = [
   { objectZh: '机器人', objectEn: 'Robot', emoji: '🤖', museum: '科技博物馆', rarity: '史诗', story: '机器人可以帮助人类完成危险或重复的工作。' },
   { objectZh: '卫星', objectEn: 'Satellite', emoji: '🛰️', museum: '科技博物馆', rarity: '史诗', story: '卫星在太空中帮助我们导航、通信和观察地球。' },
   { objectZh: '望远镜', objectEn: 'Telescope', emoji: '🔭', museum: '科技博物馆', rarity: '稀有', story: '望远镜能帮助我们看见遥远的星星和星球。' },
+  { objectZh: '演员', objectEn: 'Actor', emoji: '🎭', museum: '人物职业馆', rarity: '稀有', story: '演员会用表情、动作和语言把故事中的角色生动地演出来。' },
+  { objectZh: '男人', objectEn: 'Man', emoji: '👨', museum: '人物职业馆', rarity: '普通', story: '男人是人物世界中的一种常见形象，可以有许多不同的职业和故事。', aliases: ['male', '男性'] },
+  { objectZh: '女人', objectEn: 'Woman', emoji: '👩', museum: '人物职业馆', rarity: '普通', story: '女人可以在生活、工作和故事中扮演许多重要角色。', aliases: ['female', '女性'] },
+  { objectZh: '人物', objectEn: 'Person', emoji: '🧑', museum: '人物职业馆', rarity: '普通', story: '人物代表真实生活中的人，也可以是故事里正在发生冒险的角色。', aliases: ['human', 'people', '人'] },
+  { objectZh: '孩子', objectEn: 'Child', emoji: '🧒', museum: '人物职业馆', rarity: '普通', story: '孩子正在学习、成长和探索世界，每天都可能有新的发现。', aliases: ['kid', 'boy', 'girl', '儿童'] },
+  { objectZh: '歌手', objectEn: 'Singer', emoji: '🎤', museum: '人物职业馆', rarity: '稀有', story: '歌手用歌声表达情感，也能把快乐传递给听众。' },
+  { objectZh: '医生', objectEn: 'Doctor', emoji: '🩺', museum: '人物职业馆', rarity: '稀有', story: '医生学习很多身体和健康知识，帮助人们恢复健康。' },
+  { objectZh: '老师', objectEn: 'Teacher', emoji: '👩‍🏫', museum: '人物职业馆', rarity: '普通', story: '老师会把知识一步一步讲清楚，陪伴孩子学习和成长。' },
+  { objectZh: '警察', objectEn: 'Police Officer', emoji: '👮', museum: '人物职业馆', rarity: '稀有', story: '警察守护城市安全，也会在大家需要帮助时出现。' },
+  { objectZh: '消防员', objectEn: 'Firefighter', emoji: '👨‍🚒', museum: '人物职业馆', rarity: '史诗', story: '消防员会勇敢地灭火救援，保护人们的生命和家园。' },
+  { objectZh: '厨师', objectEn: 'Chef', emoji: '👨‍🍳', museum: '人物职业馆', rarity: '普通', story: '厨师能把食材变成美味的饭菜，让餐桌充满香气。' },
+  { objectZh: '司机', objectEn: 'Driver', emoji: '🚗', museum: '人物职业馆', rarity: '普通', story: '司机熟悉道路和交通规则，帮助人们安全到达目的地。' },
+  { objectZh: '画家', objectEn: 'Painter', emoji: '🎨', museum: '人物职业馆', rarity: '稀有', story: '画家用颜色和线条记录想象，也能画出心里的世界。' },
+  { objectZh: '运动员', objectEn: 'Athlete', emoji: '🏃', museum: '人物职业馆', rarity: '稀有', story: '运动员通过长期训练挑战自己，在比赛中展现速度和力量。' },
+  { objectZh: '科学家', objectEn: 'Scientist', emoji: '🔬', museum: '人物职业馆', rarity: '史诗', story: '科学家会提出问题、做实验，探索世界运行的秘密。' },
+  { objectZh: '宇航员', objectEn: 'Astronaut', emoji: '👨‍🚀', museum: '人物职业馆', rarity: '传奇', story: '宇航员经过严格训练，可以乘坐飞船去太空探索。' },
 ];
 
 export const MUSEUM_ARTIFACT_MUSEUMS = [
@@ -81,6 +98,7 @@ export const MUSEUM_ARTIFACT_MUSEUMS = [
   { emoji: '🦖', id: 'dinosaur', title: '恐龙博物馆' },
   { emoji: '🌳', id: 'nature', title: '自然博物馆' },
   { emoji: '💻', id: 'technology', title: '科技博物馆' },
+  { emoji: '🎭', id: 'profession', title: '人物职业馆' },
 ];
 
 export const MUSEUM_ARTIFACT_BADGES: MuseumBadgeData[] = [

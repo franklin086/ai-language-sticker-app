@@ -1,9 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { ArtifactDetailModal } from './components/ArtifactDetailModal';
+import { AchievementPanel } from './components/AchievementPanel';
 import { CompanionCard } from './components/CompanionCard';
 import { DailyQuestPanel } from './components/DailyQuestPanel';
 import { LimitedEventPanel } from './components/LimitedEventPanel';
+import { MagicWordCard } from './components/MagicWordCard';
+import { MuseumSection } from './components/MuseumSection';
 import { ShareCardPreview, type ShareCardData } from './components/ShareCardPreview';
+import { TreasureChestPanel } from './components/TreasureChestPanel';
 import { MUSEUM_ARTIFACT_BADGES } from './data/museumArtifacts';
 import {
   findMuseumArtifact,
@@ -2932,13 +2936,23 @@ export default function HomeScreen() {
             ) : recognitionResult ? (
               <>
                 <MagicWordCard
-                  collection={collection}
-                  result={recognitionResult}
+                  artifactFact={getArtifactFact(recognitionResult)}
+                  celebrateText={COPY.celebrate}
+                  confidenceLabel={COPY.confidence}
+                  confidenceText={formatConfidence(recognitionResult.confidence)}
+                  foundTitle={COPY.found}
+                  magicEmoji={getMagicEmoji(recognitionResult)}
+                  museumProgress={getMuseumProgressForResult(recognitionResult, collection)}
                   onShare={() => openShareCard('AI Magic Word Camera', 'I found a new magic artifact!', recognitionResult)}
                   onSpeakChinese={() => speakWord(recognitionResult.object_zh, 'zh')}
                   onSpeakEnglish={() => speakWord(recognitionResult.object_en, 'en')}
+                  rarityCategory={getStickerCategory(recognitionResult)}
+                  rarityLabel={getStickerCategoryLabel(getStickerCategory(recognitionResult))}
+                  result={recognitionResult}
+                  shareButtonLabel="📸 生成分享卡"
                   speakButtonScale={speakButtonScale}
                   speakingLanguage={speakingLanguage}
+                  styles={styles}
                 />
                 {DEBUG_MODE && (debugResponse.status || debugResponse.rawText) ? (
                   <DebugResponseCard
@@ -3074,87 +3088,6 @@ export default function HomeScreen() {
       </ScrollView>
       {shareCard ? <ShareCardPreview data={shareCard} onClose={() => setShareCard(null)} onSave={saveShareCardAsPng} styles={styles} /> : null}
     </SafeAreaView>
-  );
-}
-
-function MagicWordCard({
-  collection,
-  onShare,
-  result,
-  onSpeakChinese,
-  onSpeakEnglish,
-  speakButtonScale,
-  speakingLanguage,
-}: {
-  collection: CollectionItem[];
-  onShare: () => void;
-  result: RecognitionResult;
-  onSpeakChinese: () => void;
-  onSpeakEnglish: () => void;
-  speakButtonScale: Animated.AnimatedInterpolation<string | number>;
-  speakingLanguage: 'zh' | 'en' | null;
-}) {
-  const museumProgress = getMuseumProgressForResult(result, collection);
-  const rarityCategory = getStickerCategory(result);
-  const rarityVisual = getRarityVisualStyles(rarityCategory, styles);
-
-  return (
-    <View style={[styles.wordCard, rarityVisual.card]}>
-      {rarityCategory === 'legendary' ? (
-        <View style={styles.legendaryBanner}>
-          <Text style={styles.legendaryBannerTitle}>🌈 LEGENDARY!</Text>
-          <Text style={styles.legendaryBannerText}>✨ 传奇发现！</Text>
-        </View>
-      ) : null}
-      <Text style={styles.foundTitle}>{COPY.found}</Text>
-      <Text style={styles.celebrateText}>{COPY.celebrate}</Text>
-      <View style={[styles.emojiStage, rarityVisual.emojiStage]}>
-        {rarityCategory === 'legendary' ? (
-          <Text style={[styles.raritySparkle, styles.raritySparkleOne]}>✨</Text>
-        ) : null}
-        {rarityCategory === 'legendary' ? (
-          <Text style={[styles.raritySparkle, styles.raritySparkleTwo]}>🌟</Text>
-        ) : null}
-        <Text style={styles.magicEmoji}>{getMagicEmoji(result)}</Text>
-      </View>
-      <Text style={styles.chineseWord}>{result.object_zh || '未命名藏品'}</Text>
-      <Text style={styles.englishWord}>{result.object_en || 'unnamed artifact'}</Text>
-      <Text style={styles.rarityLine}>稀有度：{getStickerCategoryLabel(getStickerCategory(result))}</Text>
-      <Text style={styles.confidenceLine}>
-        {COPY.confidence}: {formatConfidence(result.confidence)}
-      </Text>
-      <View style={styles.artifactStoryBox}>
-        <Text style={styles.artifactStoryTitle}>📖 藏品故事</Text>
-        <Text style={styles.artifactStoryText}>{getArtifactFact(result)}</Text>
-      </View>
-      {museumProgress ? (
-        <View style={styles.museumProgressBox}>
-          <Text style={styles.museumProgressTitle}>
-            {museumProgress.emoji} {museumProgress.title}
-          </Text>
-          <Text style={styles.museumProgressText}>
-            已发现 {museumProgress.foundCount} / {museumProgress.totalCount}
-          </Text>
-        </View>
-      ) : null}
-      <Pressable style={({ pressed }) => [styles.shareButton, pressed && styles.shareButtonPressed]} onPress={onShare}>
-        <Text style={styles.shareButtonText}>📸 生成分享卡</Text>
-      </Pressable>
-      <View style={styles.speechActions}>
-        <SpeechButton
-          active={speakingLanguage === 'zh'}
-          label="🔊 中文发音"
-          onPress={onSpeakChinese}
-          scale={speakButtonScale}
-        />
-        <SpeechButton
-          active={speakingLanguage === 'en'}
-          label="🔊 English"
-          onPress={onSpeakEnglish}
-          scale={speakButtonScale}
-        />
-      </View>
-    </View>
   );
 }
 
@@ -3306,33 +3239,6 @@ function saveShareCardAsPng(data: ShareCardData) {
   link.download = getShareCardFileName(data.objectZh);
   link.href = canvas.toDataURL('image/png');
   link.click();
-}
-
-function SpeechButton({
-  active,
-  label,
-  onPress,
-  scale,
-}: {
-  active: boolean;
-  label: string;
-  onPress: () => void;
-  scale: Animated.AnimatedInterpolation<string | number>;
-}) {
-  return (
-    <Animated.View style={active ? { transform: [{ scale }] } : undefined}>
-      <Pressable
-        style={({ pressed }) => [
-          styles.speechButton,
-          active && styles.speechButtonActive,
-          pressed && styles.speechButtonPressed,
-        ]}
-        onPress={onPress}
-      >
-        <Text style={styles.speechButtonText}>{label}</Text>
-      </Pressable>
-    </Animated.View>
-  );
 }
 
 function FailureCard({
@@ -3541,6 +3447,7 @@ function MagicCollection({
         achievementScale={achievementScale}
         achievementTranslateY={achievementTranslateY}
         latestAchievement={latestAchievement}
+        styles={styles}
         unlockedAchievementIds={unlockedAchievementIds}
       />
 
@@ -3927,71 +3834,53 @@ function CollectionGallery({
 
       <View style={styles.galleryMuseumList}>
         {museums.map((museum) => {
-          const collectedCount = getMuseumCollectedCount(
-            museum,
-            museum.exhibits
-              .filter((exhibit) => getCollectionDiscoveryForExhibit(exhibit, collection))
-              .map((exhibit) => exhibit.id),
-          );
+          const discoveredExhibitIds = museum.exhibits
+            .filter((exhibit) => getCollectionDiscoveryForExhibit(exhibit, collection))
+            .map((exhibit) => exhibit.id);
+          const collectedCount = getMuseumCollectedCount(museum, discoveredExhibitIds);
           const museumPercent = Math.round((collectedCount / museum.exhibits.length) * 100);
+          const artifacts = museum.exhibits.map((exhibit) => {
+            const discoveredItem = getCollectionDiscoveryForExhibit(exhibit, collection);
+            const isSelected = exhibit.id === selectedExhibit.id;
+            const artifactRarityVisual = discoveredItem
+              ? getRarityVisualStyles(getStickerCategory(discoveredItem), styles)
+              : null;
+
+            return {
+              discovered: Boolean(discoveredItem),
+              emoji: exhibit.emoji,
+              id: exhibit.id,
+              isSelected,
+              objectEn: exhibit.object_en,
+              objectZh: exhibit.object_zh,
+              onPress: () => {
+                setSelectedExhibitId(exhibit.id);
+                if (!discoveredItem) {
+                  setLockedHint('???????????');
+                  return;
+                }
+
+                setLockedHint('');
+                setDetailArtifact({ exhibit, item: discoveredItem, museum });
+              },
+              rarityCardStyle: artifactRarityVisual?.card,
+            };
+          });
 
           return (
-            <View key={museum.id} style={styles.galleryMuseumCard}>
-              <View style={styles.galleryMuseumHeader}>
-                <Text style={styles.galleryMuseumTitle}>
-                  {museum.emoji} {museum.title}
-                </Text>
-                <Text style={styles.galleryMuseumCount}>
-                  {collectedCount} / {museum.exhibits.length} · {museumPercent}%
-                </Text>
-              </View>
-              <View style={styles.galleryProgressTrack}>
-                <View style={[styles.galleryProgressFill, { width: `${museumPercent}%` as `${number}%` }]} />
-              </View>
-              <ScrollView
-                contentContainerStyle={styles.galleryArtifactList}
-                horizontal
-                showsHorizontalScrollIndicator={false}
-              >
-                {museum.exhibits.map((exhibit) => {
-                  const discoveredItem = getCollectionDiscoveryForExhibit(exhibit, collection);
-                  const isSelected = exhibit.id === selectedExhibit.id;
-                  const artifactRarityVisual = discoveredItem
-                    ? getRarityVisualStyles(getStickerCategory(discoveredItem), styles)
-                    : null;
-
-                  return (
-                    <Pressable
-                      key={exhibit.id}
-                      onPress={() => {
-                        setSelectedExhibitId(exhibit.id);
-                        if (!discoveredItem) {
-                          setLockedHint('继续探索，发现后解锁！');
-                          return;
-                        }
-
-                        setLockedHint('');
-                        setDetailArtifact({ exhibit, item: discoveredItem, museum });
-                      }}
-                      style={[
-                        styles.galleryArtifactCard,
-                        artifactRarityVisual?.card,
-                        !discoveredItem && styles.galleryArtifactLocked,
-                        isSelected && styles.galleryArtifactSelected,
-                      ]}
-                    >
-                      <Text style={styles.galleryArtifactEmoji}>{discoveredItem ? exhibit.emoji : '🔒'}</Text>
-                      <Text numberOfLines={1} style={styles.galleryArtifactZh}>
-                        {discoveredItem ? exhibit.object_zh : '未发现'}
-                      </Text>
-                      <Text numberOfLines={1} style={styles.galleryArtifactEn}>
-                        {discoveredItem ? exhibit.object_en : 'Mystery'}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
-              </ScrollView>
-            </View>
+            <MuseumSection
+              key={museum.id}
+              artifacts={artifacts}
+              collectedCount={collectedCount}
+              lockedEmoji="??"
+              lockedName="???"
+              museumEmoji={museum.emoji}
+              museumPercent={museumPercent}
+              museumTitle={museum.title}
+              mysteryName="Mystery"
+              styles={styles}
+              totalCount={museum.exhibits.length}
+            />
           );
         })}
       </View>
@@ -4550,146 +4439,20 @@ function MagicRewardPanel({
         ) : null}
       </View>
 
-      <Animated.View
-        style={[
-          styles.chestCard,
-          chestOpened && styles.chestCardOpen,
-          chestOpened && {
-            opacity: chestOpacity,
-            transform: [{ scale: chestScale }],
-          },
-        ]}
-      >
-        {chestOpened ? (
-          <>
-            <Animated.View
-              pointerEvents="none"
-              style={[styles.chestGlow, { transform: [{ scale: chestGlowScale }] }]}
-            />
-            <View pointerEvents="none" style={styles.chestConfettiLayer}>
-              <Animated.Text
-                style={[
-                  styles.chestConfetti,
-                  styles.chestConfettiOne,
-                  { opacity: starTwinkleOpacity, transform: [{ scale: starTwinkleScale }] },
-                ]}
-              >
-                🎊
-              </Animated.Text>
-              <Animated.Text
-                style={[
-                  styles.chestConfetti,
-                  styles.chestConfettiTwo,
-                  { opacity: starTwinkleOpacity, transform: [{ scale: starTwinkleScale }] },
-                ]}
-              >
-                ✨
-              </Animated.Text>
-              <Animated.Text
-                style={[
-                  styles.chestConfetti,
-                  styles.chestConfettiThree,
-                  { opacity: starTwinkleOpacity, transform: [{ scale: starTwinkleScale }] },
-                ]}
-              >
-                🎉
-              </Animated.Text>
-            </View>
-            <Text style={styles.chestEmoji}>🎁</Text>
-            <Text style={styles.chestOpenTitle}>{COPY.chestOpened}</Text>
-            <Text style={styles.chestOpenText}>{COPY.chestReward}</Text>
-            <Text style={styles.chestRewardText}>{chestReward}</Text>
-          </>
-        ) : (
-          <>
-            <Text style={styles.chestEmoji}>🎁</Text>
-            <Text style={styles.chestTitle}>{COPY.chestTitle}</Text>
-            <Text style={styles.chestHint}>{COPY.chestNeedOne}</Text>
-          </>
-        )}
-      </Animated.View>
-    </View>
-  );
-}
-
-function AchievementPanel({
-  achievementGlowScale,
-  achievementOpacity,
-  achievements,
-  achievementScale,
-  achievementTranslateY,
-  latestAchievement,
-  unlockedAchievementIds,
-}: {
-  achievementGlowScale: Animated.AnimatedInterpolation<string | number>;
-  achievementOpacity: Animated.AnimatedInterpolation<string | number>;
-  achievements: AchievementDefinition[];
-  achievementScale: Animated.AnimatedInterpolation<string | number>;
-  achievementTranslateY: Animated.AnimatedInterpolation<string | number>;
-  latestAchievement: AchievementDefinition | null;
-  unlockedAchievementIds: AchievementId[];
-}) {
-  const unlockedAchievements = achievements.filter((achievement) => unlockedAchievementIds.includes(achievement.id));
-  const unlockedCount = unlockedAchievements.length;
-
-  return (
-    <View style={styles.achievementPanel}>
-      {latestAchievement ? (
-        <Animated.View
-          style={[
-            styles.achievementToast,
-            {
-              opacity: achievementOpacity,
-              transform: [{ translateY: achievementTranslateY }, { scale: achievementScale }],
-            },
-          ]}
-        >
-          <Animated.View
-            pointerEvents="none"
-            style={[styles.achievementGlow, { transform: [{ scale: achievementGlowScale }] }]}
-          />
-          <View pointerEvents="none" style={styles.achievementConfettiLayer}>
-            <Text style={[styles.achievementConfetti, styles.achievementConfettiOne]}>🎉</Text>
-            <Text style={[styles.achievementConfetti, styles.achievementConfettiTwo]}>✨</Text>
-            <Text style={[styles.achievementConfetti, styles.achievementConfettiThree]}>🏅</Text>
-          </View>
-          <Text style={styles.achievementSparkle}>✨</Text>
-          <Text style={styles.achievementToastTitle}>✨ 成就解锁！</Text>
-          <Text style={styles.achievementToastName}>
-            {latestAchievement.emoji} {latestAchievement.title}
-          </Text>
-          <Text style={styles.achievementToastEncouragement}>
-            {latestAchievement.encouragement ?? '新的魔法成就已经点亮！'}
-          </Text>
-        </Animated.View>
-      ) : null}
-
-      <View style={styles.achievementHeader}>
-        <Text style={styles.achievementTitle}>🏆 魔法成就</Text>
-        <Text style={styles.achievementCount}>
-          已解锁 {unlockedCount} / {achievements.length}
-        </Text>
-      </View>
-
-      <ScrollView contentContainerStyle={styles.achievementList} horizontal showsHorizontalScrollIndicator={false}>
-        {achievements.map((achievement) => {
-          const isUnlocked = unlockedAchievementIds.includes(achievement.id);
-
-          return (
-            <View key={achievement.id} style={[styles.achievementBadge, !isUnlocked && styles.achievementBadgeLocked]}>
-              <Text style={[styles.achievementBadgeEmoji, !isUnlocked && styles.achievementBadgeEmojiLocked]}>
-                {isUnlocked ? achievement.emoji : '🔒'}
-              </Text>
-              <Text numberOfLines={1} style={styles.achievementBadgeText}>
-                {achievement.title}
-              </Text>
-              <Text numberOfLines={2} style={isUnlocked ? styles.achievementBadgeHint : styles.achievementLockedHint}>
-                {isUnlocked ? achievement.encouragement ?? '已点亮' : '等待解锁'}
-              </Text>
-            </View>
-          );
-        })}
-      </ScrollView>
+      <TreasureChestPanel
+        chestGlowScale={chestGlowScale}
+        chestHintLabel={COPY.chestNeedOne}
+        chestOpened={chestOpened}
+        chestOpenedLabel={COPY.chestOpened}
+        chestOpacity={chestOpacity}
+        chestReward={chestReward}
+        chestRewardLabel={COPY.chestReward}
+        chestScale={chestScale}
+        chestTitleLabel={COPY.chestTitle}
+        starTwinkleOpacity={starTwinkleOpacity}
+        starTwinkleScale={starTwinkleScale}
+        styles={styles}
+      />
     </View>
   );
 }
