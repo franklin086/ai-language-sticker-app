@@ -41,14 +41,34 @@ export function getMuseumArtifactId(artifact: MuseumArtifact) {
   return `${getMuseumArtifactMuseumMeta(artifact.museum).id}-${normalizeMuseumArtifactText(artifact.objectEn).replace(/\s+/g, '-')}`;
 }
 
+const MUSEUM_ARTIFACT_SYNONYMS: Record<string, string[]> = {
+  Actor: ['actress', 'performer', '表演者'],
+  Child: ['kid', 'boy', 'girl', '儿童'],
+  Man: ['male', '男性'],
+  Person: ['human', 'people', '人'],
+  Woman: ['female', '女性'],
+};
+
+function getMuseumArtifactAliases(artifact: MuseumArtifact) {
+  return Array.from(
+    new Set([
+      ...(artifact.aliases ?? []),
+      ...(MUSEUM_ARTIFACT_SYNONYMS[artifact.objectEn] ?? []),
+      ...(MUSEUM_ARTIFACT_SYNONYMS[artifact.objectZh] ?? []),
+    ]),
+  );
+}
+
 export function getMuseumArtifactKeywords(artifact: MuseumArtifact) {
+  const aliases = getMuseumArtifactAliases(artifact);
+
   return [
     artifact.objectEn,
     artifact.objectZh,
-    ...(artifact.aliases ?? []),
+    ...aliases,
     normalizeMuseumArtifactText(artifact.objectEn),
     normalizeMuseumArtifactText(artifact.objectZh),
-    ...(artifact.aliases ?? []).map((alias) => normalizeMuseumArtifactText(alias)),
+    ...aliases.map((alias) => normalizeMuseumArtifactText(alias)),
   ];
 }
 

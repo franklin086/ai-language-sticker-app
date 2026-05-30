@@ -1,17 +1,22 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ArtifactDetailModal } from './components/ArtifactDetailModal';
 import { AchievementPanel } from './components/AchievementPanel';
+import { CityUnlockRewardModal } from './components/CityUnlockRewardModal';
 import { CompanionCard } from './components/CompanionCard';
 import { DailyQuestPanel } from './components/DailyQuestPanel';
+import { FollowUpCard } from './components/FollowUpCard';
 import { LimitedEventPanel } from './components/LimitedEventPanel';
 import { MagicWordCard } from './components/MagicWordCard';
 import { MuseumSection } from './components/MuseumSection';
 import { ShareCardPreview, type ShareCardData } from './components/ShareCardPreview';
 import { TreasureChestPanel } from './components/TreasureChestPanel';
-import { MUSEUM_ARTIFACT_BADGES } from './data/museumArtifacts';
+import { WorldMapPanel } from './components/WorldMapPanel';
+import { MUSEUM_ARTIFACT_BADGES, museumArtifacts } from './data/museumArtifacts';
 import { useAchievements } from './hooks/useAchievements';
+import { useCityUnlockRewards } from './hooks/useCityUnlockRewards';
 import { useCompanion } from './hooks/useCompanion';
 import { useDailyQuest, type DailyQuestProgress } from './hooks/useDailyQuest';
+import { useFollowUpRecognition } from './hooks/useFollowUpRecognition';
 import { useLimitedEvent, type LimitedEventProgress } from './hooks/useLimitedEvent';
 import { useTreasureChest } from './hooks/useTreasureChest';
 import {
@@ -53,7 +58,13 @@ import {
 type RecognitionResult = {
   object_en: string;
   object_zh: string;
+  specific_en?: string;
+  specific_zh?: string;
+  brand?: string;
+  subtype?: string;
   confidence: string;
+  needs_follow_up?: boolean;
+  follow_up_question?: string;
 };
 
 type CollectionItem = RecognitionResult & {
@@ -62,6 +73,7 @@ type CollectionItem = RecognitionResult & {
 };
 
 type StickerCategoryKey = 'common' | 'rare' | 'epic' | 'legendary';
+type RecognitionErrorType = 'unclear' | 'temporary';
 
 type StickerCategory = {
   key: StickerCategoryKey;
@@ -155,8 +167,9 @@ type CuratorProfile = {
 };
 
 const API_URL = 'http://localhost:8000/api/recognize';
+const FOLLOW_UP_API_URL = 'http://localhost:8000/api/recognize/follow-up';
 const DEBUG_MODE = false;
-const STICKER_TOTAL = 120;
+const STICKER_TOTAL = museumArtifacts.length;
 const XP_PER_LEVEL = 100;
 
 const XP_REWARDS: Record<StickerCategoryKey, number> = {
@@ -188,6 +201,9 @@ const COPY = {
   errorTitle: '🤔 我没有看清楚',
   errorHint: '再给我看看吧 ✨',
   errorEncourage: '🪄 换一张清楚的照片试试',
+  temporaryErrorTitle: '魔法水晶球有点忙',
+  temporaryErrorHint: 'AI识别服务暂时繁忙，请稍后再试一次 ✨',
+  temporaryErrorRetry: '再试一次',
   collectionTitle: '✨ 我的魔法图鉴',
   collectionCount: '已发现',
   collectionWords: '个魔法词语',
@@ -434,6 +450,26 @@ function getYesterdayKey() {
   const date = new Date();
   date.setDate(date.getDate() - 1);
   return getDateKey(date);
+}
+
+function getDisplayZh(result: RecognitionResult) {
+  return result.specific_zh?.trim() || result.object_zh || '魔法发现';
+}
+
+function getDisplayEn(result: RecognitionResult) {
+  return result.specific_en?.trim() || result.object_en || 'magic discovery';
+}
+
+function isTemporaryServiceError(status: number | null, rawText: string) {
+  const normalizedText = rawText.toLowerCase();
+  return (
+    status === 502 ||
+    status === 503 ||
+    normalizedText.includes('unavailable') ||
+    normalizedText.includes('high demand') ||
+    normalizedText.includes('failed to fetch') ||
+    normalizedText.includes('typeerror: failed to fetch')
+  );
 }
 
 function readStoredStreak() {
@@ -1090,8 +1126,8 @@ function buildShareCardData({
     encouragement,
     emoji: getMagicEmoji(result),
     museumTitle: location.museumTitle,
-    objectEn: result.object_en || 'magic discovery',
-    objectZh: result.object_zh || '魔法发现',
+    objectEn: getDisplayEn(result),
+    objectZh: getDisplayZh(result),
     rarityCategory,
     rarityLabel: getStickerCategoryLabel(rarityCategory),
     title,
@@ -1382,6 +1418,8 @@ export default function HomeScreen() {
   const [isRecognizing, setIsRecognizing] = useState(false);
   const [recognitionResult, setRecognitionResult] = useState<RecognitionResult | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>('');
+  const [errorType, setErrorType] = useState<RecognitionErrorType>('unclear');
+  const [lastImageUri, setLastImageUri] = useState<string | null>(null);
   const [debugResponse, setDebugResponse] = useState({
     objectEn: '',
     objectZh: '',
@@ -1443,6 +1481,7 @@ export default function HomeScreen() {
   const [shareCard, setShareCard] = useState<ShareCardData | null>(null);
   const [hoveredButton, setHoveredButton] = useState<'camera' | 'album' | null>(null);
   const [speakingLanguage, setSpeakingLanguage] = useState<'zh' | 'en' | null>(null);
+  const { followUpError, isFollowingUp, runFollowUpRecognition } = useFollowUpRecognition(FOLLOW_UP_API_URL);
 
   const floatValue = useRef(new Animated.Value(0));
   const scanValue = useRef(new Animated.Value(0));
@@ -1949,6 +1988,14 @@ export default function HomeScreen() {
     addXpAmount(XP_REWARDS[category]);
   };
 
+  const { clearLatestCityUnlockReward, latestCityUnlockReward } = useCityUnlockRewards({
+    addCompanionXp,
+    addXpAmount,
+    cityMapCompletedNodeIds,
+    cityMaps: CITY_MAPS,
+    openMagicChest,
+  });
+
   const unlockAchievements = useCallback(({
     nextCollection,
     nextCustomMuseumCount,
@@ -2022,9 +2069,11 @@ export default function HomeScreen() {
   };
 
   const recognizeImage = async (uri: string) => {
+    setLastImageUri(uri);
     setIsRecognizing(true);
     setRecognitionResult(null);
     setErrorMessage('');
+    setErrorType('unclear');
 
     setDebugResponse({
       objectEn: '',
@@ -2078,6 +2127,7 @@ export default function HomeScreen() {
 
       console.log('object_zh', parsed.object_zh ?? '');
       console.log('object_en', parsed.object_en ?? '');
+      const temporaryServiceError = isTemporaryServiceError(response.status, rawText);
 
       setDebugResponse({
         objectEn: parsed.object_en ?? '',
@@ -2088,14 +2138,21 @@ export default function HomeScreen() {
 
       if (!parsed.object_en && !parsed.object_zh) {
         setRecognitionResult(null);
-        setErrorMessage(null);
+        setErrorType(temporaryServiceError ? 'temporary' : 'unclear');
+        setErrorMessage(temporaryServiceError ? COPY.temporaryErrorTitle : COPY.error);
         return;
       }
 
       const recognizedData: RecognitionResult = {
+        brand: parsed.brand ?? '',
         confidence: parsed.confidence || 'high',
+        follow_up_question: parsed.follow_up_question ?? '',
+        needs_follow_up: Boolean(parsed.needs_follow_up),
         object_en: parsed.object_en ?? '',
         object_zh: parsed.object_zh ?? '',
+        specific_en: parsed.specific_en ?? parsed.object_en ?? '',
+        specific_zh: parsed.specific_zh ?? parsed.object_zh ?? '',
+        subtype: parsed.subtype ?? '',
       };
 
       setRecognitionResult(recognizedData);
@@ -2173,21 +2230,32 @@ export default function HomeScreen() {
       });
     } catch (error) {
       console.log('recognition failed', error);
+      const rawError = String(error);
       setDebugResponse({
         objectEn: '',
         objectZh: '',
-        rawText: String(error),
+        rawText: rawError,
         status: 'error',
       });
-      setErrorMessage(null);
+      setErrorType(isTemporaryServiceError(null, rawError) ? 'temporary' : 'unclear');
+      setErrorMessage(isTemporaryServiceError(null, rawError) ? COPY.temporaryErrorTitle : COPY.error);
     } finally {
       setIsRecognizing(false);
     }
   };
 
+  const retryRecognition = async () => {
+    if (!lastImageUri) {
+      return;
+    }
+
+    await recognizeImage(lastImageUri);
+  };
+
   const takePhoto = async () => {
     setRecognitionResult(null);
     setErrorMessage('');
+    setErrorType('unclear');
     setDebugResponse({ objectEn: '', objectZh: '', rawText: '', status: '' });
 
     try {
@@ -2211,9 +2279,11 @@ export default function HomeScreen() {
 
       const uri = result.assets[0].uri;
       setPhotoUri(uri);
+      setLastImageUri(uri);
       await recognizeImage(uri);
     } catch (error) {
       console.log('camera failed', error);
+      setErrorType('unclear');
       setErrorMessage(COPY.error);
     }
   };
@@ -2221,6 +2291,7 @@ export default function HomeScreen() {
   const chooseFromAlbum = async () => {
     setRecognitionResult(null);
     setErrorMessage('');
+    setErrorType('unclear');
     setDebugResponse({ objectEn: '', objectZh: '', rawText: '', status: '' });
 
     try {
@@ -2236,11 +2307,57 @@ export default function HomeScreen() {
 
       const uri = result.assets[0].uri;
       setPhotoUri(uri);
+      setLastImageUri(uri);
       await recognizeImage(uri);
     } catch (error) {
       console.log('photo selection failed', error);
+      setErrorType('unclear');
       setErrorMessage(COPY.error);
     }
+  };
+
+  const continueFollowUpRecognition = async () => {
+    if (!lastImageUri || !recognitionResult) {
+      return;
+    }
+
+    const followUpResult = await runFollowUpRecognition({
+      currentResult: recognitionResult,
+      uri: lastImageUri,
+    });
+
+    if (!followUpResult) {
+      return;
+    }
+
+    setRecognitionResult((currentResult) => {
+      if (!currentResult) {
+        return currentResult;
+      }
+
+      return {
+        ...currentResult,
+        brand: followUpResult.brand ?? currentResult.brand,
+        confidence: followUpResult.confidence ?? currentResult.confidence,
+        follow_up_question: followUpResult.follow_up_question ?? '',
+        needs_follow_up: Boolean(followUpResult.needs_follow_up),
+        specific_en: followUpResult.specific_en ?? currentResult.specific_en,
+        specific_zh: followUpResult.specific_zh ?? currentResult.specific_zh,
+        subtype: followUpResult.subtype ?? currentResult.subtype,
+      };
+    });
+  };
+
+  const learnCurrentWord = () => {
+    setRecognitionResult((currentResult) =>
+      currentResult
+        ? {
+            ...currentResult,
+            follow_up_question: '',
+            needs_follow_up: false,
+          }
+        : currentResult,
+    );
   };
 
   const speakWord = (text: string, language: 'zh' | 'en') => {
@@ -2301,6 +2418,8 @@ export default function HomeScreen() {
       confidence: 'high',
       object_en: 'magic discovery',
       object_zh: '魔法发现',
+      specific_en: 'magic discovery',
+      specific_zh: '魔法发现',
     };
 
   const openShareCard = (title: string, encouragement: string, result: RecognitionResult = getShareSourceResult()) => {
@@ -2468,8 +2587,8 @@ export default function HomeScreen() {
                   magicEmoji={getMagicEmoji(recognitionResult)}
                   museumProgress={getMuseumProgressForResult(recognitionResult, collection)}
                   onShare={() => openShareCard('AI Magic Word Camera', 'I found a new magic artifact!', recognitionResult)}
-                  onSpeakChinese={() => speakWord(recognitionResult.object_zh, 'zh')}
-                  onSpeakEnglish={() => speakWord(recognitionResult.object_en, 'en')}
+                  onSpeakChinese={() => speakWord(getDisplayZh(recognitionResult), 'zh')}
+                  onSpeakEnglish={() => speakWord(getDisplayEn(recognitionResult), 'en')}
                   rarityCategory={getStickerCategory(recognitionResult)}
                   rarityLabel={getStickerCategoryLabel(getStickerCategory(recognitionResult))}
                   result={recognitionResult}
@@ -2478,6 +2597,17 @@ export default function HomeScreen() {
                   speakingLanguage={speakingLanguage}
                   styles={styles}
                 />
+                {recognitionResult.needs_follow_up && recognitionResult.follow_up_question ? (
+                  <FollowUpCard
+                    errorText={followUpError}
+                    isLoading={isFollowingUp}
+                    onChangePhoto={chooseFromAlbum}
+                    onContinue={continueFollowUpRecognition}
+                    onLearnCurrent={learnCurrentWord}
+                    question={recognitionResult.follow_up_question}
+                    styles={styles}
+                  />
+                ) : null}
                 {DEBUG_MODE && (debugResponse.status || debugResponse.rawText) ? (
                   <DebugResponseCard
                     objectEn={debugResponse.objectEn}
@@ -2497,8 +2627,11 @@ export default function HomeScreen() {
             ) : errorMessage ? (
               <FailureCard
                 emojiTranslateY={errorEmojiTranslateY}
+                errorType={errorType}
+                onRetry={retryRecognition}
                 opacity={errorOpacity}
                 scale={errorScale}
+                showRetry={Boolean(lastImageUri)}
                 translateX={errorTranslateX}
               />
             ) : (
@@ -2610,6 +2743,13 @@ export default function HomeScreen() {
           </View>
         </View>
       </ScrollView>
+      {latestCityUnlockReward ? (
+        <CityUnlockRewardModal
+          onClose={clearLatestCityUnlockReward}
+          reward={latestCityUnlockReward}
+          styles={styles}
+        />
+      ) : null}
       {shareCard ? <ShareCardPreview data={shareCard} onClose={() => setShareCard(null)} onSave={saveShareCardAsPng} styles={styles} /> : null}
     </SafeAreaView>
   );
@@ -2767,25 +2907,38 @@ function saveShareCardAsPng(data: ShareCardData) {
 
 function FailureCard({
   emojiTranslateY,
+  errorType,
+  onRetry,
   opacity,
   scale,
+  showRetry,
   translateX,
 }: {
   emojiTranslateY: Animated.AnimatedInterpolation<string | number>;
+  errorType: RecognitionErrorType;
+  onRetry: () => void;
   opacity: Animated.AnimatedInterpolation<string | number>;
   scale: Animated.AnimatedInterpolation<string | number>;
+  showRetry: boolean;
   translateX: Animated.AnimatedInterpolation<string | number>;
 }) {
+  const isTemporary = errorType === 'temporary';
+
   return (
     <Animated.View style={[styles.failureCard, { opacity, transform: [{ translateX }, { scale }] }]}>
       <Animated.Text style={[styles.failureEmoji, { transform: [{ translateY: emojiTranslateY }] }]}>
         🪄
       </Animated.Text>
-      <Text style={styles.failureTitle}>{COPY.errorTitle}</Text>
-      <Text style={styles.failureHint}>{COPY.errorHint}</Text>
+      <Text style={styles.failureTitle}>{isTemporary ? COPY.temporaryErrorTitle : COPY.errorTitle}</Text>
+      <Text style={styles.failureHint}>{isTemporary ? COPY.temporaryErrorHint : COPY.errorHint}</Text>
       <View style={styles.failureEncouragePill}>
         <Text style={styles.failureEncourageText}>{COPY.errorEncourage}</Text>
       </View>
+      {isTemporary && showRetry ? (
+        <Pressable style={({ pressed }) => [styles.failureRetryButton, pressed && styles.buttonPressed]} onPress={onRetry}>
+          <Text style={styles.failureRetryText}>{COPY.temporaryErrorRetry}</Text>
+        </Pressable>
+      ) : null}
     </Animated.View>
   );
 }
@@ -2988,6 +3141,8 @@ function MagicCollection({
       />
 
       <CityMapPanel cityMapCompletedNodeIds={cityMapCompletedNodeIds} cityMaps={cityMaps} />
+
+      <WorldMapPanel cityMapCompletedNodeIds={cityMapCompletedNodeIds} cityMaps={cityMaps} styles={styles} />
 
       <MuseumBadgeWall
         latestMuseumBadge={latestMuseumBadge}
@@ -4827,6 +4982,23 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '900',
     lineHeight: 18,
+    textAlign: 'center',
+  },
+  failureRetryButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 44,
+    borderRadius: 999,
+    backgroundColor: '#7C3AED',
+    marginTop: 14,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+  },
+  failureRetryText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '900',
+    lineHeight: 20,
     textAlign: 'center',
   },
   debugResponseCard: {

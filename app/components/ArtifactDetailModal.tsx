@@ -1,7 +1,17 @@
 import { Animated, Modal, Pressable, Text, View } from 'react-native';
 import { getRarityVisualStyles } from '../utils/rarity';
 
-type RecognitionResult = { object_en: string; object_zh: string; confidence: string };
+type RecognitionResult = {
+  object_en: string;
+  object_zh: string;
+  specific_en?: string;
+  specific_zh?: string;
+  brand?: string;
+  subtype?: string;
+  confidence: string;
+  needs_follow_up?: boolean;
+  follow_up_question?: string;
+};
 type CollectionItem = RecognitionResult & { discoveredAt: string; emoji: string };
 type StickerCategoryKey = 'common' | 'rare' | 'epic' | 'legendary';
 type MuseumExhibit = { emoji: string; id: string; keywords: string[]; object_en: string; object_zh: string };
@@ -73,6 +83,10 @@ export function ArtifactDetailModal({
   const details = getGalleryArtifactDetails(exhibit, [item]);
   const rarityCategory = getStickerCategory(item);
   const rarityVisual = getRarityVisualStyles(rarityCategory, styles as Parameters<typeof getRarityVisualStyles>[1]);
+  const baseZh = item.object_zh || exhibit.object_zh;
+  const baseEn = item.object_en || exhibit.object_en;
+  const specificZh = item.specific_zh?.trim() || baseZh;
+  const specificEn = item.specific_en?.trim() || baseEn;
 
   return (
     <Modal animationType="fade" onRequestClose={onClose} transparent visible>
@@ -97,9 +111,11 @@ export function ArtifactDetailModal({
             ) : null}
             <Text style={styles.artifactDetailEmoji}>{details.emoji}</Text>
           </View>
-          <Text style={styles.artifactDetailZh}>{item.object_zh || exhibit.object_zh}</Text>
-          <Text style={styles.artifactDetailEn}>{item.object_en || exhibit.object_en}</Text>
+          <Text style={styles.artifactDetailZh}>{specificZh}</Text>
+          <Text style={styles.artifactDetailEn}>{specificEn}</Text>
           <View style={styles.artifactDetailInfoBox}>
+            <Text style={styles.artifactDetailMeta}>基础词：{baseZh} / {baseEn}</Text>
+            <Text style={styles.artifactDetailMeta}>具体识别：{specificZh} / {specificEn}</Text>
             <Text style={styles.artifactDetailMeta}>所属博物馆：{museum.title}</Text>
             <Text style={styles.artifactDetailMeta}>稀有度：{details.rarityLabel}</Text>
             <Text style={styles.artifactDetailMeta}>首次发现：{formatDiscoveredAt(item.discoveredAt)}</Text>

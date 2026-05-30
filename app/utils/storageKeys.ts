@@ -6,6 +6,7 @@ export const MUSEUM_BADGES_STORAGE_KEY = 'ai-magic-camera-museum-badges';
 export const CUSTOM_MUSEUMS_STORAGE_KEY = 'ai-magic-camera-custom-museums';
 export const CURATOR_STORAGE_KEY = 'ai-magic-camera-curator';
 export const CITY_MAP_STORAGE_KEY = 'ai-magic-camera-city-map';
+export const CITY_UNLOCK_REWARDS_STORAGE_KEY = 'ai-magic-camera-city-unlock-rewards';
 export const COLLECTION_STORAGE_KEY = 'ai-magic-camera-collection';
 export const DAILY_QUEST_STORAGE_KEY = 'ai-magic-camera-daily-quests';
 export const LIMITED_EVENT_STORAGE_KEY = 'ai-magic-camera-limited-events';

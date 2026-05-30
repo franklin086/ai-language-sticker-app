@@ -8,7 +8,13 @@ type StickerCategoryKey = 'common' | 'rare' | 'epic' | 'legendary';
 type RecognitionResult = {
   object_en: string;
   object_zh: string;
+  specific_en?: string;
+  specific_zh?: string;
+  brand?: string;
+  subtype?: string;
   confidence: string;
+  needs_follow_up?: boolean;
+  follow_up_question?: string;
 };
 
 function SpeechButton({
@@ -78,6 +84,8 @@ export function MagicWordCard({
   styles: ComponentStyles;
 }) {
   const rarityVisual = getRarityVisualStyles(rarityCategory, styles as Parameters<typeof getRarityVisualStyles>[1]);
+  const displayZh = result.specific_zh?.trim() || result.object_zh || '未命名藏品';
+  const displayEn = result.specific_en?.trim() || result.object_en || 'unnamed artifact';
 
   return (
     <View style={[styles.wordCard, rarityVisual.card]}>
@@ -98,8 +106,8 @@ export function MagicWordCard({
         ) : null}
         <Text style={styles.magicEmoji}>{magicEmoji}</Text>
       </View>
-      <Text style={styles.chineseWord}>{result.object_zh || '未命名藏品'}</Text>
-      <Text style={styles.englishWord}>{result.object_en || 'unnamed artifact'}</Text>
+      <Text style={styles.chineseWord}>{displayZh}</Text>
+      <Text style={styles.englishWord}>{displayEn}</Text>
       <Text style={styles.rarityLine}>稀有度：{rarityLabel}</Text>
       <Text style={styles.confidenceLine}>
         {confidenceLabel}: {confidenceText}
