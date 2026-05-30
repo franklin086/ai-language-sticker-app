@@ -12,6 +12,7 @@ import { MUSEUM_ARTIFACT_BADGES } from './data/museumArtifacts';
 import { useAchievements } from './hooks/useAchievements';
 import { useCompanion } from './hooks/useCompanion';
 import { useDailyQuest, type DailyQuestProgress } from './hooks/useDailyQuest';
+import { useLimitedEvent, type LimitedEventProgress } from './hooks/useLimitedEvent';
 import { useTreasureChest } from './hooks/useTreasureChest';
 import {
   findMuseumArtifact,
@@ -26,7 +27,6 @@ import {
   COLLECTION_STORAGE_KEY,
   CURATOR_STORAGE_KEY,
   CUSTOM_MUSEUMS_STORAGE_KEY,
-  LIMITED_EVENT_STORAGE_KEY,
   MUSEUM_BADGES_STORAGE_KEY,
   MUSEUM_STORAGE_KEY,
   STREAK_STORAGE_KEY,
@@ -87,20 +87,6 @@ type AchievementId =
   | 'traffic_expert'
   | 'animal_friend'
   | 'twenty_items';
-
-type LimitedEventState = {
-  badgeIds: string[];
-  completedEventIds: string[];
-};
-
-type LimitedEventProgress = {
-  badgeId: string;
-  badgeTitle: string;
-  completed: boolean;
-  eventId: string;
-  progress: number;
-  target: number;
-};
 
 type AchievementDefinition = {
   encouragement?: string;
@@ -219,14 +205,6 @@ const COPY = {
   confidence: 'Confidence',
   camera: '📷 拍照识别',
   album: '🖼️ 从相册选择',
-};
-
-const ANIMAL_EXPLORATION_EVENT = {
-  badgeId: 'limited-badge-animal-explorer',
-  badgeTitle: '🐾 动物探索家',
-  eventId: 'animal-exploration-week',
-  target: 3,
-  xpReward: 50,
 };
 
 const ACHIEVEMENTS: AchievementDefinition[] = [
@@ -526,43 +504,6 @@ function saveStoredXp(xpState: XpState) {
     window.localStorage.setItem(XP_STORAGE_KEY, JSON.stringify(xpState));
   } catch {
     // XP is local encouragement. Recognition should continue even if storage is blocked.
-  }
-}
-
-function readStoredLimitedEventState(): LimitedEventState {
-  if (Platform.OS !== 'web' || typeof window === 'undefined') {
-    return { badgeIds: [], completedEventIds: [] };
-  }
-
-  try {
-    const rawValue = window.localStorage.getItem(LIMITED_EVENT_STORAGE_KEY);
-    if (!rawValue) {
-      return { badgeIds: [], completedEventIds: [] };
-    }
-
-    const parsed = JSON.parse(rawValue) as { badgeIds?: string[]; completedEventIds?: string[] };
-    return {
-      badgeIds: Array.isArray(parsed.badgeIds)
-        ? Array.from(new Set(parsed.badgeIds.filter((id) => typeof id === 'string' && id.trim())))
-        : [],
-      completedEventIds: Array.isArray(parsed.completedEventIds)
-        ? Array.from(new Set(parsed.completedEventIds.filter((id) => typeof id === 'string' && id.trim())))
-        : [],
-    };
-  } catch {
-    return { badgeIds: [], completedEventIds: [] };
-  }
-}
-
-function saveStoredLimitedEventState(state: LimitedEventState) {
-  if (Platform.OS !== 'web' || typeof window === 'undefined') {
-    return;
-  }
-
-  try {
-    window.localStorage.setItem(LIMITED_EVENT_STORAGE_KEY, JSON.stringify(state));
-  } catch {
-    // Limited events are local rewards. Recognition should continue if storage is blocked.
   }
 }
 
@@ -1131,24 +1072,6 @@ function getDailyQuestArtifactIds(item: CollectionItem) {
   return fallbackId ? [`custom-${fallbackId}`] : [];
 }
 
-function getLimitedEventProgress(collection: CollectionItem[], limitedEventState: LimitedEventState): LimitedEventProgress {
-  const animalArtifactIds = new Set(
-    collection.filter((item) => collectionItemMatchesMuseum(item, 'animal')).flatMap((item) => getDailyQuestArtifactIds(item)),
-  );
-  const progress = Math.min(animalArtifactIds.size, ANIMAL_EXPLORATION_EVENT.target);
-
-  return {
-    badgeId: ANIMAL_EXPLORATION_EVENT.badgeId,
-    badgeTitle: ANIMAL_EXPLORATION_EVENT.badgeTitle,
-    completed:
-      progress >= ANIMAL_EXPLORATION_EVENT.target ||
-      limitedEventState.completedEventIds.includes(ANIMAL_EXPLORATION_EVENT.eventId),
-    eventId: ANIMAL_EXPLORATION_EVENT.eventId,
-    progress,
-    target: ANIMAL_EXPLORATION_EVENT.target,
-  };
-}
-
 function buildShareCardData({
   curatorTitle,
   encouragement,
@@ -1489,11 +1412,11 @@ export default function HomeScreen() {
       getArtifactIds: getDailyQuestArtifactIds,
       itemMatchesMuseum: collectionItemMatchesMuseum,
     });
-  const [limitedEventState, setLimitedEventState] = useState<LimitedEventState>({
-    badgeIds: [],
-    completedEventIds: [],
+  const { latestLimitedEventReward, limitedEventProgress, updateLimitedEventRewards } = useLimitedEvent({
+    collection,
+    getArtifactIds: getDailyQuestArtifactIds,
+    itemMatchesMuseum: collectionItemMatchesMuseum,
   });
-  const [latestLimitedEventReward, setLatestLimitedEventReward] = useState('');
   const { addCompanionXp, companionMessage, companionState, companionXpPerLevel, latestCompanionTitle } = useCompanion();
   const {
     achievementGlowScale,
@@ -1549,7 +1472,6 @@ export default function HomeScreen() {
       setXpState(storedXp);
     }
 
-    setLimitedEventState(readStoredLimitedEventState());
     setCollection(readStoredCollection());
     setExpandedArtifactIds(readStoredExpandedArtifactIds());
     setMuseumCollectedIds(readStoredMuseumIds());
@@ -2003,7 +1925,7 @@ export default function HomeScreen() {
     ]).start();
   };
 
-  const addXpAmount = (earnedXp: number) => {
+  const addXpAmount = useCallback((earnedXp: number) => {
     setXpState((currentState) => {
       let nextXp = currentState.currentXp + earnedXp;
       let nextLevel = currentState.level;
@@ -2020,32 +1942,11 @@ export default function HomeScreen() {
       setShowLevelUp(didLevelUp);
       return nextState;
     });
-  };
+  }, []);
 
   const addXpForRecognition = (result: RecognitionResult) => {
     const category = getStickerCategory(result);
     addXpAmount(XP_REWARDS[category]);
-  };
-
-  const completeLimitedEventIfReady = (nextCollection: CollectionItem[]) => {
-    setLimitedEventState((currentState) => {
-      const progress = getLimitedEventProgress(nextCollection, currentState);
-      if (!progress.completed || currentState.completedEventIds.includes(progress.eventId)) {
-        return currentState;
-      }
-
-      addXpAmount(ANIMAL_EXPLORATION_EVENT.xpReward);
-      addCompanionXp(30, '我们获得了限定徽章！', '骄傲');
-      openMagicChest(nextCollection.length + ANIMAL_EXPLORATION_EVENT.target);
-      setLatestLimitedEventReward(ANIMAL_EXPLORATION_EVENT.badgeTitle);
-
-      const nextState = {
-        badgeIds: Array.from(new Set([...currentState.badgeIds, progress.badgeId])),
-        completedEventIds: Array.from(new Set([...currentState.completedEventIds, progress.eventId])),
-      };
-      saveStoredLimitedEventState(nextState);
-      return nextState;
-    });
   };
 
   const unlockAchievements = useCallback(({
@@ -2423,10 +2324,13 @@ export default function HomeScreen() {
   }, [collection, customMuseums.length, museumCollectedIds, streakDays, unlockAchievements]);
 
   useEffect(() => {
-    completeLimitedEventIfReady(collection);
-    // Limited event rewards are guarded by completedEventIds; collection changes are the only trigger we need.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [collection]);
+    updateLimitedEventRewards({
+      addCompanionXp,
+      addXpAmount,
+      collection,
+      openMagicChest,
+    });
+  }, [addCompanionXp, addXpAmount, collection, openMagicChest, updateLimitedEventRewards]);
 
   return (
     <SafeAreaView style={styles.screen}>
@@ -2623,7 +2527,7 @@ export default function HomeScreen() {
             feedback={collectionFeedback}
             latestDailyQuestReward={latestDailyQuestReward}
             latestLimitedEventReward={latestLimitedEventReward}
-            limitedEventState={limitedEventState}
+            limitedEventProgress={limitedEventProgress}
             newestDiscoveryAt={newestDiscoveryAt}
             newItemOpacity={newItemOpacity}
             newItemScale={newItemScale}
@@ -2930,7 +2834,7 @@ function MagicCollection({
   feedback,
   latestDailyQuestReward,
   latestLimitedEventReward,
-  limitedEventState,
+  limitedEventProgress,
   newestDiscoveryAt,
   newItemOpacity,
   newItemScale,
@@ -2988,7 +2892,7 @@ function MagicCollection({
   feedback: 'new' | 'known' | '';
   latestDailyQuestReward: string;
   latestLimitedEventReward: string;
-  limitedEventState: LimitedEventState;
+  limitedEventProgress: LimitedEventProgress;
   newestDiscoveryAt: string;
   newItemOpacity: Animated.AnimatedInterpolation<string | number>;
   newItemScale: Animated.AnimatedInterpolation<string | number>;
@@ -3056,7 +2960,7 @@ function MagicCollection({
 
       <LimitedEventPanel
         latestLimitedEventReward={latestLimitedEventReward}
-        progress={getLimitedEventProgress(collection, limitedEventState)}
+        progress={limitedEventProgress}
         styles={styles}
       />
 
