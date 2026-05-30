@@ -45,8 +45,10 @@ export function getMuseumArtifactKeywords(artifact: MuseumArtifact) {
   return [
     artifact.objectEn,
     artifact.objectZh,
+    ...(artifact.aliases ?? []),
     normalizeMuseumArtifactText(artifact.objectEn),
     normalizeMuseumArtifactText(artifact.objectZh),
+    ...(artifact.aliases ?? []).map((alias) => normalizeMuseumArtifactText(alias)),
   ];
 }
 
