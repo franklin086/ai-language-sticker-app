@@ -8,7 +8,10 @@ import { FollowUpCard } from './components/FollowUpCard';
 import { LimitedEventPanel } from './components/LimitedEventPanel';
 import { MagicWordCard } from './components/MagicWordCard';
 import { MuseumSection } from './components/MuseumSection';
+import { MuseumMasterRankPanel } from './components/MuseumMasterRankPanel';
+import { PassportPanel } from './components/PassportPanel';
 import { ShareCardPreview, type ShareCardData } from './components/ShareCardPreview';
+import { StorylinePanel } from './components/StorylinePanel';
 import { TreasureChestPanel } from './components/TreasureChestPanel';
 import { WorldMapPanel } from './components/WorldMapPanel';
 import { MUSEUM_ARTIFACT_BADGES, museumArtifacts } from './data/museumArtifacts';
@@ -37,6 +40,7 @@ import {
   STREAK_STORAGE_KEY,
   XP_STORAGE_KEY,
 } from './utils/storageKeys';
+import { getWorldAchievementIds, type WorldAchievementId } from './utils/worldAchievementHelpers';
 import * as ImagePicker from 'expo-image-picker';
 import * as Speech from 'expo-speech';
 import {
@@ -98,7 +102,8 @@ type AchievementId =
   | 'pilot_apprentice'
   | 'traffic_expert'
   | 'animal_friend'
-  | 'twenty_items';
+  | 'twenty_items'
+  | WorldAchievementId;
 
 type AchievementDefinition = {
   encouragement?: string;
@@ -243,6 +248,11 @@ const ACTIVE_ACHIEVEMENTS: AchievementDefinition[] = [
   { emoji: '🎉', encouragement: '你完成了第一座官方博物馆！', id: 'one_official_museum', title: '博物馆新人' },
   { emoji: '👑', encouragement: '三座博物馆完成，你已经很像真正的馆长了！', id: 'three_official_museums', title: '博物馆达人' },
   { emoji: '✨', encouragement: '你开始创建自己的魔法博物馆了！', id: 'one_custom_museum', title: '小小馆长' },
+  { emoji: '🏙️', encouragement: '你点亮了第一座城市，世界地图开始发光啦！', id: 'world_city_explorer', title: '城市探索者' },
+  { emoji: '🇨🇳', encouragement: '中国的魔法城市都被你点亮了！', id: 'world_china_explorer', title: '中国探索家' },
+  { emoji: '🇯🇵', encouragement: '日本的魔法探索完成啦！', id: 'world_japan_explorer', title: '日本探索家' },
+  { emoji: '🇺🇸', encouragement: '美国的魔法探索完成啦！', id: 'world_usa_explorer', title: '美国探索家' },
+  { emoji: '🌍', encouragement: '整个世界地图都被你点亮了，太厉害了！', id: 'world_explorer', title: '世界探索家' },
 ];
 
 
@@ -2443,6 +2453,13 @@ export default function HomeScreen() {
   }, [collection, customMuseums.length, museumCollectedIds, streakDays, unlockAchievements]);
 
   useEffect(() => {
+    unlockAchievementIds(getWorldAchievementIds({
+      cityMapCompletedNodeIds,
+      cityMaps: CITY_MAPS,
+    }));
+  }, [cityMapCompletedNodeIds, unlockAchievementIds]);
+
+  useEffect(() => {
     updateLimitedEventRewards({
       addCompanionXp,
       addXpAmount,
@@ -3128,6 +3145,24 @@ function MagicCollection({
         unlockedAchievementIds={unlockedAchievementIds}
       />
 
+      <MuseumMasterRankPanel
+        cityMapCompletedNodeIds={cityMapCompletedNodeIds}
+        cityMaps={cityMaps}
+        collection={collection}
+        museumCollectedIds={museumCollectedIds}
+        museums={museums}
+        styles={styles}
+        totalArtifactCount={STICKER_TOTAL}
+      />
+
+      <StorylinePanel
+        cityMapCompletedNodeIds={cityMapCompletedNodeIds}
+        cityMaps={cityMaps}
+        restoredMemoryCount={museumCollectedIds.length}
+        styles={styles}
+        totalMemoryCount={STICKER_TOTAL}
+      />
+
       <MagicMuseumPanel museumCollectedIds={museumCollectedIds} museums={museums} />
 
       <CollectionGallery
@@ -3142,7 +3177,26 @@ function MagicCollection({
 
       <CityMapPanel cityMapCompletedNodeIds={cityMapCompletedNodeIds} cityMaps={cityMaps} />
 
-      <WorldMapPanel cityMapCompletedNodeIds={cityMapCompletedNodeIds} cityMaps={cityMaps} styles={styles} />
+      <WorldMapPanel
+        cityMapCompletedNodeIds={cityMapCompletedNodeIds}
+        cityMaps={cityMaps}
+        collection={collection}
+        museumCollectedIds={museumCollectedIds}
+        museums={museums}
+        onShareArtifact={onShareArtifact}
+        onSpeakArtifactChinese={onSpeakArtifactChinese}
+        onSpeakArtifactEnglish={onSpeakArtifactEnglish}
+        speakButtonScale={speakButtonScale}
+        speakingLanguage={speakingLanguage}
+        styles={styles}
+      />
+
+      <PassportPanel
+        cityMapCompletedNodeIds={cityMapCompletedNodeIds}
+        cityMaps={cityMaps}
+        museumCollectedIds={museumCollectedIds}
+        styles={styles}
+      />
 
       <MuseumBadgeWall
         latestMuseumBadge={latestMuseumBadge}
