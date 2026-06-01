@@ -13,6 +13,7 @@ import { PassportPanel } from './components/PassportPanel';
 import { ShareCardPreview, type ShareCardData } from './components/ShareCardPreview';
 import { StorylinePanel } from './components/StorylinePanel';
 import { TreasureChestPanel } from './components/TreasureChestPanel';
+import { WorldExpeditionPanel } from './components/WorldExpeditionPanel';
 import { WorldMapPanel } from './components/WorldMapPanel';
 import { MUSEUM_ARTIFACT_BADGES, museumArtifacts } from './data/museumArtifacts';
 import { useAchievements } from './hooks/useAchievements';
@@ -3161,6 +3162,15 @@ function MagicCollection({
         restoredMemoryCount={museumCollectedIds.length}
         styles={styles}
         totalMemoryCount={STICKER_TOTAL}
+      />
+
+      <WorldExpeditionPanel
+        cityMapCompletedNodeIds={cityMapCompletedNodeIds}
+        cityMaps={cityMaps}
+        collection={collection}
+        museumCollectedIds={museumCollectedIds}
+        museums={museums}
+        styles={styles}
       />
 
       <MagicMuseumPanel museumCollectedIds={museumCollectedIds} museums={museums} />
