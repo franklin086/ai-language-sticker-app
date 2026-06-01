@@ -114,7 +114,7 @@ export function buildNationalMapProgress({
   const completedNodeIds = new Set(cityMapCompletedNodeIds);
   const cities = country.cities.map((worldCity) => {
     const cityMap = cityMaps.find((city) => city.id === worldCity.cityId);
-    const cityMuseums = cityMap?.museums ?? [];
+    const cityMuseums = cityMap?.museums ?? worldCity.museums ?? [];
     const museumProgress = cityMuseums.map((cityMuseum) =>
       getMuseumProgress({
         cityMuseum,

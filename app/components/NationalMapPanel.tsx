@@ -64,6 +64,7 @@ export function NationalMapPanel({
           <NationalCityCard
             city={city}
             key={city.cityId}
+            onBack={onBack}
             onOpenMuseum={(museum) =>
               onOpenMuseum({
                 cityName: city.cityName,

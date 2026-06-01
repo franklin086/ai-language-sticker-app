@@ -4,9 +4,11 @@ import type { NationalCityProgress } from '../utils/nationalMapHelpers';
 
 export function NationalCityCard({
   city,
+  onBack,
   onOpenMuseum,
 }: {
   city: NationalCityProgress;
+  onBack: () => void;
   onOpenMuseum: (museum: NationalCityProgress['museums'][number]) => void;
 }) {
   const [expanded, setExpanded] = useState(false);
@@ -26,6 +28,22 @@ export function NationalCityCard({
         shadowRadius: completed ? 14 : 8,
       }}
     >
+      <View style={{ alignItems: 'flex-end', marginBottom: 8 }}>
+        <Pressable
+          style={({ pressed }) => ({
+            backgroundColor: pressed ? '#DDD6FE' : '#F5F3FF',
+            borderColor: '#C4B5FD',
+            borderRadius: 999,
+            borderWidth: 1,
+            paddingHorizontal: 12,
+            paddingVertical: 7,
+          })}
+          onPress={onBack}
+        >
+          <Text style={{ color: '#6D28D9', fontSize: 12, fontWeight: '900' }}>← 世界地图</Text>
+        </Pressable>
+      </View>
+
       <Pressable onPress={() => setExpanded((current) => !current)}>
         <View style={{ alignItems: 'flex-start', flexDirection: 'row', justifyContent: 'space-between', gap: 12 }}>
           <View style={{ flex: 1 }}>

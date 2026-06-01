@@ -56,8 +56,9 @@ export function buildWorldMapProgress({
   return worldMap.map((country) => {
     const cities = country.cities.map((worldCity) => {
       const cityMap = cityMaps.find((city) => city.id === worldCity.cityId);
-      const totalMuseumCount = cityMap?.museums.length ?? 0;
-      const completedMuseumCount = cityMap?.museums.filter((museum) => completedNodeIds.has(museum.id)).length ?? 0;
+      const cityMuseums = cityMap?.museums ?? worldCity.museums ?? [];
+      const totalMuseumCount = cityMuseums.length;
+      const completedMuseumCount = cityMuseums.filter((museum) => completedNodeIds.has(museum.id)).length;
       const percent = getPercent(completedMuseumCount, totalMuseumCount);
 
       return {

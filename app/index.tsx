@@ -7,6 +7,7 @@ import { DailyQuestPanel } from './components/DailyQuestPanel';
 import { DiscoveryCelebrationModal } from './components/DiscoveryCelebrationModal';
 import { FollowUpCard } from './components/FollowUpCard';
 import { LimitedEventPanel } from './components/LimitedEventPanel';
+import { MagicGuildPanel } from './components/MagicGuildPanel';
 import { MagicWordCard } from './components/MagicWordCard';
 import { MuseumSection } from './components/MuseumSection';
 import { MuseumMasterRankPanel } from './components/MuseumMasterRankPanel';
@@ -1492,6 +1493,7 @@ export default function HomeScreen() {
     title: getCuratorTitle(1),
   });
   const [shareCard, setShareCard] = useState<ShareCardData | null>(null);
+  const [showMagicGuild, setShowMagicGuild] = useState(false);
   const [hoveredButton, setHoveredButton] = useState<'camera' | 'album' | null>(null);
   const [speakingLanguage, setSpeakingLanguage] = useState<'zh' | 'en' | null>(null);
   const { followUpError, isFollowingUp, runFollowUpRecognition } = useFollowUpRecognition(FOLLOW_UP_API_URL);
@@ -2769,9 +2771,27 @@ export default function HomeScreen() {
             >
               <Text style={styles.secondaryButtonText}>{COPY.album}</Text>
             </Pressable>
+
+            <Pressable
+              style={({ pressed }) => [styles.secondaryButton, pressed && styles.secondaryButtonPressed]}
+              onPress={() => setShowMagicGuild(true)}
+            >
+              <Text style={styles.secondaryButtonText}>🏛 公会总部</Text>
+            </Pressable>
           </View>
         </View>
       </ScrollView>
+      {showMagicGuild ? (
+        <MagicGuildPanel
+          cityMapCompletedNodeIds={cityMapCompletedNodeIds}
+          cityMaps={CITY_MAPS}
+          collection={collection}
+          museumCollectedIds={museumCollectedIds}
+          museums={MAGIC_MUSEUMS_WITH_ARTIFACTS}
+          onClose={() => setShowMagicGuild(false)}
+          totalArtifactCount={STICKER_TOTAL}
+        />
+      ) : null}
       {latestCityUnlockReward ? (
         <CityUnlockRewardModal
           onClose={clearLatestCityUnlockReward}
