@@ -4,6 +4,7 @@ import { AchievementPanel } from './components/AchievementPanel';
 import { CityUnlockRewardModal } from './components/CityUnlockRewardModal';
 import { CompanionCard } from './components/CompanionCard';
 import { DailyQuestPanel } from './components/DailyQuestPanel';
+import { DiscoveryCelebrationModal } from './components/DiscoveryCelebrationModal';
 import { FollowUpCard } from './components/FollowUpCard';
 import { LimitedEventPanel } from './components/LimitedEventPanel';
 import { MagicWordCard } from './components/MagicWordCard';
@@ -20,6 +21,7 @@ import { useAchievements } from './hooks/useAchievements';
 import { useCityUnlockRewards } from './hooks/useCityUnlockRewards';
 import { useCompanion } from './hooks/useCompanion';
 import { useDailyQuest, type DailyQuestProgress } from './hooks/useDailyQuest';
+import { useDiscoveryCelebration } from './hooks/useDiscoveryCelebration';
 import { useFollowUpRecognition } from './hooks/useFollowUpRecognition';
 import { useLimitedEvent, type LimitedEventProgress } from './hooks/useLimitedEvent';
 import { useTreasureChest } from './hooks/useTreasureChest';
@@ -1493,6 +1495,7 @@ export default function HomeScreen() {
   const [hoveredButton, setHoveredButton] = useState<'camera' | 'album' | null>(null);
   const [speakingLanguage, setSpeakingLanguage] = useState<'zh' | 'en' | null>(null);
   const { followUpError, isFollowingUp, runFollowUpRecognition } = useFollowUpRecognition(FOLLOW_UP_API_URL);
+  const { closeDiscoveryCelebration, discoveryCelebration, triggerDiscoveryCelebration } = useDiscoveryCelebration();
 
   const floatValue = useRef(new Animated.Value(0));
   const scanValue = useRef(new Animated.Value(0));
@@ -2226,6 +2229,14 @@ export default function HomeScreen() {
         setNewestDiscoveryAt(discoveredAt);
         animateCount();
         openMagicChest(nextCollection.length);
+        triggerDiscoveryCelebration({
+          cityMapCompletedNodeIds,
+          cityMaps: CITY_MAPS,
+          collection: nextCollection,
+          item: nextCollection[0],
+          museumCollectedIds,
+          museums: MAGIC_MUSEUMS_WITH_ARTIFACTS,
+        });
         updateDailyQuestRewards(nextCollection, {
           addCompanionXp,
           addXpAmount,
@@ -2767,6 +2778,9 @@ export default function HomeScreen() {
           reward={latestCityUnlockReward}
           styles={styles}
         />
+      ) : null}
+      {discoveryCelebration ? (
+        <DiscoveryCelebrationModal data={discoveryCelebration} onClose={closeDiscoveryCelebration} />
       ) : null}
       {shareCard ? <ShareCardPreview data={shareCard} onClose={() => setShareCard(null)} onSave={saveShareCardAsPng} styles={styles} /> : null}
     </SafeAreaView>
