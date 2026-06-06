@@ -4,10 +4,12 @@ import { AchievementPanel } from './components/AchievementPanel';
 import { CityUnlockRewardModal } from './components/CityUnlockRewardModal';
 import { CompanionCard } from './components/CompanionCard';
 import { DailyQuestPanel } from './components/DailyQuestPanel';
+import { DailyDiscoveryStreakPanel } from './components/DailyDiscoveryStreakPanel';
 import { DiscoveryCelebrationModal } from './components/DiscoveryCelebrationModal';
 import { FollowUpCard } from './components/FollowUpCard';
 import { LimitedEventPanel } from './components/LimitedEventPanel';
 import { MagicGuildPanel } from './components/MagicGuildPanel';
+import { MagicMuseumLeaguePanel } from './components/MagicMuseumLeaguePanel';
 import { MagicWordCard } from './components/MagicWordCard';
 import { MuseumSection } from './components/MuseumSection';
 import { MuseumMasterRankPanel } from './components/MuseumMasterRankPanel';
@@ -17,12 +19,14 @@ import { StorylinePanel } from './components/StorylinePanel';
 import { SeasonalEventPanel } from './components/SeasonalEventPanel';
 import { TreasureChestPanel } from './components/TreasureChestPanel';
 import { WorldExpeditionPanel } from './components/WorldExpeditionPanel';
+import { WorldMemoryFragmentPanel } from './components/WorldMemoryFragmentPanel';
 import { WorldMapPanel } from './components/WorldMapPanel';
 import { MUSEUM_ARTIFACT_BADGES, museumArtifacts } from './data/museumArtifacts';
 import { useAchievements } from './hooks/useAchievements';
 import { useCityUnlockRewards } from './hooks/useCityUnlockRewards';
 import { useCompanion } from './hooks/useCompanion';
 import { useDailyQuest, type DailyQuestProgress } from './hooks/useDailyQuest';
+import { useDailyDiscoveryStreak } from './hooks/useDailyDiscoveryStreak';
 import { useDiscoveryCelebration } from './hooks/useDiscoveryCelebration';
 import { useFollowUpRecognition } from './hooks/useFollowUpRecognition';
 import { useLimitedEvent, type LimitedEventProgress } from './hooks/useLimitedEvent';
@@ -45,6 +49,10 @@ import {
   STREAK_STORAGE_KEY,
   XP_STORAGE_KEY,
 } from './utils/storageKeys';
+import type {
+  DailyDiscoveryStreakMilestone,
+  DailyDiscoveryStreakState,
+} from './utils/dailyDiscoveryStreakHelpers';
 import { getWorldAchievementIds, type WorldAchievementId } from './utils/worldAchievementHelpers';
 import * as ImagePicker from 'expo-image-picker';
 import * as Speech from 'expo-speech';
@@ -1465,6 +1473,14 @@ export default function HomeScreen() {
       getArtifactIds: getDailyQuestArtifactIds,
       itemMatchesMuseum: collectionItemMatchesMuseum,
     });
+  const {
+    clearLatestDailyDiscoveryMilestone,
+    dailyDiscoveryMilestones,
+    dailyDiscoveryStreakState,
+    latestDailyDiscoveryMilestone,
+    nextMilestone,
+    updateDailyDiscoveryStreak,
+  } = useDailyDiscoveryStreak();
   const { latestLimitedEventReward, limitedEventProgress, updateLimitedEventRewards } = useLimitedEvent({
     collection,
     getArtifactIds: getDailyQuestArtifactIds,
@@ -2174,6 +2190,7 @@ export default function HomeScreen() {
 
       setRecognitionResult(recognizedData);
       setErrorMessage(null);
+      updateDailyDiscoveryStreak();
       updateStreakForToday();
       const achievementStreakDays = lastStreakDate === getDateKey(new Date())
         ? streakDays
@@ -2687,9 +2704,12 @@ export default function HomeScreen() {
             collection={collection}
             collectionMessage={collectionMessage}
             countScale={countScale}
+            dailyDiscoveryMilestones={dailyDiscoveryMilestones}
+            dailyDiscoveryStreakState={dailyDiscoveryStreakState}
             dailyQuestProgress={dailyQuestProgress}
             expandedArtifactIds={expandedArtifactIds}
             feedback={collectionFeedback}
+            latestDailyDiscoveryMilestone={latestDailyDiscoveryMilestone}
             latestDailyQuestReward={latestDailyQuestReward}
             latestLimitedEventReward={latestLimitedEventReward}
             limitedEventProgress={limitedEventProgress}
@@ -2722,6 +2742,8 @@ export default function HomeScreen() {
             xpLevelUpScale={xpLevelUpScale}
             xpState={xpState}
             unlockedAchievementIds={unlockedAchievementIds}
+            nextDailyDiscoveryMilestone={nextMilestone}
+            onClearLatestDailyDiscoveryMilestone={clearLatestDailyDiscoveryMilestone}
             onShareArtifact={(item) => openShareCard('AI Magic Encyclopedia', 'I found a new magic artifact!', item)}
             onToggleArtifactStory={toggleArtifactStory}
             onSpeakArtifactChinese={(text) => speakWord(text, 'zh')}
@@ -3035,9 +3057,12 @@ function MagicCollection({
   collection,
   collectionMessage,
   countScale,
+  dailyDiscoveryMilestones,
+  dailyDiscoveryStreakState,
   dailyQuestProgress,
   expandedArtifactIds,
   feedback,
+  latestDailyDiscoveryMilestone,
   latestDailyQuestReward,
   latestLimitedEventReward,
   limitedEventProgress,
@@ -3070,6 +3095,8 @@ function MagicCollection({
   xpLevelUpScale,
   xpState,
   unlockedAchievementIds,
+  nextDailyDiscoveryMilestone,
+  onClearLatestDailyDiscoveryMilestone,
   onShareArtifact,
   onShareMuseumBadge,
   onSpeakArtifactChinese,
@@ -3093,9 +3120,12 @@ function MagicCollection({
   collection: CollectionItem[];
   collectionMessage: string;
   countScale: Animated.AnimatedInterpolation<string | number>;
+  dailyDiscoveryMilestones: DailyDiscoveryStreakMilestone[];
+  dailyDiscoveryStreakState: DailyDiscoveryStreakState;
   dailyQuestProgress: DailyQuestProgress[];
   expandedArtifactIds: string[];
   feedback: 'new' | 'known' | '';
+  latestDailyDiscoveryMilestone: DailyDiscoveryStreakMilestone | null;
   latestDailyQuestReward: string;
   latestLimitedEventReward: string;
   limitedEventProgress: LimitedEventProgress;
@@ -3128,6 +3158,8 @@ function MagicCollection({
   xpLevelUpScale: Animated.AnimatedInterpolation<string | number>;
   xpState: XpState;
   unlockedAchievementIds: AchievementId[];
+  nextDailyDiscoveryMilestone: DailyDiscoveryStreakMilestone;
+  onClearLatestDailyDiscoveryMilestone: () => void;
   onShareArtifact: (item: CollectionItem) => void;
   onShareMuseumBadge: (badge: MuseumBadge) => void;
   onSpeakArtifactChinese: (text: string) => void;
@@ -3161,6 +3193,15 @@ function MagicCollection({
       <DailyQuestPanel
         latestDailyQuestReward={latestDailyQuestReward}
         questProgress={dailyQuestProgress}
+        styles={styles}
+      />
+
+      <DailyDiscoveryStreakPanel
+        latestMilestone={latestDailyDiscoveryMilestone}
+        milestones={dailyDiscoveryMilestones}
+        nextMilestone={nextDailyDiscoveryMilestone}
+        onClearLatestMilestone={onClearLatestDailyDiscoveryMilestone}
+        state={dailyDiscoveryStreakState}
         styles={styles}
       />
 
@@ -3200,6 +3241,16 @@ function MagicCollection({
       />
 
       <SeasonalEventPanel collection={collection} museumCollectedIds={museumCollectedIds} styles={styles} />
+
+      <WorldMemoryFragmentPanel
+        cityMapCompletedNodeIds={cityMapCompletedNodeIds}
+        cityMaps={cityMaps}
+        collection={collection}
+        museumCollectedIds={museumCollectedIds}
+        styles={styles}
+      />
+
+      <MagicMuseumLeaguePanel collection={collection} museumCollectedIds={museumCollectedIds} styles={styles} />
 
       <WorldExpeditionPanel
         cityMapCompletedNodeIds={cityMapCompletedNodeIds}
