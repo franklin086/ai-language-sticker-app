@@ -14,6 +14,7 @@ import { MuseumMasterRankPanel } from './components/MuseumMasterRankPanel';
 import { PassportPanel } from './components/PassportPanel';
 import { ShareCardPreview, type ShareCardData } from './components/ShareCardPreview';
 import { StorylinePanel } from './components/StorylinePanel';
+import { SeasonalEventPanel } from './components/SeasonalEventPanel';
 import { TreasureChestPanel } from './components/TreasureChestPanel';
 import { WorldExpeditionPanel } from './components/WorldExpeditionPanel';
 import { WorldMapPanel } from './components/WorldMapPanel';
@@ -3197,6 +3198,8 @@ function MagicCollection({
         styles={styles}
         totalMemoryCount={STICKER_TOTAL}
       />
+
+      <SeasonalEventPanel collection={collection} museumCollectedIds={museumCollectedIds} styles={styles} />
 
       <WorldExpeditionPanel
         cityMapCompletedNodeIds={cityMapCompletedNodeIds}

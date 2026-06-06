@@ -1,6 +1,7 @@
 import { Pressable, Text, View } from 'react-native';
 import type { NationalMapProgress } from '../utils/nationalMapHelpers';
 import { NationalCityCard } from './NationalCityCard';
+import { NationalNpcCard } from './NationalNpcCard';
 
 export function NationalMapPanel({
   nationalMap,
@@ -26,6 +27,8 @@ export function NationalMapPanel({
           完成城市，点亮国家探索之路
         </Text>
       </View>
+
+      <NationalNpcCard countryId={nationalMap.countryId} percent={nationalMap.percent} />
 
       <View
         style={{
