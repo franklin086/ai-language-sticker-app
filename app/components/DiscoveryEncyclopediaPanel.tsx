@@ -1,5 +1,6 @@
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useDiscoveryEncyclopedia } from '../hooks/useDiscoveryEncyclopedia';
+import { useContentLanguage } from '../hooks/useContentLanguage';
 import { useLanguage } from '../hooks/useLanguage';
 import type { TranslationKey } from '../i18n/translations';
 import type { EncyclopediaFilterKey, EncyclopediaSortKey } from '../utils/discoveryEncyclopediaHelpers';
@@ -27,6 +28,7 @@ export function DiscoveryEncyclopediaPanel({
   onBack: () => void;
 }) {
   const encyclopedia = useDiscoveryEncyclopedia({ collection, museumCollectedIds });
+  const { getArtifactDescription, getArtifactName } = useContentLanguage();
   const { t } = useLanguage();
   const selectedEntry = encyclopedia.selectedEntry;
 
@@ -128,10 +130,13 @@ export function DiscoveryEncyclopediaPanel({
             <>
               <Text style={{ fontSize: 42, textAlign: 'center' }}>{selectedEntry.artifact.emoji}</Text>
               <Text style={{ color: '#6D28D9', fontSize: 20, fontWeight: '900', marginTop: 8, textAlign: 'center' }}>
-                {selectedEntry.artifact.objectZh}
+                {getArtifactName(selectedEntry.artifact)}
               </Text>
               <Text style={{ color: '#7C3AED', fontSize: 13, fontWeight: '800', marginTop: 4, textAlign: 'center' }}>
                 {selectedEntry.artifact.objectEn}
+              </Text>
+              <Text style={{ color: '#92400E', fontSize: 12, fontWeight: '800', lineHeight: 18, marginTop: 8, textAlign: 'center' }}>
+                {getArtifactDescription(selectedEntry.artifact)}
               </Text>
 
               <EncyclopediaSection title={`🏛 ${t('collection')}`}>

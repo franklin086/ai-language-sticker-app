@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { Animated, Pressable, Text, View } from 'react-native';
 import {
-  getMuseumArtifactCategory,
   findMuseumArtifact,
+  getMuseumArtifactCategory,
   type StickerCategoryKey,
 } from '../utils/artifactHelpers';
+import { useLanguage } from '../hooks/useLanguage';
 import type { MuseumExplorerArtifact, MuseumExplorerData } from '../utils/museumExplorerHelpers';
 import { ArtifactDetailModal } from './ArtifactDetailModal';
 import { MuseumArtifactGrid } from './MuseumArtifactGrid';
@@ -71,28 +72,28 @@ export function MuseumExplorerPanel({
   styles: ComponentStyles;
 }) {
   const [selectedArtifact, setSelectedArtifact] = useState<MuseumExplorerArtifact | null>(null);
+  const { t } = useLanguage();
 
   return (
     <View style={{ backgroundColor: '#FFF7ED', borderColor: data.completed ? '#FBBF24' : '#E9D5FF', borderRadius: 24, borderWidth: data.completed ? 2 : 1, padding: 16 }}>
-      <Text style={{ color: '#6D28D9', fontSize: 24, fontWeight: '900' }}>🏛 博物馆探索页</Text>
+      <Text style={{ color: '#6D28D9', fontSize: 24, fontWeight: '900' }}>🏛 {t('museum')}</Text>
       <Text style={{ color: '#5B21B6', fontSize: 20, fontWeight: '900', marginTop: 8 }}>{data.museumName}</Text>
       <Text style={{ color: '#7C3AED', fontSize: 13, fontWeight: '700', marginTop: 6 }}>
-        {data.countryName} · {data.cityName}
+        {data.countryName} / {data.cityName}
       </Text>
 
       <MuseumNpcCard collectedCount={data.collectedCount} museumName={data.museum.title} totalCount={data.totalCount} />
 
       <View style={{ backgroundColor: data.completed ? '#FFFBEB' : '#FFFFFF', borderColor: data.completed ? '#FBBF24' : '#E9D5FF', borderRadius: 18, borderWidth: 1, marginTop: 14, padding: 14 }}>
         <Text style={{ color: data.completed ? '#B45309' : '#6D28D9', fontSize: 16, fontWeight: '900' }}>
-          {data.completed ? '🏅 博物馆完成印章' : '继续探索，收集更多藏品'}
+          {data.completed ? `🏆 ${t('completed')}` : t('unknown')}
         </Text>
-        {data.completed ? (
-          <Text style={{ color: '#92400E', fontSize: 13, fontWeight: '900', marginTop: 6 }}>馆长认证完成</Text>
-        ) : null}
         <Text style={{ color: '#7C3AED', fontSize: 13, fontWeight: '800', marginTop: 10 }}>
-          已收藏藏品：{data.collectedCount} / {data.totalCount}
+          {t('collection')}: {data.collectedCount} / {data.totalCount}
         </Text>
-        <Text style={{ color: '#B45309', fontSize: 15, fontWeight: '900', marginTop: 4 }}>完成度：{data.percent}%</Text>
+        <Text style={{ color: '#B45309', fontSize: 15, fontWeight: '900', marginTop: 4 }}>
+          {t('completed')}: {data.percent}%
+        </Text>
         <View style={{ backgroundColor: '#F3E8FF', borderRadius: 999, height: 12, marginTop: 10, overflow: 'hidden' }}>
           <View style={{ backgroundColor: '#FBBF24', borderRadius: 999, height: '100%', width: `${data.percent}%` }} />
         </View>
@@ -115,7 +116,9 @@ export function MuseumExplorerPanel({
         })}
         onPress={onBack}
       >
-        <Text style={{ color: '#6D28D9', fontSize: 14, fontWeight: '900', textAlign: 'center' }}>返回国家地图</Text>
+        <Text style={{ color: '#6D28D9', fontSize: 14, fontWeight: '900', textAlign: 'center' }}>
+          {t('back')} {t('world_map')}
+        </Text>
       </Pressable>
 
       {selectedArtifact?.item ? (

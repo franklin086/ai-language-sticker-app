@@ -1,4 +1,5 @@
 import { Pressable, Text } from 'react-native';
+import { useContentLanguage } from '../hooks/useContentLanguage';
 import { useLanguage } from '../hooks/useLanguage';
 import { getCollectionBookRarityLabel } from '../utils/museumCollectionsBookHelpers';
 import type { EncyclopediaArtifactEntry } from '../utils/discoveryEncyclopediaHelpers';
@@ -12,6 +13,7 @@ export function EncyclopediaArtifactCard({
   onPress: () => void;
   selected: boolean;
 }) {
+  const { getArtifactName } = useContentLanguage();
   const { t } = useLanguage();
 
   return (
@@ -32,7 +34,7 @@ export function EncyclopediaArtifactCard({
     >
       <Text style={{ fontSize: 30, textAlign: 'center' }}>{entry.discovered ? entry.artifact.emoji : '❓'}</Text>
       <Text numberOfLines={1} style={{ color: '#5B21B6', fontSize: 13, fontWeight: '900', marginTop: 8, textAlign: 'center' }}>
-        {entry.discovered ? entry.artifact.objectZh : t('mysterious_artifact')}
+        {entry.discovered ? getArtifactName(entry.artifact) : t('mysterious_artifact')}
       </Text>
       <Text numberOfLines={1} style={{ color: '#7C3AED', fontSize: 11, fontWeight: '800', marginTop: 4, textAlign: 'center' }}>
         {entry.discovered ? entry.artifact.objectEn : t('unknown')}

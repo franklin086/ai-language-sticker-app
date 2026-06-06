@@ -1,4 +1,5 @@
 import { Pressable, Text, View } from 'react-native';
+import { useLanguage } from '../hooks/useLanguage';
 import type { NationalMapProgress } from '../utils/nationalMapHelpers';
 import { NationalCityCard } from './NationalCityCard';
 import { NationalNpcCard } from './NationalNpcCard';
@@ -17,14 +18,16 @@ export function NationalMapPanel({
     museumName: string;
   }) => void;
 }) {
+  const { t } = useLanguage();
+
   return (
     <View style={{ backgroundColor: '#FFF7ED', borderColor: '#E9D5FF', borderRadius: 24, borderWidth: 1, padding: 16 }}>
       <View>
         <Text style={{ color: '#6D28D9', fontSize: 24, fontWeight: '900' }}>
-          {nationalMap.emoji} {nationalMap.countryName}魔法地图
+          {nationalMap.emoji} {nationalMap.countryName} {t('world_map')}
         </Text>
         <Text style={{ color: '#7C3AED', fontSize: 14, fontWeight: '700', marginTop: 6 }}>
-          完成城市，点亮国家探索之路
+          {t('cities')} / {t('museum')} / {t('progress')}
         </Text>
       </View>
 
@@ -40,15 +43,17 @@ export function NationalMapPanel({
           padding: 14,
         }}
       >
-        <Text style={{ color: '#6D28D9', fontSize: 15, fontWeight: '900' }}>国家总进度</Text>
+        <Text style={{ color: '#6D28D9', fontSize: 15, fontWeight: '900' }}>{t('total_completion')}</Text>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 10 }}>
           <Text style={{ color: '#7C3AED', fontSize: 13, fontWeight: '800' }}>
-            城市：{nationalMap.completedCityCount} / {nationalMap.totalCityCount}
+            {t('cities')}: {nationalMap.completedCityCount} / {nationalMap.totalCityCount}
           </Text>
           <Text style={{ color: '#7C3AED', fontSize: 13, fontWeight: '800' }}>
-            博物馆：{nationalMap.completedMuseumCount} / {nationalMap.totalMuseumCount}
+            {t('museum')}: {nationalMap.completedMuseumCount} / {nationalMap.totalMuseumCount}
           </Text>
-          <Text style={{ color: '#B45309', fontSize: 13, fontWeight: '900' }}>完成度：{nationalMap.percent}%</Text>
+          <Text style={{ color: '#B45309', fontSize: 13, fontWeight: '900' }}>
+            {t('completed')}: {nationalMap.percent}%
+          </Text>
         </View>
         <View style={{ backgroundColor: '#F3E8FF', borderRadius: 999, height: 12, marginTop: 12, overflow: 'hidden' }}>
           <View
@@ -91,7 +96,9 @@ export function NationalMapPanel({
         })}
         onPress={onBack}
       >
-        <Text style={{ color: '#6D28D9', fontSize: 14, fontWeight: '900', textAlign: 'center' }}>返回世界地图</Text>
+        <Text style={{ color: '#6D28D9', fontSize: 14, fontWeight: '900', textAlign: 'center' }}>
+          {t('back')} {t('world_map')}
+        </Text>
       </Pressable>
     </View>
   );

@@ -1,8 +1,10 @@
 import { Text, View } from 'react-native';
+import { useContentLanguage } from '../hooks/useContentLanguage';
 import { useLanguage } from '../hooks/useLanguage';
 import { getCollectionBookRarityLabel, type CollectionBookArtifact } from '../utils/museumCollectionsBookHelpers';
 
 export function CollectionBookArtifactCard({ item }: { item: CollectionBookArtifact }) {
+  const { getArtifactName } = useContentLanguage();
   const { t } = useLanguage();
 
   if (!item.discovered) {
@@ -46,7 +48,7 @@ export function CollectionBookArtifactCard({ item }: { item: CollectionBookArtif
     >
       <Text style={{ fontSize: 30, textAlign: 'center' }}>{item.artifact.emoji}</Text>
       <Text numberOfLines={1} style={{ color: '#5B21B6', fontSize: 13, fontWeight: '900', marginTop: 8, textAlign: 'center' }}>
-        {item.artifact.objectZh}
+        {getArtifactName(item.artifact)}
       </Text>
       <Text numberOfLines={1} style={{ color: '#7C3AED', fontSize: 11, fontWeight: '800', marginTop: 4, textAlign: 'center' }}>
         {item.artifact.objectEn}

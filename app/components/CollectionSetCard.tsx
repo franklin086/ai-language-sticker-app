@@ -1,4 +1,5 @@
 import { Text, View } from 'react-native';
+import { useContentLanguage } from '../hooks/useContentLanguage';
 import { useLanguage } from '../hooks/useLanguage';
 import type { CollectionSetProgress } from '../utils/collectionSetHelpers';
 
@@ -21,6 +22,7 @@ export function CollectionSetCard({
   highlighted?: boolean;
   set: CollectionSetProgress;
 }) {
+  const { getArtifactName } = useContentLanguage();
   const { t } = useLanguage();
   const completed = set.status === 'completed';
 
@@ -97,7 +99,7 @@ export function CollectionSetCard({
             }}
           >
             <Text style={{ color: '#6D28D9', fontSize: 12, fontWeight: '900' }}>
-              {artifact.discovered ? artifact.artifact?.emoji ?? '✅' : '❓'} {artifact.discovered ? artifact.label : t('mysterious_artifact')}
+              {artifact.discovered ? artifact.artifact?.emoji ?? '✅' : '❓'} {artifact.discovered && artifact.artifact ? getArtifactName(artifact.artifact) : artifact.discovered ? artifact.label : t('mysterious_artifact')}
             </Text>
             {!artifact.discovered ? (
               <Text style={{ color: '#7C3AED', fontSize: 10, fontWeight: '800', marginTop: 3 }}>

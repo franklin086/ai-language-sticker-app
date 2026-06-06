@@ -1,4 +1,7 @@
 import { Pressable, Text, View } from 'react-native';
+import { useContentLanguage } from '../hooks/useContentLanguage';
+import { useLanguage } from '../hooks/useLanguage';
+import { findMuseumArtifact } from '../utils/artifactHelpers';
 import type { MuseumExplorerArtifact } from '../utils/museumExplorerHelpers';
 
 export function MuseumArtifactTile({
@@ -10,6 +13,13 @@ export function MuseumArtifactTile({
   onPress: () => void;
   rarityLabel: string;
 }) {
+  const { getArtifactName } = useContentLanguage();
+  const { t } = useLanguage();
+  const museumArtifact = findMuseumArtifact({
+    object_en: artifact.exhibit.object_en,
+    object_zh: artifact.exhibit.object_zh,
+  });
+
   if (!artifact.discovered) {
     return (
       <View
@@ -26,10 +36,10 @@ export function MuseumArtifactTile({
       >
         <Text style={{ fontSize: 28, textAlign: 'center' }}>🔒</Text>
         <Text style={{ color: '#6D28D9', fontSize: 13, fontWeight: '900', marginTop: 8, textAlign: 'center' }}>
-          神秘藏品
+          {t('mysterious_artifact')}
         </Text>
         <Text style={{ color: '#8B5CF6', fontSize: 11, fontWeight: '700', marginTop: 5, textAlign: 'center' }}>
-          继续探索解锁
+          {t('unknown')}
         </Text>
       </View>
     );
@@ -52,7 +62,7 @@ export function MuseumArtifactTile({
       >
         <Text style={{ fontSize: 30, textAlign: 'center' }}>{artifact.item?.emoji ?? artifact.exhibit.emoji}</Text>
         <Text numberOfLines={1} style={{ color: '#5B21B6', fontSize: 13, fontWeight: '900', marginTop: 8, textAlign: 'center' }}>
-          {artifact.exhibit.object_zh}
+          {museumArtifact ? getArtifactName(museumArtifact) : artifact.exhibit.object_zh}
         </Text>
         <Text numberOfLines={1} style={{ color: '#7C3AED', fontSize: 11, fontWeight: '700', marginTop: 4, textAlign: 'center' }}>
           {artifact.exhibit.object_en}

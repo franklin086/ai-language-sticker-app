@@ -6,6 +6,16 @@ export type MuseumArtifact = {
   rarity: string;
   story: string;
   aliases?: string[];
+  nameTranslations?: MuseumArtifactTranslations;
+  descriptionTranslations?: MuseumArtifactTranslations;
+};
+
+export type MuseumArtifactTranslations = {
+  zh: string;
+  en: string;
+  es: string;
+  pt: string;
+  ja: string;
 };
 
 export type MuseumBadgeData = {
@@ -32,8 +42,8 @@ export const museumArtifacts: MuseumArtifact[] = [
   { objectZh: '轮船', objectEn: 'Ship', emoji: '🚢', museum: '交通博物馆', rarity: '史诗', story: '轮船能在海上运输巨大的货物。' },
   { objectZh: '帆船', objectEn: 'Sailboat', emoji: '⛵', museum: '交通博物馆', rarity: '稀有', story: '帆船会借助风的力量在水面前进。' },
   { objectZh: '潜水艇', objectEn: 'Submarine', emoji: '🚤', museum: '交通博物馆', rarity: '史诗', story: '潜水艇可以潜到海面下面探索神秘海洋。' },
-  { objectZh: '火箭', objectEn: 'Rocket', emoji: '🚀', museum: '交通博物馆', rarity: '传奇', story: '火箭能把宇航员送入太空。' },
-  { objectZh: '熊猫', objectEn: 'Panda', emoji: '🐼', museum: '动物博物馆', rarity: '传奇', story: '大熊猫主要生活在中国四川山区。' },
+  { objectZh: '火箭', objectEn: 'Rocket', emoji: '🚀', museum: '交通博物馆', rarity: '传奇', story: '火箭能把宇航员送入太空。', nameTranslations: { zh: '火箭', en: 'Rocket', es: 'Cohete', pt: 'Foguete', ja: 'ロケット' }, descriptionTranslations: { zh: '能把宇航员送入太空的强大飞行器。', en: 'A powerful vehicle that can carry astronauts into space.', es: 'Un vehículo poderoso que puede llevar astronautas al espacio.', pt: 'Um veículo poderoso que pode levar astronautas ao espaço.', ja: '宇宙飛行士を宇宙へ運べる強力な乗り物。' } },
+  { objectZh: '熊猫', objectEn: 'Panda', emoji: '🐼', museum: '动物博物馆', rarity: '传奇', story: '大熊猫主要生活在中国四川山区。', nameTranslations: { zh: '熊猫', en: 'Panda', es: 'Panda', pt: 'Panda', ja: 'パンダ' }, descriptionTranslations: { zh: '生活在中国山区、喜欢吃竹子的珍稀动物。', en: 'A rare animal from China that loves eating bamboo.', es: 'Un animal raro de China al que le encanta comer bambú.', pt: 'Um animal raro da China que adora comer bambu.', ja: '中国にすみ、竹を食べるのが好きなめずらしい動物。' } },
   { objectZh: '狮子', objectEn: 'Lion', emoji: '🦁', museum: '动物博物馆', rarity: '史诗', story: '狮子的吼声最远可传8公里。' },
   { objectZh: '老虎', objectEn: 'Tiger', emoji: '🐯', museum: '动物博物馆', rarity: '史诗', story: '老虎身上的条纹像每只老虎自己的身份证。' },
   { objectZh: '大象', objectEn: 'Elephant', emoji: '🐘', museum: '动物博物馆', rarity: '史诗', story: '大象会用长鼻子喝水、搬东西和打招呼。' },
@@ -41,7 +51,7 @@ export const museumArtifacts: MuseumArtifact[] = [
   { objectZh: '猴子', objectEn: 'Monkey', emoji: '🐒', museum: '动物博物馆', rarity: '稀有', story: '猴子很灵活，常常用尾巴保持平衡。' },
   { objectZh: '企鹅', objectEn: 'Penguin', emoji: '🐧', museum: '动物博物馆', rarity: '稀有', story: '企鹅不会飞，但它们是很棒的游泳高手。' },
   { objectZh: '海豚', objectEn: 'Dolphin', emoji: '🐬', museum: '动物博物馆', rarity: '稀有', story: '海豚会用声音互相交流和寻找食物。' },
-  { objectZh: '鲸鱼', objectEn: 'Whale', emoji: '🐋', museum: '动物博物馆', rarity: '史诗', story: '鲸鱼是海洋里体型巨大的哺乳动物。' },
+  { objectZh: '鲸鱼', objectEn: 'Whale', emoji: '🐋', museum: '动物博物馆', rarity: '史诗', story: '鲸鱼是海洋里体型巨大的哺乳动物。', nameTranslations: { zh: '鲸鱼', en: 'Whale', es: 'Ballena', pt: 'Baleia', ja: 'クジラ' }, descriptionTranslations: { zh: '生活在海洋里的大型哺乳动物。', en: 'A giant mammal that lives in the ocean.', es: 'Un mamífero gigante que vive en el océano.', pt: 'Um mamífero gigante que vive no oceano.', ja: '海にすむ大きな哺乳類。' } },
   { objectZh: '乌龟', objectEn: 'Turtle', emoji: '🐢', museum: '动物博物馆', rarity: '普通', story: '乌龟背上的壳像随身携带的小房子。' },
   { objectZh: '猫', objectEn: 'Cat', emoji: '🐱', museum: '动物博物馆', rarity: '普通', story: '猫的胡须可以帮助它感知周围空间。' },
   { objectZh: '狗', objectEn: 'Dog', emoji: '🐶', museum: '动物博物馆', rarity: '普通', story: '狗的嗅觉非常灵敏，能闻到人类闻不到的气味。' },
@@ -67,11 +77,11 @@ export const museumArtifacts: MuseumArtifact[] = [
   { objectZh: '森林', objectEn: 'Forest', emoji: '🌲', museum: '自然博物馆', rarity: '稀有', story: '森林是许多动物和植物共同生活的家园。' },
   { objectZh: '树', objectEn: 'Tree', emoji: '🌳', museum: '自然博物馆', rarity: '普通', story: '树会吸收二氧化碳，并释放出氧气。' },
   { objectZh: '花', objectEn: 'Flower', emoji: '🌸', museum: '自然博物馆', rarity: '普通', story: '花会用颜色和香味吸引小昆虫来帮忙传粉。' },
-  { objectZh: '电脑', objectEn: 'Computer', emoji: '💻', museum: '科技博物馆', rarity: '稀有', story: '电脑可以帮助人们计算、画画、学习和创造。' },
-  { objectZh: '手机', objectEn: 'Mobile Phone', emoji: '📱', museum: '科技博物馆', rarity: '稀有', story: '手机让人们可以随时通话、拍照和查资料。' },
-  { objectZh: '相机', objectEn: 'Camera', emoji: '📷', museum: '科技博物馆', rarity: '稀有', story: '相机可以把一瞬间的画面保存下来。' },
+  { objectZh: '电脑', objectEn: 'Computer', emoji: '💻', museum: '科技博物馆', rarity: '稀有', story: '电脑可以帮助人们计算、画画、学习和创造。', nameTranslations: { zh: '电脑', en: 'Computer', es: 'Computadora', pt: 'Computador', ja: 'コンピューター' }, descriptionTranslations: { zh: '帮助人们学习、创作和处理信息的科技工具。', en: 'A technology tool for learning, creating, and working with information.', es: 'Una herramienta tecnológica para aprender, crear y trabajar con información.', pt: 'Uma ferramenta tecnológica para aprender, criar e trabalhar com informações.', ja: '学習、創作、情報処理に役立つ技術ツール。' } },
+  { objectZh: '手机', objectEn: 'Mobile Phone', emoji: '📱', museum: '科技博物馆', rarity: '稀有', story: '手机让人们可以随时通话、拍照和查资料。', nameTranslations: { zh: '手机', en: 'Mobile Phone', es: 'Teléfono móvil', pt: 'Celular', ja: '携帯電話' }, descriptionTranslations: { zh: '可以通话、拍照、学习和连接远方的人。', en: 'A device for calling, taking photos, learning, and connecting with people far away.', es: 'Un dispositivo para llamar, tomar fotos, aprender y conectar con personas lejanas.', pt: 'Um aparelho para ligar, tirar fotos, aprender e se conectar com pessoas distantes.', ja: '電話、写真、学習、遠くの人とのつながりに使える道具。' } },
+  { objectZh: '相机', objectEn: 'Camera', emoji: '📷', museum: '科技博物馆', rarity: '稀有', story: '相机可以把一瞬间的画面保存下来。', nameTranslations: { zh: '相机', en: 'Camera', es: 'Cámara', pt: 'Câmera', ja: 'カメラ' }, descriptionTranslations: { zh: '把珍贵瞬间保存成照片的工具。', en: 'A tool that saves special moments as photos.', es: 'Una herramienta que guarda momentos especiales como fotos.', pt: 'Uma ferramenta que guarda momentos especiais como fotos.', ja: '大切な瞬間を写真として残す道具。' } },
   { objectZh: '电视', objectEn: 'Television', emoji: '📺', museum: '科技博物馆', rarity: '普通', story: '电视能把远处的影像和声音带到家里。' },
-  { objectZh: '机器人', objectEn: 'Robot', emoji: '🤖', museum: '科技博物馆', rarity: '史诗', story: '机器人可以帮助人类完成危险或重复的工作。' },
+  { objectZh: '机器人', objectEn: 'Robot', emoji: '🤖', museum: '科技博物馆', rarity: '史诗', story: '机器人可以帮助人类完成危险或重复的工作。', nameTranslations: { zh: '机器人', en: 'Robot', es: 'Robot', pt: 'Robô', ja: 'ロボット' }, descriptionTranslations: { zh: '能帮助人类完成复杂、危险或重复工作的机器伙伴。', en: 'A machine helper that can do complex, risky, or repeated work.', es: 'Un ayudante mecánico que puede hacer trabajos complejos, peligrosos o repetidos.', pt: 'Um ajudante mecânico que pode fazer trabalhos complexos, perigosos ou repetidos.', ja: '複雑、危険、くり返しの仕事を助ける機械の仲間。' } },
   { objectZh: '卫星', objectEn: 'Satellite', emoji: '🛰️', museum: '科技博物馆', rarity: '史诗', story: '卫星在太空中帮助我们导航、通信和观察地球。' },
   { objectZh: '望远镜', objectEn: 'Telescope', emoji: '🔭', museum: '科技博物馆', rarity: '稀有', story: '望远镜能帮助我们看见遥远的星星和星球。' },
   { objectZh: '演员', objectEn: 'Actor', emoji: '🎭', museum: '人物职业馆', rarity: '稀有', story: '演员会用表情、动作和语言把故事中的角色生动地演出来。', aliases: ['actress', 'performer', '表演者'] },
@@ -102,8 +112,8 @@ export const museumArtifacts: MuseumArtifact[] = [
   { objectZh: '刺猬', objectEn: 'Hedgehog', emoji: '🦔', museum: '动物博物馆', rarity: '稀有', story: '刺猬遇到危险时会缩成小球，用尖刺保护自己。' },
   { objectZh: '斑马', objectEn: 'Zebra', emoji: '🦓', museum: '动物博物馆', rarity: '稀有', story: '斑马身上的条纹像独一无二的自然身份证。' },
   { objectZh: '河马', objectEn: 'Hippo', emoji: '🦛', museum: '动物博物馆', rarity: '稀有', story: '河马大部分时间待在水里，能帮助身体保持凉快。' },
-  { objectZh: '袋鼠', objectEn: 'Kangaroo', emoji: '🦘', museum: '动物博物馆', rarity: '稀有', story: '袋鼠用强壮的后腿跳跃，妈妈还有育儿袋照顾宝宝。', aliases: ['澳洲袋鼠', 'kangaroo', 'Australian kangaroo'] },
-  { objectZh: '海龟', objectEn: 'Sea Turtle', emoji: '🐢', museum: '动物博物馆', rarity: '稀有', story: '海龟能在大海里长距离旅行，找到适合产卵的沙滩。', aliases: ['海洋海龟', 'sea turtle', 'marine turtle'] },
+  { objectZh: '袋鼠', objectEn: 'Kangaroo', emoji: '🦘', museum: '动物博物馆', rarity: '稀有', story: '袋鼠用强壮的后腿跳跃，妈妈还有育儿袋照顾宝宝。', aliases: ['澳洲袋鼠', 'kangaroo', 'Australian kangaroo'], nameTranslations: { zh: '袋鼠', en: 'Kangaroo', es: 'Canguro', pt: 'Canguru', ja: 'カンガルー' }, descriptionTranslations: { zh: '用强壮后腿跳跃，妈妈用育儿袋照顾宝宝。', en: 'It jumps with strong back legs, and mothers carry babies in a pouch.', es: 'Salta con fuertes patas traseras, y las madres llevan a sus crías en una bolsa.', pt: 'Salta com fortes patas traseiras, e as mães carregam os filhotes em uma bolsa.', ja: '強い後ろ足で跳び、母親は袋で赤ちゃんを育てます。' } },
+  { objectZh: '海龟', objectEn: 'Sea Turtle', emoji: '🐢', museum: '动物博物馆', rarity: '稀有', story: '海龟能在大海里长距离旅行，找到适合产卵的沙滩。', aliases: ['海洋海龟', 'sea turtle', 'marine turtle'], nameTranslations: { zh: '海龟', en: 'Sea Turtle', es: 'Tortuga marina', pt: 'Tartaruga marinha', ja: 'ウミガメ' }, descriptionTranslations: { zh: '能在海洋中长距离旅行的古老动物。', en: 'An ancient animal that can travel long distances through the ocean.', es: 'Un animal antiguo que puede viajar largas distancias por el océano.', pt: 'Um animal antigo que pode viajar longas distâncias pelo oceano.', ja: '海を長い距離移動できる古くからいる動物。' } },
   { objectZh: '鹦鹉', objectEn: 'Parrot', emoji: '🦜', museum: '动物博物馆', rarity: '稀有', story: '鹦鹉会模仿声音，有些还能学会简单的人类语言。' },
   { objectZh: '麻雀', objectEn: 'Sparrow', emoji: '🐦', museum: '动物博物馆', rarity: '普通', story: '麻雀常生活在城市和乡村，是很容易观察到的小鸟。' },
   { objectZh: '乌鸦', objectEn: 'Crow', emoji: '🐦‍⬛', museum: '动物博物馆', rarity: '稀有', story: '乌鸦非常聪明，能记住路线，也会使用简单工具。' },
@@ -111,7 +121,7 @@ export const museumArtifacts: MuseumArtifact[] = [
   { objectZh: '共享单车', objectEn: 'Shared Bike', emoji: '🚲', museum: '交通博物馆', rarity: '普通', story: '共享单车让短距离出行更方便，也能减少交通拥堵。' },
   { objectZh: '电动车', objectEn: 'Electric Scooter', emoji: '🛴', museum: '交通博物馆', rarity: '普通', story: '电动车依靠电池前进，适合城市里的短途移动。' },
   { objectZh: '校车', objectEn: 'School Bus', emoji: '🚌', museum: '交通博物馆', rarity: '普通', story: '校车会把孩子们安全送到学校和家附近。' },
-  { objectZh: '双层巴士', objectEn: 'Double-decker Bus', emoji: '🚌', museum: '交通博物馆', rarity: '稀有', story: '双层巴士有上下两层，坐在高处能看到更远的街景。', aliases: ['伦敦巴士', '红色巴士', 'double decker bus', 'London bus', 'red bus'] },
+  { objectZh: '双层巴士', objectEn: 'Double-decker Bus', emoji: '🚌', museum: '交通博物馆', rarity: '稀有', story: '双层巴士有上下两层，坐在高处能看到更远的街景。', aliases: ['伦敦巴士', '红色巴士', 'double decker bus', 'London bus', 'red bus'], nameTranslations: { zh: '双层巴士', en: 'Double-decker Bus', es: 'Autobús de dos pisos', pt: 'Ônibus de dois andares', ja: '二階建てバス' }, descriptionTranslations: { zh: '有上下两层，能从高处看城市街景。', en: 'A bus with two levels that lets riders see the city from higher up.', es: 'Un autobús de dos pisos para ver la ciudad desde más alto.', pt: 'Um ônibus de dois andares para ver a cidade de um ponto mais alto.', ja: '二階があり、高い場所から街を見られるバス。' } },
   { objectZh: '高铁', objectEn: 'High-speed Rail', emoji: '🚄', museum: '交通博物馆', rarity: '史诗', story: '高铁运行平稳又快速，让城市之间的旅行更轻松。' },
   { objectZh: '货车', objectEn: 'Truck', emoji: '🚚', museum: '交通博物馆', rarity: '普通', story: '货车能运输很多物品，把商品送到不同地方。' },
   { objectZh: '工程车', objectEn: 'Construction Vehicle', emoji: '🚜', museum: '交通博物馆', rarity: '稀有', story: '工程车能挖土、搬运和修路，是建设城市的小帮手。' },
@@ -119,46 +129,46 @@ export const museumArtifacts: MuseumArtifact[] = [
   { objectZh: '热气球', objectEn: 'Hot Air Balloon', emoji: '🎈', museum: '交通博物馆', rarity: '稀有', story: '热气球利用热空气上升，能慢慢飘到天空中。' },
   { objectZh: '游艇', objectEn: 'Yacht', emoji: '🛥️', museum: '交通博物馆', rarity: '稀有', story: '游艇常用于水上旅行和观光，能在湖海中悠闲航行。' },
   { objectZh: '皮划艇', objectEn: 'Kayak', emoji: '🛶', museum: '交通博物馆', rarity: '稀有', story: '皮划艇又轻又窄，需要用船桨控制前进方向。' },
-  { objectZh: '笔记本电脑', objectEn: 'Laptop', emoji: '💻', museum: '科技博物馆', rarity: '普通', story: '笔记本电脑可以随身携带，让学习和创作更灵活。' },
+  { objectZh: '笔记本电脑', objectEn: 'Laptop', emoji: '💻', museum: '科技博物馆', rarity: '普通', story: '笔记本电脑可以随身携带，让学习和创作更灵活。', nameTranslations: { zh: '笔记本电脑', en: 'Laptop', es: 'Portátil', pt: 'Notebook', ja: 'ノートパソコン' }, descriptionTranslations: { zh: '可以随身携带，让学习和创作更灵活。', en: 'A portable computer that makes learning and creating more flexible.', es: 'Una computadora portátil que hace más flexible aprender y crear.', pt: 'Um computador portátil que deixa o aprendizado e a criação mais flexíveis.', ja: '持ち運べて、学習や創作をもっと自由にするコンピューター。' } },
   { objectZh: '键盘', objectEn: 'Keyboard', emoji: '⌨️', museum: '科技博物馆', rarity: '普通', story: '键盘把手指按下的符号变成电脑能理解的输入。' },
   { objectZh: '鼠标', objectEn: 'Mouse', emoji: '🖱️', museum: '科技博物馆', rarity: '普通', story: '鼠标能控制屏幕上的指针，帮助我们点击和选择。' },
   { objectZh: '显示器', objectEn: 'Monitor', emoji: '🖥️', museum: '科技博物馆', rarity: '普通', story: '显示器会把电脑里的内容变成我们看得见的画面。' },
-  { objectZh: '智能手机', objectEn: 'Smartphone', emoji: '📱', museum: '科技博物馆', rarity: '普通', story: '智能手机能拍照、导航、学习，也能连接远方的人。' },
+  { objectZh: '智能手机', objectEn: 'Smartphone', emoji: '📱', museum: '科技博物馆', rarity: '普通', story: '智能手机能拍照、导航、学习，也能连接远方的人。', nameTranslations: { zh: '智能手机', en: 'Smartphone', es: 'Teléfono inteligente', pt: 'Smartphone', ja: 'スマートフォン' }, descriptionTranslations: { zh: '能拍照、导航、学习，也能连接远方的人。', en: 'A smart device for photos, navigation, learning, and staying connected.', es: 'Un dispositivo inteligente para fotos, navegación, aprendizaje y conexión.', pt: 'Um aparelho inteligente para fotos, navegação, aprendizado e conexão.', ja: '写真、ナビ、学習、人とのつながりに使えるスマートな道具。' } },
   { objectZh: '平板', objectEn: 'Tablet', emoji: '📱', museum: '科技博物馆', rarity: '普通', story: '平板屏幕大又轻便，适合阅读、绘画和看学习视频。' },
   { objectZh: '智能手表', objectEn: 'Smart Watch', emoji: '⌚', museum: '科技博物馆', rarity: '稀有', story: '智能手表能显示时间，也能记录运动和提醒消息。' },
   { objectZh: '耳机', objectEn: 'Headphones', emoji: '🎧', museum: '科技博物馆', rarity: '普通', story: '耳机把声音送到耳边，让我们更清楚地听音乐和语言。' },
   { objectZh: '音箱', objectEn: 'Speaker', emoji: '🔊', museum: '科技博物馆', rarity: '普通', story: '音箱能把电信号变成声音，让音乐充满房间。' },
   { objectZh: '打印机', objectEn: 'Printer', emoji: '🖨️', museum: '科技博物馆', rarity: '普通', story: '打印机能把电脑里的文字和图片印到纸上。' },
   { objectZh: '无人机', objectEn: 'Drone', emoji: '🚁', museum: '科技博物馆', rarity: '史诗', story: '无人机能从空中拍摄画面，也能帮助观察难到达的地方。' },
-  { objectZh: 'AI芯片', objectEn: 'AI Chip', emoji: '🧠', museum: '科技博物馆', rarity: '传奇', story: 'AI芯片能快速处理大量信息，是人工智能的重要小引擎。' },
-  { objectZh: '蒙娜丽莎', objectEn: 'Mona Lisa', emoji: '🖼️', museum: '卢浮宫魔法馆', rarity: '传奇', story: '蒙娜丽莎是一幅著名肖像画，她神秘的微笑吸引了世界各地的人。', aliases: ['Mona Lisa painting', 'La Gioconda', '达芬奇肖像', '神秘微笑'] },
+  { objectZh: 'AI芯片', objectEn: 'AI Chip', emoji: '🧠', museum: '科技博物馆', rarity: '传奇', story: 'AI芯片能快速处理大量信息，是人工智能的重要小引擎。', nameTranslations: { zh: 'AI芯片', en: 'AI Chip', es: 'Chip de IA', pt: 'Chip de IA', ja: 'AIチップ' }, descriptionTranslations: { zh: '能快速处理大量信息，是人工智能的重要小引擎。', en: 'A tiny engine that helps AI process lots of information quickly.', es: 'Un pequeño motor que ayuda a la IA a procesar mucha información rápido.', pt: 'Um pequeno motor que ajuda a IA a processar muitas informações rapidamente.', ja: 'AIが多くの情報を速く処理するのを助ける小さなエンジン。' } },
+  { objectZh: '蒙娜丽莎', objectEn: 'Mona Lisa', emoji: '🖼️', museum: '卢浮宫魔法馆', rarity: '传奇', story: '蒙娜丽莎是一幅著名肖像画，她神秘的微笑吸引了世界各地的人。', aliases: ['Mona Lisa painting', 'La Gioconda', '达芬奇肖像', '神秘微笑'], nameTranslations: { zh: '蒙娜丽莎', en: 'Mona Lisa', es: 'Mona Lisa', pt: 'Mona Lisa', ja: 'モナ・リザ' }, descriptionTranslations: { zh: '一幅因神秘微笑而闻名世界的肖像画。', en: 'A world-famous portrait known for its mysterious smile.', es: 'Un retrato mundialmente famoso por su sonrisa misteriosa.', pt: 'Um retrato famoso no mundo todo por seu sorriso misterioso.', ja: '神秘的な微笑みで世界的に有名な肖像画。' } },
   { objectZh: '维纳斯雕像', objectEn: 'Venus Statue', emoji: '🗿', museum: '卢浮宫魔法馆', rarity: '史诗', story: '维纳斯雕像来自古希腊艺术，优雅的姿态让人想象古代工匠的巧手。', aliases: ['Venus de Milo', 'Aphrodite statue', '米洛的维纳斯', '女神雕像'] },
   { objectZh: '胜利女神像', objectEn: 'Winged Victory Statue', emoji: '🪽', museum: '卢浮宫魔法馆', rarity: '史诗', story: '胜利女神像展开翅膀，好像刚刚降落在船头宣布胜利。', aliases: ['Winged Victory of Samothrace', 'Nike statue', '萨莫色雷斯胜利女神', '胜利女神'] },
   { objectZh: '拿破仑皇冠', objectEn: 'Napoleon Crown', emoji: '👑', museum: '卢浮宫魔法馆', rarity: '史诗', story: '拿破仑皇冠象征着法国历史中的重要时刻，也展示了精细的工艺。', aliases: ['Napoleon coronation crown', 'French crown', '皇冠', '法兰西皇冠'] },
-  { objectZh: '埃菲尔铁塔模型', objectEn: 'Eiffel Tower Model', emoji: '🗼', museum: '巴黎艺术馆', rarity: '稀有', story: '埃菲尔铁塔是巴黎的著名地标，模型能帮助我们近距离观察它的结构。', aliases: ['Eiffel Tower', 'Paris tower model', '巴黎铁塔', '铁塔模型'] },
+  { objectZh: '埃菲尔铁塔模型', objectEn: 'Eiffel Tower Model', emoji: '🗼', museum: '巴黎艺术馆', rarity: '稀有', story: '埃菲尔铁塔是巴黎的著名地标，模型能帮助我们近距离观察它的结构。', aliases: ['Eiffel Tower', 'Paris tower model', '巴黎铁塔', '铁塔模型'], nameTranslations: { zh: '埃菲尔铁塔模型', en: 'Eiffel Tower Model', es: 'Modelo de la Torre Eiffel', pt: 'Modelo da Torre Eiffel', ja: 'エッフェル塔の模型' }, descriptionTranslations: { zh: '巴黎著名地标的模型，可以观察铁塔结构。', en: 'A model of Paris famous landmark, useful for seeing its structure up close.', es: 'Un modelo del famoso monumento de París para observar su estructura.', pt: 'Um modelo do famoso marco de Paris para observar sua estrutura.', ja: 'パリの有名なランドマークを近くで観察できる模型。' } },
   { objectZh: '印象派油画', objectEn: 'Impressionist Painting', emoji: '🎨', museum: '巴黎艺术馆', rarity: '史诗', story: '印象派画家喜欢捕捉光和颜色，让画面像一瞬间的记忆。', aliases: ['Impressionism painting', 'oil painting', '印象派画作', '油画'] },
   { objectZh: '巴黎地铁票', objectEn: 'Paris Metro Ticket', emoji: '🎟️', museum: '巴黎艺术馆', rarity: '普通', story: '小小的巴黎地铁票记录了城市里每天来来往往的旅行。', aliases: ['metro ticket', 'Paris subway ticket', '地铁票', '车票'] },
-  { objectZh: '罗塞塔石碑', objectEn: 'Rosetta Stone', emoji: '🪨', museum: '大英文明馆', rarity: '传奇', story: '罗塞塔石碑帮助人们读懂古埃及文字，像一把打开历史的钥匙。', aliases: ['Rosetta Stone tablet', 'stone inscription', '石碑', '古埃及石碑'] },
+  { objectZh: '罗塞塔石碑', objectEn: 'Rosetta Stone', emoji: '🪨', museum: '大英文明馆', rarity: '传奇', story: '罗塞塔石碑帮助人们读懂古埃及文字，像一把打开历史的钥匙。', aliases: ['Rosetta Stone tablet', 'stone inscription', '石碑', '古埃及石碑'], nameTranslations: { zh: '罗塞塔石碑', en: 'Rosetta Stone', es: 'Piedra de Rosetta', pt: 'Pedra de Roseta', ja: 'ロゼッタ・ストーン' }, descriptionTranslations: { zh: '帮助人们读懂古埃及文字的重要石碑。', en: 'An important stone that helped people read ancient Egyptian writing.', es: 'Una piedra importante que ayudó a leer la escritura del antiguo Egipto.', pt: 'Uma pedra importante que ajudou a ler a escrita do Egito antigo.', ja: '古代エジプト文字を読む手がかりになった重要な石碑。' } },
   { objectZh: '骑士盔甲', objectEn: 'Knight Armor', emoji: '🛡️', museum: '大英文明馆', rarity: '史诗', story: '骑士盔甲能保护身体，也让我们看到中世纪战士的装备。', aliases: ['armor', 'armour', 'knight suit', '盔甲', '铠甲'] },
   { objectZh: '王冠宝石', objectEn: 'Crown Jewels', emoji: '💎', museum: '大英文明馆', rarity: '传奇', story: '王冠宝石闪闪发光，常常被用于重要的王室仪式。', aliases: ['royal jewels', 'crown jewel', 'crown', '宝石王冠', '皇家珠宝'] },
   { objectZh: '蒸汽机模型', objectEn: 'Steam Engine Model', emoji: '🚂', museum: '伦敦科技馆', rarity: '史诗', story: '蒸汽机利用热水产生的蒸汽力量，推动了很多机器运转。', aliases: ['steam engine', 'engine model', '蒸汽机', '蒸汽火车模型'] },
   { objectZh: '红色电话亭', objectEn: 'Red Telephone Booth', emoji: '☎️', museum: '伦敦科技馆', rarity: '稀有', story: '红色电话亭曾经是伦敦街头重要的通信小屋。', aliases: ['red phone box', 'telephone booth', 'phone booth', '红电话亭', '电话亭'] },
-  { objectZh: '图坦卡蒙面具', objectEn: 'Tutankhamun Mask', emoji: '🎭', museum: '金字塔文明馆', rarity: '传奇', story: '图坦卡蒙面具金光闪闪，是了解古埃及法老文化的重要宝物。', aliases: ['King Tut mask', 'Tut mask', 'pharaoh mask', '黄金面具', '法老面具'] },
+  { objectZh: '图坦卡蒙面具', objectEn: 'Tutankhamun Mask', emoji: '🎭', museum: '金字塔文明馆', rarity: '传奇', story: '图坦卡蒙面具金光闪闪，是了解古埃及法老文化的重要宝物。', aliases: ['King Tut mask', 'Tut mask', 'pharaoh mask', '黄金面具', '法老面具'], nameTranslations: { zh: '图坦卡蒙面具', en: 'Tutankhamun Mask', es: 'Máscara de Tutankamón', pt: 'Máscara de Tutancâmon', ja: 'ツタンカーメンのマスク' }, descriptionTranslations: { zh: '金光闪闪的法老面具，是古埃及的重要宝物。', en: 'A golden pharaoh mask and an important treasure of ancient Egypt.', es: 'Una máscara dorada de faraón y un tesoro del antiguo Egipto.', pt: 'Uma máscara dourada de faraó e um tesouro do Egito antigo.', ja: '古代エジプトの大切な宝である金色のファラオのマスク。' } },
   { objectZh: '法老权杖', objectEn: 'Pharaoh Scepter', emoji: '🔱', museum: '金字塔文明馆', rarity: '史诗', story: '法老权杖象征权力，古埃及人会用它表现统治者的身份。', aliases: ['pharaoh staff', 'royal scepter', 'sceptre', '权杖', '法老手杖'] },
   { objectZh: '木乃伊棺椁', objectEn: 'Mummy Sarcophagus', emoji: '⚰️', museum: '金字塔文明馆', rarity: '史诗', story: '木乃伊棺椁装饰着图案和文字，讲述古埃及人对来世的想象。', aliases: ['mummy coffin', 'sarcophagus', 'mummy case', '木乃伊棺材', '古埃及棺椁'] },
-  { objectZh: '纸莎草卷轴', objectEn: 'Papyrus Scroll', emoji: '📜', museum: '尼罗河自然馆', rarity: '稀有', story: '纸莎草能做成书写材料，古埃及人用它记录故事和知识。', aliases: ['papyrus', 'scroll', 'ancient scroll', '纸莎草', '古代卷轴'] },
+  { objectZh: '纸莎草卷轴', objectEn: 'Papyrus Scroll', emoji: '📜', museum: '尼罗河自然馆', rarity: '稀有', story: '纸莎草能做成书写材料，古埃及人用它记录故事和知识。', aliases: ['papyrus', 'scroll', 'ancient scroll', '纸莎草', '古代卷轴'], nameTranslations: { zh: '纸莎草卷轴', en: 'Papyrus Scroll', es: 'Papiro', pt: 'Pergaminho de papiro', ja: 'パピルスの巻物' }, descriptionTranslations: { zh: '古埃及人用来记录故事和知识的书写材料。', en: 'A writing material ancient Egyptians used to record stories and knowledge.', es: 'Un material de escritura usado por los antiguos egipcios para guardar historias y conocimiento.', pt: 'Um material de escrita usado pelos antigos egípcios para registrar histórias e conhecimento.', ja: '古代エジプト人が物語や知識を記録した書き物の材料。' } },
   { objectZh: '圣甲虫', objectEn: 'Scarab Beetle', emoji: '🪲', museum: '尼罗河自然馆', rarity: '稀有', story: '圣甲虫在古埃及文化里代表太阳和新的开始。', aliases: ['scarab', 'beetle amulet', 'dung beetle', '甲虫', '圣甲虫护符'] },
   { objectZh: '鳄鱼雕像', objectEn: 'Crocodile Statue', emoji: '🐊', museum: '尼罗河自然馆', rarity: '史诗', story: '尼罗河里生活着鳄鱼，鳄鱼雕像提醒我们河流生态很特别。', aliases: ['crocodile sculpture', 'alligator statue', '鳄鱼', '尼罗鳄雕像'] },
-  { objectZh: '泰姬陵模型', objectEn: 'Taj Mahal Model', emoji: '🕌', museum: '印度文明馆', rarity: '传奇', story: '泰姬陵以白色大理石闻名，是印度非常著名的建筑。', aliases: ['Taj Mahal', 'Taj Mahal miniature', '泰姬陵', '印度宫殿模型'] },
+  { objectZh: '泰姬陵模型', objectEn: 'Taj Mahal Model', emoji: '🕌', museum: '印度文明馆', rarity: '传奇', story: '泰姬陵以白色大理石闻名，是印度非常著名的建筑。', aliases: ['Taj Mahal', 'Taj Mahal miniature', '泰姬陵', '印度宫殿模型'], nameTranslations: { zh: '泰姬陵模型', en: 'Taj Mahal Model', es: 'Modelo del Taj Mahal', pt: 'Modelo do Taj Mahal', ja: 'タージ・マハルの模型' }, descriptionTranslations: { zh: '印度著名建筑的模型，以白色大理石之美闻名。', en: 'A model of India famous white marble landmark.', es: 'Un modelo del famoso monumento indio de mármol blanco.', pt: 'Um modelo do famoso marco indiano de mármore branco.', ja: '白い大理石で有名なインドの建築の模型。' } },
   { objectZh: '印度象雕像', objectEn: 'Indian Elephant Statue', emoji: '🐘', museum: '印度文明馆', rarity: '史诗', story: '印度象在许多故事和节日中都很重要，象征力量和智慧。', aliases: ['Indian elephant', 'elephant statue', '象雕像', '大象雕像'] },
   { objectZh: '宝莱坞电影海报', objectEn: 'Bollywood Movie Poster', emoji: '🎬', museum: '印度文明馆', rarity: '稀有', story: '宝莱坞电影常有音乐和舞蹈，海报会用鲜艳颜色吸引观众。', aliases: ['Bollywood poster', 'movie poster', 'Indian film poster', '电影海报', '宝莱坞海报'] },
   { objectZh: '咖喱香料盒', objectEn: 'Curry Spice Box', emoji: '🌶️', museum: '香料生活馆', rarity: '稀有', story: '咖喱香料盒里有不同香料，能让食物拥有丰富的味道。', aliases: ['spice box', 'masala box', 'curry spices', '香料盒', '咖喱粉'] },
   { objectZh: '传统纱丽', objectEn: 'Traditional Sari', emoji: '🥻', museum: '香料生活馆', rarity: '稀有', story: '纱丽是一种传统服饰，长长的布料可以穿出优雅的样子。', aliases: ['sari', 'saree', 'Indian dress', '纱丽', '印度服饰'] },
   { objectZh: '铜制茶壶', objectEn: 'Copper Teapot', emoji: '🫖', museum: '香料生活馆', rarity: '普通', story: '铜制茶壶能用来泡茶，也展示了生活器具中的手工艺。', aliases: ['teapot', 'copper kettle', 'tea pot', '茶壶', '铜壶'] },
-  { objectZh: '考拉', objectEn: 'Koala', emoji: '🐨', museum: '澳洲动物馆', rarity: '史诗', story: '考拉喜欢待在桉树上，大部分时间都在休息和吃树叶。', aliases: ['koala bear', 'Australian koala', '无尾熊', '树袋熊'] },
+  { objectZh: '考拉', objectEn: 'Koala', emoji: '🐨', museum: '澳洲动物馆', rarity: '史诗', story: '考拉喜欢待在桉树上，大部分时间都在休息和吃树叶。', aliases: ['koala bear', 'Australian koala', '无尾熊', '树袋熊'], nameTranslations: { zh: '考拉', en: 'Koala', es: 'Koala', pt: 'Coala', ja: 'コアラ' }, descriptionTranslations: { zh: '喜欢待在桉树上休息和吃树叶的澳洲动物。', en: 'An Australian animal that rests in eucalyptus trees and eats leaves.', es: 'Un animal australiano que descansa en eucaliptos y come hojas.', pt: 'Um animal australiano que descansa em eucaliptos e come folhas.', ja: 'ユーカリの木で休み、葉を食べるオーストラリアの動物。' } },
   { objectZh: '鸭嘴兽', objectEn: 'Platypus', emoji: '🦫', museum: '澳洲动物馆', rarity: '传奇', story: '鸭嘴兽会下蛋，还有像鸭子一样的嘴，是非常特别的动物。', aliases: ['duck-billed platypus', 'platypus animal', '鸭嘴兽动物'] },
-  { objectZh: '大堡礁珊瑚', objectEn: 'Great Barrier Reef Coral', emoji: '🪸', museum: '海洋自然馆', rarity: '传奇', story: '大堡礁是由许多珊瑚组成的海底家园，生活着丰富的海洋生物。', aliases: ['coral reef', 'Great Barrier Reef', 'coral', '珊瑚', '大堡礁'] },
-  { objectZh: '冲浪板', objectEn: 'Surfboard', emoji: '🏄', museum: '海洋自然馆', rarity: '稀有', story: '冲浪板能帮助人们站在海浪上滑行，感受海洋的力量。', aliases: ['surf board', 'surfing board', '冲浪', '滑浪板'] },
+  { objectZh: '大堡礁珊瑚', objectEn: 'Great Barrier Reef Coral', emoji: '🪸', museum: '海洋自然馆', rarity: '传奇', story: '大堡礁是由许多珊瑚组成的海底家园，生活着丰富的海洋生物。', aliases: ['coral reef', 'Great Barrier Reef', 'coral', '珊瑚', '大堡礁'], nameTranslations: { zh: '大堡礁珊瑚', en: 'Great Barrier Reef Coral', es: 'Coral de la Gran Barrera', pt: 'Coral da Grande Barreira', ja: 'グレートバリアリーフのサンゴ' }, descriptionTranslations: { zh: '由许多珊瑚组成的海底家园，生活着丰富的海洋生物。', en: 'An underwater home made of coral, full of ocean life.', es: 'Un hogar submarino hecho de coral y lleno de vida marina.', pt: 'Um lar submarino feito de coral e cheio de vida marinha.', ja: 'サンゴでできた、たくさんの海の生き物が暮らす海底の家。' } },
+  { objectZh: '冲浪板', objectEn: 'Surfboard', emoji: '🏄', museum: '海洋自然馆', rarity: '稀有', story: '冲浪板能帮助人们站在海浪上滑行，感受海洋的力量。', aliases: ['surf board', 'surfing board', '冲浪', '滑浪板'], nameTranslations: { zh: '冲浪板', en: 'Surfboard', es: 'Tabla de surf', pt: 'Prancha de surfe', ja: 'サーフボード' }, descriptionTranslations: { zh: '帮助人们站在海浪上滑行，感受海洋的力量。', en: 'A board that helps people ride waves and feel the power of the ocean.', es: 'Una tabla para deslizarse sobre olas y sentir la fuerza del mar.', pt: 'Uma prancha para deslizar nas ondas e sentir a força do mar.', ja: '波に乗り、海の力を感じるための板。' } },
 ];
 
 export const MUSEUM_ARTIFACT_MUSEUMS = [
