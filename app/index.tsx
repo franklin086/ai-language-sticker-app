@@ -1144,8 +1144,14 @@ function buildShareCardData({
 }): ShareCardData {
   const location = getArtifactMuseumAndCity(result, CITY_MAPS);
   const rarityCategory = getStickerCategory(result);
+  const discoveredAt =
+    'discoveredAt' in result && typeof result.discoveredAt === 'string'
+      ? formatDiscoveredAt(result.discoveredAt)
+      : formatDiscoveredAt(new Date().toISOString());
+
   return {
     curatorTitle,
+    discoveredAt,
     encouragement,
     emoji: getMagicEmoji(result),
     museumTitle: location.museumTitle,
@@ -2825,7 +2831,7 @@ export default function HomeScreen() {
       {discoveryCelebration ? (
         <DiscoveryCelebrationModal data={discoveryCelebration} onClose={closeDiscoveryCelebration} />
       ) : null}
-      {shareCard ? <ShareCardPreview data={shareCard} onClose={() => setShareCard(null)} onSave={saveShareCardAsPng} styles={styles} /> : null}
+      {shareCard ? <ShareCardPreview data={shareCard} onClose={() => setShareCard(null)} onSave={saveShareCardAsPngV2} styles={styles} /> : null}
     </SafeAreaView>
   );
 }
@@ -2979,6 +2985,111 @@ function saveShareCardAsPng(data: ShareCardData) {
   link.href = canvas.toDataURL('image/png');
   link.click();
 }
+
+function saveShareCardAsPngV2(data: ShareCardData) {
+  if (Platform.OS !== 'web' || typeof document === 'undefined') {
+    Alert.alert('Save share image', 'Saving PNG is currently available on web.');
+    return;
+  }
+
+  const canvas = document.createElement('canvas');
+  canvas.width = 900;
+  canvas.height = 1200;
+  const context = canvas.getContext('2d');
+
+  if (!context) {
+    return;
+  }
+
+  context.fillStyle = '#FFF4DC';
+  context.fillRect(0, 0, canvas.width, canvas.height);
+
+  const glow = context.createRadialGradient(450, 350, 30, 450, 350, 430);
+  glow.addColorStop(0, data.rarityCategory === 'legendary' ? 'rgba(251, 191, 36, 0.82)' : 'rgba(250, 204, 21, 0.72)');
+  glow.addColorStop(0.55, data.rarityCategory === 'legendary' ? 'rgba(236, 72, 153, 0.28)' : 'rgba(168, 85, 247, 0.24)');
+  glow.addColorStop(1, 'rgba(255, 244, 220, 0)');
+  context.fillStyle = glow;
+  context.fillRect(0, 0, canvas.width, canvas.height);
+
+  drawRoundedRect(context, 90, 80, 720, 1040, 56);
+  context.fillStyle = '#FFF9EB';
+  context.fill();
+  context.lineWidth = 6;
+  context.strokeStyle = data.rarityCategory === 'legendary' ? '#EC4899' : '#F7C948';
+  context.stroke();
+
+  context.textAlign = 'center';
+
+  if (data.rarityCategory === 'legendary') {
+    context.fillStyle = '#DB2777';
+    context.font = '900 36px Arial, sans-serif';
+    context.fillText('🌈 传奇发现', 450, 145);
+  }
+
+  context.fillStyle = '#6D28D9';
+  context.font = '900 46px Arial, sans-serif';
+  context.fillText('AI魔法识字相机', 450, data.rarityCategory === 'legendary' ? 200 : 170);
+
+  context.fillStyle = '#F59E0B';
+  context.font = '900 34px Arial, sans-serif';
+  context.fillText('✨', 175, 170);
+  context.fillText('⭐', 720, 205);
+  context.fillText('✨', 205, 975);
+
+  context.fillStyle = '#FFF1B8';
+  drawRoundedRect(context, 315, 230, 270, 270, 62);
+  context.fill();
+  context.lineWidth = 4;
+  context.strokeStyle = '#F7C948';
+  context.stroke();
+
+  context.font = '110px "Apple Color Emoji", "Segoe UI Emoji", sans-serif';
+  context.fillText(data.emoji, 450, 405);
+
+  context.fillStyle = '#3B245F';
+  context.font = '900 58px Arial, sans-serif';
+  drawCenteredText(context, data.objectZh, 450, 570, 600, 66, 2);
+
+  context.fillStyle = '#7C3AED';
+  context.font = '900 38px Arial, sans-serif';
+  drawCenteredText(context, data.objectEn, 450, 675, 610, 46, 2);
+
+  context.fillStyle = '#FFFFFF';
+  drawRoundedRect(context, 145, 745, 285, 110, 30);
+  context.fill();
+  drawRoundedRect(context, 470, 745, 285, 110, 30);
+  context.fill();
+
+  context.fillStyle = '#8A6B9F';
+  context.font = '900 22px Arial, sans-serif';
+  context.fillText('稀有度', 287, 790);
+  context.fillText('发现日期', 612, 790);
+
+  context.fillStyle = '#4C2D6F';
+  context.font = '900 26px Arial, sans-serif';
+  drawCenteredText(context, data.rarityLabel, 287, 828, 240, 32, 1);
+  drawCenteredText(context, data.discoveredAt, 612, 828, 240, 32, 1);
+
+  context.fillStyle = '#8A5E22';
+  context.font = '900 27px Arial, sans-serif';
+  drawCenteredText(context, `所属博物馆：${data.museumTitle}`, 450, 900, 610, 36, 2);
+
+  context.fillStyle = '#6D28D9';
+  context.font = '900 30px Arial, sans-serif';
+  drawCenteredText(context, '世界记忆又恢复了一点点 ✨', 450, 980, 620, 40, 2);
+  drawCenteredText(context, data.encouragement, 450, 1040, 620, 40, 2);
+
+  context.fillStyle = '#8A5E22';
+  context.font = '900 22px Arial, sans-serif';
+  drawCenteredText(context, 'AI魔法识字相机 · 发现真实世界的语言魔法', 450, 1092, 620, 30, 1);
+
+  const link = document.createElement('a');
+  link.download = getShareCardFileName(data.objectZh);
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+}
+
+void saveShareCardAsPng;
 
 function FailureCard({
   emojiTranslateY,

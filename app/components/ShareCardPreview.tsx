@@ -4,6 +4,8 @@ import { getRarityVisualStyles } from '../utils/rarity';
 type StickerCategoryKey = 'common' | 'rare' | 'epic' | 'legendary';
 
 export type ShareCardData = {
+  curatorTitle: string;
+  discoveredAt: string;
   encouragement: string;
   emoji: string;
   museumTitle: string;
@@ -12,7 +14,6 @@ export type ShareCardData = {
   rarityCategory: StickerCategoryKey;
   rarityLabel: string;
   title: string;
-  curatorTitle: string;
 };
 
 type ComponentStyles = Record<string, any>;
@@ -37,7 +38,7 @@ export function ShareCardPreview({
       <View style={styles.sharePreviewShell}>
         <View pointerEvents="none" style={styles.sharePreviewGlow} />
         <Text style={[styles.sharePreviewSparkle, styles.sharePreviewSparkleOne]}>✨</Text>
-        <Text style={[styles.sharePreviewSparkle, styles.sharePreviewSparkleTwo]}>🌟</Text>
+        <Text style={[styles.sharePreviewSparkle, styles.sharePreviewSparkleTwo]}>⭐</Text>
         <Text style={[styles.sharePreviewSparkle, styles.sharePreviewSparkleThree]}>✨</Text>
 
         <View style={[styles.sharePreviewCard, rarityVisual.card]}>
@@ -47,6 +48,7 @@ export function ShareCardPreview({
               <Text style={styles.legendaryBannerText}>✨ 传奇发现！</Text>
             </View>
           ) : null}
+
           <Text style={styles.sharePreviewBrand}>AI魔法识字相机</Text>
           <Text style={styles.sharePreviewTitle}>{data.title}</Text>
           <View style={[styles.sharePreviewEmojiStage, rarityVisual.emojiStage]}>
@@ -54,6 +56,7 @@ export function ShareCardPreview({
           </View>
           <Text style={styles.sharePreviewZh}>{data.objectZh}</Text>
           <Text style={styles.sharePreviewEn}>{data.objectEn}</Text>
+
           <View style={styles.sharePreviewInfoGrid}>
             <View style={styles.sharePreviewInfoPill}>
               <Text style={styles.sharePreviewInfoLabel}>稀有度</Text>
@@ -64,8 +67,12 @@ export function ShareCardPreview({
               <Text style={styles.sharePreviewInfoValue}>{data.curatorTitle}</Text>
             </View>
           </View>
+
           <Text style={styles.sharePreviewMuseum}>所属博物馆：{data.museumTitle}</Text>
+          <Text style={styles.sharePreviewMuseum}>发现日期：{data.discoveredAt}</Text>
+          <Text style={styles.sharePreviewEncouragement}>世界记忆又恢复了一点点 ✨</Text>
           <Text style={styles.sharePreviewEncouragement}>{data.encouragement}</Text>
+          <Text style={styles.sharePreviewMuseum}>AI魔法识字相机 · 发现真实世界的语言魔法</Text>
         </View>
 
         <View style={styles.sharePreviewActions}>

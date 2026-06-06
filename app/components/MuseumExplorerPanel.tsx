@@ -76,6 +76,21 @@ export function MuseumExplorerPanel({
 
   return (
     <View style={{ backgroundColor: '#FFF7ED', borderColor: data.completed ? '#FBBF24' : '#E9D5FF', borderRadius: 24, borderWidth: data.completed ? 2 : 1, padding: 16 }}>
+      <Pressable
+        style={({ pressed }) => ({
+          alignSelf: 'flex-start',
+          backgroundColor: pressed ? '#DDD6FE' : '#FFFFFF',
+          borderColor: '#C4B5FD',
+          borderRadius: 999,
+          borderWidth: 1,
+          marginBottom: 12,
+          paddingHorizontal: 12,
+          paddingVertical: 8,
+        })}
+        onPress={onBack}
+      >
+        <Text style={{ color: '#6D28D9', fontSize: 12, fontWeight: '900' }}>← {t('back')}</Text>
+      </Pressable>
       <Text style={{ color: '#6D28D9', fontSize: 24, fontWeight: '900' }}>🏛 {t('museum')}</Text>
       <Text style={{ color: '#5B21B6', fontSize: 20, fontWeight: '900', marginTop: 8 }}>{data.museumName}</Text>
       <Text style={{ color: '#7C3AED', fontSize: 13, fontWeight: '700', marginTop: 6 }}>

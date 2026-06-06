@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
+import { useLanguage } from '../hooks/useLanguage';
 import type { NationalCityProgress } from '../utils/nationalMapHelpers';
 
 export function NationalCityCard({
@@ -12,6 +13,7 @@ export function NationalCityCard({
   onOpenMuseum: (museum: NationalCityProgress['museums'][number]) => void;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const { t } = useLanguage();
   const completed = city.completed;
 
   return (
@@ -40,7 +42,7 @@ export function NationalCityCard({
           })}
           onPress={onBack}
         >
-          <Text style={{ color: '#6D28D9', fontSize: 12, fontWeight: '900' }}>← 世界地图</Text>
+          <Text style={{ color: '#6D28D9', fontSize: 12, fontWeight: '900' }}>← {t('world_map')}</Text>
         </Pressable>
       </View>
 
@@ -51,7 +53,7 @@ export function NationalCityCard({
               {city.emoji} {city.cityName}
             </Text>
             <Text style={{ color: '#7C3AED', fontSize: 13, fontWeight: '800', marginTop: 5 }}>
-              博物馆：{city.completedMuseumCount} / {city.totalMuseumCount}
+              {t('museum')}: {city.completedMuseumCount} / {city.totalMuseumCount}
             </Text>
             <Text style={{ color: completed ? '#B45309' : '#6D28D9', fontSize: 13, fontWeight: '900', marginTop: 5 }}>
               {city.status}
@@ -62,7 +64,7 @@ export function NationalCityCard({
               {city.percent}%
             </Text>
             <Text style={{ color: '#A855F7', fontSize: 12, fontWeight: '800', marginTop: 4 }}>
-              {expanded ? '收起 ▲' : '查看博物馆 ▼'}
+              {expanded ? `${t('close')} ▲` : `${t('open')} ${t('museum')} ▼`}
             </Text>
           </View>
         </View>
@@ -80,7 +82,7 @@ export function NationalCityCard({
 
         {completed ? (
           <Text style={{ color: '#92400E', fontSize: 13, fontWeight: '900', marginTop: 8 }}>
-            ✨ 已点亮 · 🏙️ 城市探索完成
+            ✨ {t('completed')}
           </Text>
         ) : null}
       </Pressable>
@@ -105,7 +107,7 @@ export function NationalCityCard({
                     {museum.emoji} {museum.name}
                   </Text>
                   <Text style={{ color: '#7C3AED', fontSize: 12, fontWeight: '700', marginTop: 4 }}>
-                    藏品：{museum.collectedCount} / {museum.totalCount}
+                    {t('collection')}: {museum.collectedCount} / {museum.totalCount}
                   </Text>
                 </View>
                 <Text style={{ color: museum.completed ? '#B45309' : '#7C3AED', fontSize: 15, fontWeight: '900' }}>
@@ -127,7 +129,7 @@ export function NationalCityCard({
                 onPress={() => onOpenMuseum(museum)}
               >
                 <Text style={{ color: '#6D28D9', fontSize: 12, fontWeight: '900', textAlign: 'center' }}>
-                  进入博物馆
+                  {t('open')} {t('museum')}
                 </Text>
               </Pressable>
             </View>

@@ -75,6 +75,21 @@ export function MagicGuildPanel({
           />
         ) : (
           <>
+            <Pressable
+              style={({ pressed }) => ({
+                alignSelf: 'flex-start',
+                backgroundColor: pressed ? '#DDD6FE' : '#FFFFFF',
+                borderColor: '#C4B5FD',
+                borderRadius: 999,
+                borderWidth: 1,
+                marginBottom: 12,
+                paddingHorizontal: 12,
+                paddingVertical: 8,
+              })}
+              onPress={onClose}
+            >
+              <Text style={{ color: '#6D28D9', fontSize: 12, fontWeight: '900' }}>← {t('back')}</Text>
+            </Pressable>
             <Text style={{ color: '#6D28D9', fontSize: 25, fontWeight: '900', textAlign: 'center' }}>
               {t('guild_headquarters')}
             </Text>

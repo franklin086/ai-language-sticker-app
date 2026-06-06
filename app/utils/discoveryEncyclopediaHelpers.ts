@@ -180,6 +180,19 @@ function filterEntries(entries: EncyclopediaArtifactEntry[], filterKey: Encyclop
   return entries;
 }
 
+export function validateEncyclopediaCount(entriesCount: number, artifactCount = museumArtifacts.length) {
+  const valid = entriesCount === artifactCount;
+
+  if (!valid && process.env.NODE_ENV !== 'production') {
+    console.warn('百科条目数与 museumArtifacts 不一致', {
+      artifactCount,
+      entriesCount,
+    });
+  }
+
+  return valid;
+}
+
 export function buildDiscoveryEncyclopediaState({
   collection,
   filterKey,
@@ -212,6 +225,7 @@ export function buildDiscoveryEncyclopediaState({
     };
   });
   const totalCount = entries.length;
+  validateEncyclopediaCount(totalCount);
   const unlockedCount = entries.filter((entry) => entry.discovered).length;
   const completionPercent = totalCount > 0 ? Math.round((unlockedCount / totalCount) * 100) : 0;
   const visibleEntries = sortEntries(filterEntries(entries, filterKey), sortKey);
