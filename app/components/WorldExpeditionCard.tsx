@@ -1,4 +1,5 @@
 import { Text, View } from 'react-native';
+import { useLanguage } from '../hooks/useLanguage';
 import type { WorldExpeditionProgress } from '../utils/worldExpeditionHelpers';
 
 export function WorldExpeditionCard({
@@ -8,6 +9,7 @@ export function WorldExpeditionCard({
   expedition: WorldExpeditionProgress;
   highlighted?: boolean;
 }) {
+  const { t } = useLanguage();
   const completed = expedition.status === 'completed';
 
   return (
@@ -51,15 +53,15 @@ export function WorldExpeditionCard({
 
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 10 }}>
         <Text style={{ color: '#5B21B6', fontSize: 12, fontWeight: '800' }}>
-          进度：{Math.min(expedition.currentValue, expedition.target)} / {expedition.target}
+          {t('progress')}: {Math.min(expedition.currentValue, expedition.target)} / {expedition.target}
         </Text>
         <Text style={{ color: completed ? '#B45309' : '#6D28D9', fontSize: 12, fontWeight: '900' }}>
-          状态：{completed ? '已完成' : '进行中'}
+          {t('status')}: {completed ? t('completed') : t('exploring')}
         </Text>
       </View>
 
       <Text style={{ color: '#B45309', fontSize: 12, fontWeight: '800', marginTop: 8 }}>
-        奖励预览：{expedition.rewardText}
+        {t('reward_preview')}: {expedition.rewardText}
       </Text>
     </View>
   );

@@ -13,3 +13,4 @@ export const DAILY_DISCOVERY_STREAK_STORAGE_KEY = 'ai-magic-camera-daily-streak'
 export const LIMITED_EVENT_STORAGE_KEY = 'ai-magic-camera-limited-events';
 export const COMPANION_STORAGE_KEY = 'ai-magic-camera-companion';
 export const ARTIFACT_STORY_STORAGE_KEY = 'ai-magic-camera-artifact-stories';
+export const LANGUAGE_STORAGE_KEY = 'ai-magic-camera-language';
