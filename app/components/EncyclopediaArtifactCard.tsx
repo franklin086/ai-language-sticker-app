@@ -3,6 +3,7 @@ import { useContentLanguage } from '../hooks/useContentLanguage';
 import { useLanguage } from '../hooks/useLanguage';
 import { getCollectionBookRarityLabel } from '../utils/museumCollectionsBookHelpers';
 import type { EncyclopediaArtifactEntry } from '../utils/discoveryEncyclopediaHelpers';
+import { AudioButton } from './AudioButton';
 
 export function EncyclopediaArtifactCard({
   entry,
@@ -44,6 +45,7 @@ export function EncyclopediaArtifactCard({
           {getCollectionBookRarityLabel(entry.rarity)}
         </Text>
       ) : null}
+      {entry.discovered ? <AudioButton artifact={entry.artifact} /> : null}
     </Pressable>
   );
 }

@@ -3,6 +3,7 @@ import { useContentLanguage } from '../hooks/useContentLanguage';
 import { useLanguage } from '../hooks/useLanguage';
 import { findMuseumArtifact } from '../utils/artifactHelpers';
 import type { MuseumExplorerArtifact } from '../utils/museumExplorerHelpers';
+import { AudioButton } from './AudioButton';
 
 export function MuseumArtifactTile({
   artifact,
@@ -70,6 +71,7 @@ export function MuseumArtifactTile({
         <Text style={{ color: '#B45309', fontSize: 11, fontWeight: '800', marginTop: 6, textAlign: 'center' }}>
           {rarityLabel}
         </Text>
+        <AudioButton artifact={museumArtifact ?? artifact.exhibit} />
       </View>
     </Pressable>
   );

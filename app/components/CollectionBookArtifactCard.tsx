@@ -2,6 +2,7 @@ import { Text, View } from 'react-native';
 import { useContentLanguage } from '../hooks/useContentLanguage';
 import { useLanguage } from '../hooks/useLanguage';
 import { getCollectionBookRarityLabel, type CollectionBookArtifact } from '../utils/museumCollectionsBookHelpers';
+import { AudioButton } from './AudioButton';
 
 export function CollectionBookArtifactCard({ item }: { item: CollectionBookArtifact }) {
   const { getArtifactName } = useContentLanguage();
@@ -59,6 +60,7 @@ export function CollectionBookArtifactCard({ item }: { item: CollectionBookArtif
       <Text numberOfLines={1} style={{ color: '#6D28D9', fontSize: 10, fontWeight: '700', marginTop: 4, textAlign: 'center' }}>
         {item.artifact.museum}
       </Text>
+      <AudioButton artifact={item.artifact} />
     </View>
   );
 }

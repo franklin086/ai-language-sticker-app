@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useLanguage } from '../hooks/useLanguage';
+import { useAudioCoverage } from '../hooks/useAudioCoverage';
 import { useMagicGuild } from '../hooks/useMagicGuild';
+import { AudioCoverageCard } from './AudioCoverageCard';
 import { CollectionSetPanel } from './CollectionSetPanel';
 import { GuildMissionBoard } from './GuildMissionBoard';
 import { GuildStatusCard } from './GuildStatusCard';
@@ -23,6 +25,7 @@ export function MagicGuildPanel({
 }) {
   const [guildView, setGuildView] = useState<'home' | 'collectionsBook' | 'collectionSets'>('home');
   const { t } = useLanguage();
+  const audioCoverage = useAudioCoverage('en');
   const guild = useMagicGuild({
     cityMapCompletedNodeIds,
     cityMaps,
@@ -103,6 +106,8 @@ export function MagicGuildPanel({
               <GuildStatusCard guild={guild} />
               <GuildMissionBoard guild={guild} />
             </View>
+
+            <AudioCoverageCard coverageLevel={audioCoverage.coverageLevel} stats={audioCoverage.stats} />
 
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 14 }}>
               <Pressable
