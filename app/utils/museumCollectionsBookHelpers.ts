@@ -1,11 +1,14 @@
+import { KnowledgeCategory, knowledgeCategoryOrder } from '../data/knowledgeCategories';
 import { museumArtifacts, type MuseumArtifact } from '../data/museumArtifacts';
+import type { SupportedLanguage } from '../i18n/translations';
 import {
   findMuseumArtifact,
   getMuseumArtifactId,
   getMuseumArtifactMuseumMeta,
 } from './artifactHelpers';
+import { getKnowledgeCategory, getKnowledgeCategoryLabel } from './knowledgeCategoryHelpers';
 
-export type CollectionBookFilterKey = 'all' | 'animal' | 'nature' | 'technology' | 'civilization' | 'art' | 'world_culture';
+export type CollectionBookFilterKey = 'all' | KnowledgeCategory;
 export type CollectionBookSortKey = 'latest' | 'rarity' | 'discovered_first' | 'locked_first';
 export type CollectionBookRarity = 'common' | 'rare' | 'epic' | 'legendary';
 
@@ -34,16 +37,6 @@ type CollectionLike = {
   object_zh: string;
 };
 
-export const COLLECTION_BOOK_FILTERS: CollectionBookFilter[] = [
-  { key: 'all', label: '全部' },
-  { key: 'animal', label: '动物' },
-  { key: 'nature', label: '自然' },
-  { key: 'technology', label: '科技' },
-  { key: 'civilization', label: '文明' },
-  { key: 'art', label: '艺术' },
-  { key: 'world_culture', label: '世界文化' },
-];
-
 export const COLLECTION_BOOK_SORTS: CollectionBookSort[] = [
   { key: 'latest', label: '最新发现' },
   { key: 'rarity', label: '稀有度' },
@@ -58,31 +51,22 @@ const rarityRank: Record<CollectionBookRarity, number> = {
   legendary: 4,
 };
 
-function includesAny(value: string, keywords: string[]) {
-  const text = value.toLowerCase();
-  return keywords.some((keyword) => text.includes(keyword.toLowerCase()));
-}
-
-function getArtifactSearchText(artifact: MuseumArtifact) {
-  return [
-    artifact.objectZh,
-    artifact.objectEn,
-    artifact.museum,
-    artifact.story,
-    ...(artifact.aliases ?? []),
-  ].join(' ');
+function normalizeRarity(value: string) {
+  return value.trim().toLowerCase();
 }
 
 export function getCollectionBookRarity(artifact: MuseumArtifact): CollectionBookRarity {
-  if (artifact.rarity === '传奇') {
+  const rarity = normalizeRarity(artifact.rarity);
+
+  if (rarity.includes('传奇') || rarity.includes('legendary') || rarity.includes('浼犲')) {
     return 'legendary';
   }
 
-  if (artifact.rarity === '史诗') {
+  if (rarity.includes('史诗') || rarity.includes('epic') || rarity.includes('鍙茶瘲')) {
     return 'epic';
   }
 
-  if (artifact.rarity === '稀有') {
+  if (rarity.includes('稀有') || rarity.includes('rare') || rarity.includes('绋')) {
     return 'rare';
   }
 
@@ -105,39 +89,42 @@ export function getCollectionBookRarityLabel(rarity: CollectionBookRarity) {
   return '⚪ 普通';
 }
 
+function getAllFilterLabel(language: SupportedLanguage) {
+  if (language === 'en') {
+    return 'All';
+  }
+
+  if (language === 'es') {
+    return 'Todo';
+  }
+
+  if (language === 'pt') {
+    return 'Tudo';
+  }
+
+  if (language === 'ja') {
+    return 'すべて';
+  }
+
+  return '全部';
+}
+
+function buildCollectionBookFilters(language: SupportedLanguage): CollectionBookFilter[] {
+  return [
+    { key: 'all', label: getAllFilterLabel(language) },
+    ...knowledgeCategoryOrder.map((category) => ({
+      key: category,
+      label: getKnowledgeCategoryLabel(category, language),
+    })),
+  ];
+}
+
 function artifactMatchesFilter(artifact: MuseumArtifact, filterKey: CollectionBookFilterKey) {
   if (filterKey === 'all') {
     return true;
   }
 
-  const museumId = getMuseumArtifactMuseumMeta(artifact.museum).id;
-  const searchText = getArtifactSearchText(artifact);
-
-  if (filterKey === 'animal') {
-    return museumId === 'animal' || museumId === 'sydney-australian-animals' || includesAny(searchText, ['动物', 'animal']);
-  }
-
-  if (filterKey === 'nature') {
-    return includesAny(searchText, ['自然', '海洋', '森林', '河流', '瀑布', '大海', '珊瑚', 'nature', 'ocean', 'forest']);
-  }
-
-  if (filterKey === 'technology') {
-    return (
-      museumId === 'technology' ||
-      museumId === 'london-science' ||
-      includesAny(searchText, ['科技', '火箭', '机器人', '电脑', '无人机', '芯片', 'technology', 'rocket', 'robot'])
-    );
-  }
-
-  if (filterKey === 'civilization') {
-    return includesAny(searchText, ['文明', '金字塔', '大英', '印度文明', '玛雅', '罗塞塔', '法老', 'civilization', 'pyramid']);
-  }
-
-  if (filterKey === 'art') {
-    return includesAny(searchText, ['艺术', '卢浮宫', '巴黎艺术', '油画', '雕像', '蒙娜丽莎', 'art', 'painting', 'statue']);
-  }
-
-  return includesAny(searchText, ['世界文化', '职业', '生活', '人物', '香料', 'culture', 'profession', 'life', 'spice']);
+  return getKnowledgeCategory(artifact) === filterKey;
 }
 
 function getDiscoveredArtifactMap(collection: CollectionLike[], museumCollectedIds: string[]) {
@@ -187,11 +174,13 @@ function sortCollectionBookArtifacts(items: CollectionBookArtifact[], sortKey: C
 export function buildMuseumCollectionsBookState({
   collection,
   filterKey,
+  language,
   museumCollectedIds,
   sortKey,
 }: {
   collection: CollectionLike[];
   filterKey: CollectionBookFilterKey;
+  language: SupportedLanguage;
   museumCollectedIds: string[];
   sortKey: CollectionBookSortKey;
 }) {
@@ -217,7 +206,7 @@ export function buildMuseumCollectionsBookState({
     artifacts: sortCollectionBookArtifacts(filteredArtifacts, sortKey),
     completionPercent,
     discoveredCount,
-    filters: COLLECTION_BOOK_FILTERS,
+    filters: buildCollectionBookFilters(language),
     sortOptions: COLLECTION_BOOK_SORTS,
     totalCount,
   };

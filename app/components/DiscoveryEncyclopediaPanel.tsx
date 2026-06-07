@@ -1,12 +1,22 @@
+import { useEffect } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useDiscoveryEncyclopedia } from '../hooks/useDiscoveryEncyclopedia';
 import { useContentLanguage } from '../hooks/useContentLanguage';
 import { useLanguage } from '../hooks/useLanguage';
 import type { TranslationKey } from '../i18n/translations';
+import { getPrimaryArtifactFact } from '../utils/artifactFactHelpers';
+import {
+  canRevealArtifactLearningContent,
+  getLockedLearningContentMessage,
+  warnIfLearningContentBlocked,
+} from '../utils/discoveryRuleHelpers';
 import type { EncyclopediaFilterKey, EncyclopediaSortKey } from '../utils/discoveryEncyclopediaHelpers';
+import { getKnowledgeCategory } from '../utils/knowledgeCategoryHelpers';
 import { getCollectionBookRarityLabel } from '../utils/museumCollectionsBookHelpers';
+import { DiscoveryFactCard } from './DiscoveryFactCard';
 import { EncyclopediaArtifactCard } from './EncyclopediaArtifactCard';
 import { EncyclopediaSection } from './EncyclopediaSection';
+import { KnowledgeCategoryBadge } from './KnowledgeCategoryBadge';
 
 const filterLabelKeys: Record<EncyclopediaFilterKey, TranslationKey> = {
   all: 'all',
@@ -29,8 +39,21 @@ export function DiscoveryEncyclopediaPanel({
 }) {
   const encyclopedia = useDiscoveryEncyclopedia({ collection, museumCollectedIds });
   const { getArtifactDescription, getArtifactName } = useContentLanguage();
-  const { t } = useLanguage();
+  const { currentLanguage, t } = useLanguage();
   const selectedEntry = encyclopedia.selectedEntry;
+  const canRevealSelectedEntry = selectedEntry ? canRevealArtifactLearningContent(selectedEntry.discovered) : false;
+
+  useEffect(() => {
+    if (!selectedEntry) {
+      return;
+    }
+
+    warnIfLearningContentBlocked({
+      artifactId: selectedEntry.id,
+      context: 'DiscoveryEncyclopediaPanel',
+      discovered: selectedEntry.discovered,
+    });
+  }, [selectedEntry]);
 
   return (
     <View>
@@ -126,7 +149,7 @@ export function DiscoveryEncyclopediaPanel({
 
       {selectedEntry ? (
         <View style={{ backgroundColor: '#FFFBEB', borderColor: '#FBBF24', borderRadius: 20, borderWidth: 2, marginTop: 14, padding: 14 }}>
-          {selectedEntry.discovered ? (
+          {canRevealSelectedEntry ? (
             <>
               <Text style={{ fontSize: 42, textAlign: 'center' }}>{selectedEntry.artifact.emoji}</Text>
               <Text style={{ color: '#6D28D9', fontSize: 20, fontWeight: '900', marginTop: 8, textAlign: 'center' }}>
@@ -135,6 +158,10 @@ export function DiscoveryEncyclopediaPanel({
               <Text style={{ color: '#7C3AED', fontSize: 13, fontWeight: '800', marginTop: 4, textAlign: 'center' }}>
                 {selectedEntry.artifact.objectEn}
               </Text>
+              <KnowledgeCategoryBadge
+                category={getKnowledgeCategory(selectedEntry.artifact)}
+                language={currentLanguage}
+              />
               <Text style={{ color: '#92400E', fontSize: 12, fontWeight: '800', lineHeight: 18, marginTop: 8, textAlign: 'center' }}>
                 {getArtifactDescription(selectedEntry.artifact)}
               </Text>
@@ -155,6 +182,12 @@ export function DiscoveryEncyclopediaPanel({
                 <Text style={{ color: '#7C3AED', fontSize: 12, fontWeight: '800', lineHeight: 18 }}>{selectedEntry.artifact.story}</Text>
               </EncyclopediaSection>
 
+              <DiscoveryFactCard
+                category={getKnowledgeCategory(selectedEntry.artifact)}
+                fact={getPrimaryArtifactFact(selectedEntry.artifact, currentLanguage)}
+                language={currentLanguage}
+              />
+
               <EncyclopediaSection title={`🔍 ${t('you_know')}`}>
                 <Text style={{ color: '#7C3AED', fontSize: 12, fontWeight: '800', lineHeight: 18 }}>{selectedEntry.fact}</Text>
               </EncyclopediaSection>
@@ -171,6 +204,7 @@ export function DiscoveryEncyclopediaPanel({
               <EncyclopediaSection title={`🏛 ${t('collection')}`}>
                 <Text style={{ color: '#7C3AED', fontSize: 12, fontWeight: '800', lineHeight: 18 }}>
                   {t('status')}: {t('locked')}
+                  {`\n${getLockedLearningContentMessage()}`}
                 </Text>
               </EncyclopediaSection>
             </>

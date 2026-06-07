@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useLanguage } from './useLanguage';
 import {
   buildMuseumCollectionsBookState,
   type CollectionBookFilterKey,
@@ -14,15 +15,17 @@ export function useMuseumCollectionsBook({
 }) {
   const [filterKey, setFilterKey] = useState<CollectionBookFilterKey>('all');
   const [sortKey, setSortKey] = useState<CollectionBookSortKey>('latest');
+  const { currentLanguage } = useLanguage();
   const bookState = useMemo(
     () =>
       buildMuseumCollectionsBookState({
         collection,
         filterKey,
+        language: currentLanguage,
         museumCollectedIds,
         sortKey,
       }),
-    [collection, filterKey, museumCollectedIds, sortKey],
+    [collection, currentLanguage, filterKey, museumCollectedIds, sortKey],
   );
 
   return {

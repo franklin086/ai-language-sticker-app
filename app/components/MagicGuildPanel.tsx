@@ -1,16 +1,20 @@
 import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
-import { useLanguage } from '../hooks/useLanguage';
 import { useAudioCoverage } from '../hooks/useAudioCoverage';
+import { useLanguage } from '../hooks/useLanguage';
 import { useMagicGuild } from '../hooks/useMagicGuild';
+import { guildNavigationItems, type GuildView } from '../utils/navigationMap';
 import { AudioCoverageCard } from './AudioCoverageCard';
 import { CollectionSetPanel } from './CollectionSetPanel';
+import { ExplorerAcademyPanel } from './ExplorerAcademyPanel';
 import { GuildMissionBoard } from './GuildMissionBoard';
 import { GuildStatusCard } from './GuildStatusCard';
+import { KnowledgeCollectionsPanel } from './KnowledgeCollectionsPanel';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { MuseumCollectionsBookPanel } from './MuseumCollectionsBookPanel';
 
 type MagicGuildInput = Parameters<typeof useMagicGuild>[0];
+type MagicGuildView = 'home' | GuildView;
 
 export function MagicGuildPanel({
   cityMapCompletedNodeIds,
@@ -23,7 +27,7 @@ export function MagicGuildPanel({
 }: MagicGuildInput & {
   onClose: () => void;
 }) {
-  const [guildView, setGuildView] = useState<'home' | 'collectionsBook' | 'collectionSets'>('home');
+  const [guildView, setGuildView] = useState<MagicGuildView>('home');
   const { t } = useLanguage();
   const audioCoverage = useAudioCoverage('en');
   const guild = useMagicGuild({
@@ -76,6 +80,18 @@ export function MagicGuildPanel({
             museumCollectedIds={museumCollectedIds}
             onBack={() => setGuildView('home')}
           />
+        ) : guildView === 'knowledgeCollections' ? (
+          <KnowledgeCollectionsPanel
+            collection={collection}
+            museumCollectedIds={museumCollectedIds}
+            onBack={() => setGuildView('home')}
+          />
+        ) : guildView === 'explorerAcademy' ? (
+          <ExplorerAcademyPanel
+            collection={collection}
+            museumCollectedIds={museumCollectedIds}
+            onBack={() => setGuildView('home')}
+          />
         ) : (
           <>
             <Pressable
@@ -110,39 +126,9 @@ export function MagicGuildPanel({
             <AudioCoverageCard coverageLevel={audioCoverage.coverageLevel} stats={audioCoverage.stats} />
 
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 14 }}>
-              <Pressable
-                style={({ pressed }) => ({
-                  backgroundColor: pressed ? '#FEF3C7' : '#FFFFFF',
-                  borderColor: '#FBBF24',
-                  borderRadius: 18,
-                  borderWidth: 1,
-                  flex: 1,
-                  minWidth: 150,
-                  padding: 12,
-                })}
-                onPress={() => setGuildView('collectionsBook')}
-              >
-                <Text style={{ color: '#6D28D9', fontSize: 14, fontWeight: '900', textAlign: 'center' }}>
-                  {t('open_collection_book')}
-                </Text>
-              </Pressable>
-
-              <Pressable
-                style={({ pressed }) => ({
-                  backgroundColor: pressed ? '#FEF3C7' : '#FFFFFF',
-                  borderColor: '#FBBF24',
-                  borderRadius: 18,
-                  borderWidth: 1,
-                  flex: 1,
-                  minWidth: 150,
-                  padding: 12,
-                })}
-                onPress={() => setGuildView('collectionSets')}
-              >
-                <Text style={{ color: '#6D28D9', fontSize: 14, fontWeight: '900', textAlign: 'center' }}>
-                  🎁 {t('collection_sets')}
-                </Text>
-              </Pressable>
+              {guildNavigationItems.map((item) => (
+                <GuildButton key={item.id} label={t(item.labelKey)} onPress={() => setGuildView(item.id)} />
+              ))}
             </View>
 
             <View style={{ backgroundColor: '#FFFFFF', borderColor: '#E9D5FF', borderRadius: 18, borderWidth: 1, marginTop: 14, padding: 12 }}>
@@ -167,5 +153,24 @@ export function MagicGuildPanel({
         )}
       </View>
     </View>
+  );
+}
+
+function GuildButton({ label, onPress }: { label: string; onPress: () => void }) {
+  return (
+    <Pressable
+      style={({ pressed }) => ({
+        backgroundColor: pressed ? '#FEF3C7' : '#FFFFFF',
+        borderColor: '#FBBF24',
+        borderRadius: 18,
+        borderWidth: 1,
+        flex: 1,
+        minWidth: 150,
+        padding: 12,
+      })}
+      onPress={onPress}
+    >
+      <Text style={{ color: '#6D28D9', fontSize: 14, fontWeight: '900', textAlign: 'center' }}>{label}</Text>
+    </Pressable>
   );
 }

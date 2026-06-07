@@ -1,24 +1,9 @@
 import { Pressable, Text, View } from 'react-native';
 import { useLanguage } from '../hooks/useLanguage';
-import type { TranslationKey } from '../i18n/translations';
-import type {
-  CollectionBookFilter,
-  CollectionBookFilterKey,
-  CollectionBookSort,
-  CollectionBookSortKey,
-} from '../utils/museumCollectionsBookHelpers';
+import type { CollectionBookFilter, CollectionBookFilterKey, CollectionBookSort, CollectionBookSortKey } from '../utils/museumCollectionsBookHelpers';
+import { KnowledgeCategory } from '../data/knowledgeCategories';
 
-const filterLabelKeys: Record<CollectionBookFilterKey, TranslationKey> = {
-  all: 'all',
-  animal: 'category_animal',
-  nature: 'category_nature',
-  technology: 'category_technology',
-  civilization: 'category_civilization',
-  art: 'category_art',
-  world_culture: 'category_world_culture',
-};
-
-const sortLabelKeys: Record<CollectionBookSortKey, TranslationKey> = {
+const sortLabelKeys: Record<CollectionBookSortKey, Parameters<ReturnType<typeof useLanguage>['t']>[0]> = {
   latest: 'latest_discovery',
   rarity: 'rarity',
   discovered_first: 'discovered_first',
@@ -64,7 +49,7 @@ export function CollectionBookFilterBar({
                 onPress={() => onChangeFilter(filter.key)}
               >
                 <Text style={{ color: active ? '#FFFFFF' : '#6D28D9', fontSize: 12, fontWeight: '900' }}>
-                  {t(filterLabelKeys[filter.key])}
+                  {filter.key === 'all' ? filter.label : `${getCategoryEmoji(filter.key)} ${filter.label}`}
                 </Text>
               </Pressable>
             );
@@ -101,4 +86,32 @@ export function CollectionBookFilterBar({
       </View>
     </View>
   );
+}
+
+function getCategoryEmoji(category: CollectionBookFilterKey) {
+  if (category === KnowledgeCategory.ANIMALS) {
+    return '🐼';
+  }
+
+  if (category === KnowledgeCategory.TECHNOLOGY) {
+    return '🚀';
+  }
+
+  if (category === KnowledgeCategory.CIVILIZATION) {
+    return '🏛';
+  }
+
+  if (category === KnowledgeCategory.ART) {
+    return '🎨';
+  }
+
+  if (category === KnowledgeCategory.ARCHITECTURE) {
+    return '🏰';
+  }
+
+  if (category === KnowledgeCategory.OCEAN) {
+    return '🌊';
+  }
+
+  return '🌎';
 }

@@ -50,6 +50,9 @@ export type TranslationKey =
   | 'league_badge'
   | 'league_count'
   | 'league_list'
+  | 'knowledge_collections'
+  | 'knowledge_quiz'
+  | 'explorer_academy'
   | 'latest_discovery'
   | 'locked'
   | 'locked_first'
@@ -149,6 +152,9 @@ const zh: TranslationTable = {
   league_badge: '联盟徽章',
   league_count: '联盟数量',
   league_list: '联盟列表',
+  knowledge_collections: '📚 主题知识册',
+  knowledge_quiz: '🧠 知识挑战',
+  explorer_academy: '🎓 探索学院',
   latest_discovery: '最新发现',
   locked: '未发现',
   locked_first: '未发现优先',
@@ -239,6 +245,9 @@ const en: TranslationTable = {
   league_badge: 'League Badge',
   league_count: 'League Count',
   league_list: 'League List',
+  knowledge_collections: '📚 Knowledge Collections',
+  knowledge_quiz: '🧠 Knowledge Quiz',
+  explorer_academy: '🎓 Explorer Academy',
   latest_discovery: 'Latest Discovery',
   locked: 'Locked',
   locked_first: 'Locked First',

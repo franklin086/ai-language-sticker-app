@@ -50,3 +50,11 @@ expo-env.d.ts
 backend/.env
 backend/.env*
 !backend/.env.example
+
+ai-language-sticker-app-api.txt
+
+*.env
+
+*api-key*
+
+*secret*
