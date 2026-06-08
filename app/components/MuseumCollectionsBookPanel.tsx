@@ -95,7 +95,11 @@ export function MuseumCollectionsBookPanel({
       <ScrollView style={{ maxHeight: 420, marginTop: 12 }} contentContainerStyle={{ paddingBottom: 8 }}>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'space-between' }}>
           {book.artifacts.map((item) => (
-            <CollectionBookArtifactCard item={item} key={item.id} />
+            <CollectionBookArtifactCard
+              item={item}
+              key={item.id}
+              onPressStory={item.discovered ? () => setShowEncyclopedia(true) : undefined}
+            />
           ))}
         </View>
       </ScrollView>

@@ -30,6 +30,21 @@ export function DiscoveryFactCard({
         shadowRadius: 10,
       }}
     >
+      <View
+        style={{
+          backgroundColor: '#FFF7D6',
+          borderColor: '#FBBF24',
+          borderRadius: 14,
+          borderWidth: 1,
+          marginBottom: 10,
+          paddingHorizontal: 10,
+          paddingVertical: 8,
+        }}
+      >
+        <Text style={{ color: '#92400E', fontSize: 12, fontWeight: '900', lineHeight: 17, textAlign: 'center' }}>
+          📚 本知识来自你发现的藏品
+        </Text>
+      </View>
       <Text style={{ color: '#6D28D9', fontSize: 14, fontWeight: '900' }}>💡 你知道吗？</Text>
       {category && language ? <KnowledgeCategoryBadge category={category} language={language} /> : null}
       <Text style={{ color: '#7C3AED', fontSize: 12, fontWeight: '800', lineHeight: 18, marginTop: 6 }}>

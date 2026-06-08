@@ -17,6 +17,7 @@ import { DiscoveryFactCard } from './DiscoveryFactCard';
 import { EncyclopediaArtifactCard } from './EncyclopediaArtifactCard';
 import { EncyclopediaSection } from './EncyclopediaSection';
 import { KnowledgeCategoryBadge } from './KnowledgeCategoryBadge';
+import { LearningBackButton } from './LearningBackButton';
 
 const filterLabelKeys: Record<EncyclopediaFilterKey, TranslationKey> = {
   all: 'all',
@@ -57,27 +58,14 @@ export function DiscoveryEncyclopediaPanel({
 
   return (
     <View>
-      <Pressable
-        style={({ pressed }) => ({
-          alignSelf: 'flex-start',
-          backgroundColor: pressed ? '#DDD6FE' : '#FFFFFF',
-          borderColor: '#C4B5FD',
-          borderRadius: 999,
-          borderWidth: 1,
-          paddingHorizontal: 12,
-          paddingVertical: 8,
-        })}
-        onPress={onBack}
-      >
-        <Text style={{ color: '#6D28D9', fontSize: 12, fontWeight: '900' }}>{t('back_to_collection_book')}</Text>
-      </Pressable>
+      <LearningBackButton label={t('back')} onPress={onBack} />
 
-      <Text style={{ color: '#6D28D9', fontSize: 25, fontWeight: '900', marginTop: 14, textAlign: 'center' }}>
+      <Text style={{ color: '#6D28D9', fontSize: 23, fontWeight: '900', lineHeight: 30, marginTop: 14, textAlign: 'center' }}>
         {t('magic_discovery_encyclopedia')}
       </Text>
 
       <View style={{ backgroundColor: '#FFFFFF', borderColor: '#FBBF24', borderRadius: 20, borderWidth: 2, marginTop: 14, padding: 14 }}>
-        <Text style={{ color: '#6D28D9', fontSize: 16, fontWeight: '900' }}>{t('encyclopedia_completion')}</Text>
+        <Text style={{ color: '#6D28D9', fontSize: 15, fontWeight: '900', lineHeight: 21 }}>{t('encyclopedia_completion')}</Text>
         <Text style={{ color: '#B45309', fontSize: 28, fontWeight: '900', marginTop: 8 }}>
           {encyclopedia.completionPercent}%
         </Text>
@@ -114,7 +102,7 @@ export function DiscoveryEncyclopediaPanel({
                 }}
                 onPress={() => encyclopedia.setFilterKey(filter.key)}
               >
-                <Text style={{ color: active ? '#FFFFFF' : '#6D28D9', fontSize: 12, fontWeight: '900' }}>
+                <Text style={{ color: active ? '#FFFFFF' : '#6D28D9', fontSize: 12, fontWeight: '900', lineHeight: 17, textAlign: 'center' }}>
                   {t(filterLabelKeys[filter.key])}
                 </Text>
               </Pressable>
@@ -138,7 +126,7 @@ export function DiscoveryEncyclopediaPanel({
                 }}
                 onPress={() => encyclopedia.setSortKey(sortOption.key)}
               >
-                <Text style={{ color: active ? '#92400E' : '#6D28D9', fontSize: 12, fontWeight: '900' }}>
+                <Text style={{ color: active ? '#92400E' : '#6D28D9', fontSize: 12, fontWeight: '900', lineHeight: 17, textAlign: 'center' }}>
                   {t(sortLabelKeys[sortOption.key])}
                 </Text>
               </Pressable>
@@ -152,7 +140,7 @@ export function DiscoveryEncyclopediaPanel({
           {canRevealSelectedEntry ? (
             <>
               <Text style={{ fontSize: 42, textAlign: 'center' }}>{selectedEntry.artifact.emoji}</Text>
-              <Text style={{ color: '#6D28D9', fontSize: 20, fontWeight: '900', marginTop: 8, textAlign: 'center' }}>
+              <Text style={{ color: '#6D28D9', fontSize: 19, fontWeight: '900', lineHeight: 25, marginTop: 8, textAlign: 'center' }}>
                 {getArtifactName(selectedEntry.artifact)}
               </Text>
               <Text style={{ color: '#7C3AED', fontSize: 13, fontWeight: '800', marginTop: 4, textAlign: 'center' }}>
@@ -166,6 +154,37 @@ export function DiscoveryEncyclopediaPanel({
                 {getArtifactDescription(selectedEntry.artifact)}
               </Text>
 
+              <View
+                style={{
+                  backgroundColor: '#FFF7D6',
+                  borderColor: '#FBBF24',
+                  borderRadius: 18,
+                  borderWidth: 2,
+                  marginTop: 12,
+                  padding: 12,
+                }}
+              >
+                <Text style={{ color: '#92400E', fontSize: 13, fontWeight: '900', textAlign: 'center' }}>
+                  先了解这个藏品背后的故事
+                </Text>
+                <View
+                  style={{
+                    alignSelf: 'center',
+                    backgroundColor: '#7C3AED',
+                    borderRadius: 999,
+                    marginTop: 9,
+                    paddingHorizontal: 14,
+                    paddingVertical: 8,
+                  }}
+                >
+                  <Text style={{ color: '#FFFFFF', fontSize: 13, fontWeight: '900' }}>📖 阅读故事</Text>
+                </View>
+              </View>
+
+              <EncyclopediaSection title={`📖 ${t('story')}`}>
+                <Text style={{ color: '#7C3AED', fontSize: 12, fontWeight: '800', lineHeight: 18 }}>{selectedEntry.artifact.story}</Text>
+              </EncyclopediaSection>
+
               <EncyclopediaSection title={`🏛 ${t('collection')}`}>
                 <Text style={{ color: '#7C3AED', fontSize: 12, fontWeight: '800', lineHeight: 18 }}>
                   {t('museum')}: {selectedEntry.artifact.museum}
@@ -176,10 +195,6 @@ export function DiscoveryEncyclopediaPanel({
                   {`\n${t('rarity')}: ${getCollectionBookRarityLabel(selectedEntry.rarity)}`}
                   {`\n${t('status')}: ${t('discovered')}`}
                 </Text>
-              </EncyclopediaSection>
-
-              <EncyclopediaSection title={`📖 ${t('story')}`}>
-                <Text style={{ color: '#7C3AED', fontSize: 12, fontWeight: '800', lineHeight: 18 }}>{selectedEntry.artifact.story}</Text>
               </EncyclopediaSection>
 
               <DiscoveryFactCard

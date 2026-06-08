@@ -113,6 +113,16 @@ export function ArtifactDetailModal({
           </View>
           <Text style={styles.artifactDetailZh}>{specificZh}</Text>
           <Text style={styles.artifactDetailEn}>{specificEn}</Text>
+          <View style={styles.artifactDetailStoryFirstBox}>
+            <Text style={styles.artifactDetailStoryFirstText}>先了解这个藏品背后的故事</Text>
+            <View style={styles.artifactDetailStoryFirstButton}>
+              <Text style={styles.artifactDetailStoryFirstButtonText}>📖 阅读故事</Text>
+            </View>
+          </View>
+          <View style={styles.artifactDetailStoryBox}>
+            <Text style={styles.artifactDetailStoryTitle}>📖 藏品故事</Text>
+            <Text style={styles.artifactDetailStoryText}>{details.story}</Text>
+          </View>
           <View style={styles.artifactDetailInfoBox}>
             <Text style={styles.artifactDetailMeta}>基础词：{baseZh} / {baseEn}</Text>
             <Text style={styles.artifactDetailMeta}>具体识别：{specificZh} / {specificEn}</Text>
@@ -120,10 +130,6 @@ export function ArtifactDetailModal({
             <Text style={styles.artifactDetailMeta}>稀有度：{details.rarityLabel}</Text>
             <Text style={styles.artifactDetailMeta}>首次发现：{formatDiscoveredAt(item.discoveredAt)}</Text>
             <Text style={styles.artifactDetailMeta}>Confidence：{formatConfidence(item.confidence)}</Text>
-          </View>
-          <View style={styles.artifactDetailStoryBox}>
-            <Text style={styles.artifactDetailStoryTitle}>📖 藏品故事</Text>
-            <Text style={styles.artifactDetailStoryText}>{details.story}</Text>
           </View>
           <View style={styles.artifactDetailSpeechRow}>
             <SpeechButton

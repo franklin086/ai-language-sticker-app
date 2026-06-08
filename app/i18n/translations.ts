@@ -47,6 +47,8 @@ export type TranslationKey =
   | 'guild_headquarters'
   | 'guild_welcome'
   | 'language'
+  | 'learning_dashboard'
+  | 'learning_profile'
   | 'league_badge'
   | 'league_count'
   | 'league_list'
@@ -81,11 +83,15 @@ export type TranslationKey =
   | 'seasonal_events'
   | 'seasonal_events_hint'
   | 'sort_mode'
+  | 'start_exploring_cta'
   | 'status'
   | 'story'
   | 'theme'
   | 'today_status'
   | 'total_completion'
+  | 'onboarding_collect_language_treasures'
+  | 'onboarding_discover_world'
+  | 'onboarding_unlock_stories_knowledge'
   | 'unknown'
   | 'unlocked'
   | 'world_expedition'
@@ -149,6 +155,8 @@ const zh: TranslationTable = {
   guild_headquarters: '🏛 魔法探索者公会总部',
   guild_welcome: '欢迎回来，小馆长',
   language: '🌐 Language',
+  learning_dashboard: '📊 学习驾驶舱',
+  learning_profile: '📊 学习档案',
   league_badge: '联盟徽章',
   league_count: '联盟数量',
   league_list: '联盟列表',
@@ -183,11 +191,15 @@ const zh: TranslationTable = {
   seasonal_events: '🎊 世界季节活动',
   seasonal_events_hint: '魔法世界正在发生新的变化',
   sort_mode: '排序方式',
+  start_exploring_cta: '✨ 开始发现',
   status: '状态',
   story: '藏品故事',
   theme: '主题',
   today_status: '今日状态',
   total_completion: '总完成度',
+  onboarding_collect_language_treasures: '收集语言宝藏',
+  onboarding_discover_world: '发现真实世界',
+  onboarding_unlock_stories_knowledge: '解锁故事与知识',
   unknown: '继续探索解锁',
   unlocked: '已解锁',
   world_expedition: '🌍 世界远征中心',
@@ -242,6 +254,8 @@ const en: TranslationTable = {
   guild_headquarters: '🏛 Magic Explorer Guild',
   guild_welcome: 'Welcome back, little curator',
   language: '🌐 Language',
+  learning_dashboard: '📊 Learning Dashboard',
+  learning_profile: '📊 Learning Profile',
   league_badge: 'League Badge',
   league_count: 'League Count',
   league_list: 'League List',
@@ -276,11 +290,15 @@ const en: TranslationTable = {
   seasonal_events: '🎊 Seasonal Events',
   seasonal_events_hint: 'The magic world is changing with the seasons',
   sort_mode: 'Sort',
+  start_exploring_cta: '✨ Start Discovering',
   status: 'Status',
   story: 'Artifact Story',
   theme: 'Theme',
   today_status: 'Today',
   total_completion: 'Total Progress',
+  onboarding_collect_language_treasures: 'Collect language treasures',
+  onboarding_discover_world: 'Discover the real world',
+  onboarding_unlock_stories_knowledge: 'Unlock stories and knowledge',
   unknown: 'Keep exploring to unlock',
   unlocked: 'Unlocked',
   world_expedition: '🌍 World Expedition Center',
@@ -316,6 +334,8 @@ const es: TranslationTable = {
   exploring: 'Explorando',
   guild_headquarters: '🏛 Gremio de Exploradores Mágicos',
   guild_welcome: 'Bienvenido de nuevo, pequeño curador',
+  learning_dashboard: '📊 Panel de aprendizaje',
+  learning_profile: '📊 Perfil de aprendizaje',
   locked: 'Bloqueado',
   magic_collection_sets: '🎁 Sets mágicos',
   magic_discovery_encyclopedia: '📚 Enciclopedia mágica',
@@ -326,7 +346,11 @@ const es: TranslationTable = {
   rarity: 'Rareza',
   return_home: 'Volver al inicio',
   seasonal_events: '🎊 Eventos de temporada',
+  start_exploring_cta: '✨ Empezar a descubrir',
   status: 'Estado',
+  onboarding_collect_language_treasures: 'Colecciona tesoros de palabras',
+  onboarding_discover_world: 'Descubre el mundo real',
+  onboarding_unlock_stories_knowledge: 'Desbloquea historias y conocimiento',
   unknown: 'Sigue explorando para desbloquear',
   world_map: 'Mapa mundial',
 };
@@ -357,6 +381,8 @@ const pt: TranslationTable = {
   exploring: 'Explorando',
   guild_headquarters: '🏛 Guilda dos Exploradores Mágicos',
   guild_welcome: 'Bem-vindo de volta, pequeno curador',
+  learning_dashboard: '📊 Painel de aprendizagem',
+  learning_profile: '📊 Perfil de aprendizagem',
   locked: 'Bloqueado',
   magic_collection_sets: '🎁 Conjuntos mágicos',
   magic_discovery_encyclopedia: '📚 Enciclopédia mágica',
@@ -367,6 +393,10 @@ const pt: TranslationTable = {
   rarity: 'Raridade',
   return_home: 'Voltar ao início',
   seasonal_events: '🎊 Eventos sazonais',
+  start_exploring_cta: '✨ Começar a descobrir',
+  onboarding_collect_language_treasures: 'Colecione tesouros de palavras',
+  onboarding_discover_world: 'Descubra o mundo real',
+  onboarding_unlock_stories_knowledge: 'Desbloqueie histórias e conhecimento',
   unknown: 'Continue explorando para desbloquear',
   world_map: 'Mapa mundial',
 };
@@ -397,6 +427,8 @@ const ja: TranslationTable = {
   exploring: '探索中',
   guild_headquarters: '🏛 魔法探索者ギルド',
   guild_welcome: 'おかえり、小さな館長さん',
+  learning_dashboard: '📊 学習ダッシュボード',
+  learning_profile: '📊 学習プロフィール',
   locked: '未発見',
   magic_collection_sets: '🎁 魔法コレクションセット',
   magic_discovery_encyclopedia: '📚 魔法発見百科',
@@ -407,7 +439,11 @@ const ja: TranslationTable = {
   rarity: 'レア度',
   return_home: 'ホームへ戻る',
   seasonal_events: '🎊 季節イベント',
+  start_exploring_cta: '✨ 発見をはじめる',
   status: '状態',
+  onboarding_collect_language_treasures: 'ことばの宝物を集める',
+  onboarding_discover_world: '本物の世界を発見する',
+  onboarding_unlock_stories_knowledge: '物語と知識を解き放つ',
   unknown: '探索を続けて解放',
   world_map: '世界地図',
 };

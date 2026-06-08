@@ -43,22 +43,22 @@ export function WorldCountryCard({
     >
       <Pressable onPress={onToggle}>
         <View style={{ alignItems: 'flex-start', flexDirection: 'row', justifyContent: 'space-between', gap: 12 }}>
-          <View style={{ flex: 1 }}>
-            <Text style={{ color: '#6D28D9', fontSize: 22, fontWeight: '900' }}>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <Text style={{ color: '#6D28D9', fontSize: 20, fontWeight: '900', lineHeight: 27 }}>
               {country.emoji} {country.countryName}
             </Text>
-            <Text style={{ color: '#7C3AED', fontSize: 13, fontWeight: '700', marginTop: 6 }}>
+            <Text style={{ color: '#7C3AED', fontSize: 13, fontWeight: '700', lineHeight: 18, marginTop: 6 }}>
               已完成城市 {country.completedCityCount} / {country.totalCityCount}
             </Text>
-            <Text style={{ color: '#8B5CF6', fontSize: 12, fontWeight: '700', marginTop: 3 }}>
+            <Text style={{ color: '#8B5CF6', fontSize: 12, fontWeight: '700', lineHeight: 17, marginTop: 3 }}>
               状态：{getCountryStatus(country)}
             </Text>
           </View>
-          <View style={{ alignItems: 'flex-end' }}>
+          <View style={{ alignItems: 'flex-end', flexShrink: 0 }}>
             <Text style={{ color: countryCompleted ? '#B45309' : '#7C3AED', fontSize: 24, fontWeight: '900' }}>
               {country.percent}%
             </Text>
-            <Text style={{ color: '#A855F7', fontSize: 12, fontWeight: '800', marginTop: 4 }}>
+            <Text style={{ color: '#A855F7', fontSize: 12, fontWeight: '800', lineHeight: 17, marginTop: 4, textAlign: 'right' }}>
               {expanded ? '收起 ▲' : '展开 ▼'}
             </Text>
           </View>
@@ -91,7 +91,7 @@ export function WorldCountryCard({
         })}
         onPress={onEnterCountry}
       >
-        <Text style={{ color: '#6D28D9', fontSize: 13, fontWeight: '900', textAlign: 'center' }}>
+        <Text style={{ color: '#6D28D9', fontSize: 13, fontWeight: '900', lineHeight: 18, textAlign: 'center' }}>
           进入{country.countryName}地图
         </Text>
       </Pressable>

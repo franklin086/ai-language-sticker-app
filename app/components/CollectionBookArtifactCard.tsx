@@ -1,10 +1,16 @@
-import { Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { useContentLanguage } from '../hooks/useContentLanguage';
 import { useLanguage } from '../hooks/useLanguage';
 import { getCollectionBookRarityLabel, type CollectionBookArtifact } from '../utils/museumCollectionsBookHelpers';
 import { AudioButton } from './AudioButton';
 
-export function CollectionBookArtifactCard({ item }: { item: CollectionBookArtifact }) {
+export function CollectionBookArtifactCard({
+  item,
+  onPressStory,
+}: {
+  item: CollectionBookArtifact;
+  onPressStory?: () => void;
+}) {
   const { getArtifactName } = useContentLanguage();
   const { t } = useLanguage();
 
@@ -57,6 +63,20 @@ export function CollectionBookArtifactCard({ item }: { item: CollectionBookArtif
       <Text style={{ color: '#B45309', fontSize: 11, fontWeight: '900', marginTop: 6, textAlign: 'center' }}>
         {getCollectionBookRarityLabel(item.rarity)}
       </Text>
+      <Pressable
+        style={({ pressed }) => ({
+          backgroundColor: pressed ? '#FDE68A' : '#FFF7D6',
+          borderColor: '#FBBF24',
+          borderRadius: 999,
+          borderWidth: 1,
+          marginTop: 8,
+          paddingHorizontal: 10,
+          paddingVertical: 6,
+        })}
+        onPress={onPressStory}
+      >
+        <Text style={{ color: '#7C3AED', fontSize: 11, fontWeight: '900', textAlign: 'center' }}>📖 阅读故事</Text>
+      </Pressable>
       <Text numberOfLines={1} style={{ color: '#6D28D9', fontSize: 10, fontWeight: '700', marginTop: 4, textAlign: 'center' }}>
         {item.artifact.museum}
       </Text>

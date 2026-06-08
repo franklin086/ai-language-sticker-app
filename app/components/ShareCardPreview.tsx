@@ -50,29 +50,29 @@ export function ShareCardPreview({
           ) : null}
 
           <Text style={styles.sharePreviewBrand}>AI魔法识字相机</Text>
-          <Text style={styles.sharePreviewTitle}>{data.title}</Text>
+          <Text numberOfLines={2} style={styles.sharePreviewTitle}>{data.title}</Text>
           <View style={[styles.sharePreviewEmojiStage, rarityVisual.emojiStage]}>
             <Text style={styles.sharePreviewEmoji}>{data.emoji}</Text>
           </View>
-          <Text style={styles.sharePreviewZh}>{data.objectZh}</Text>
-          <Text style={styles.sharePreviewEn}>{data.objectEn}</Text>
+          <Text numberOfLines={2} style={styles.sharePreviewZh}>{data.objectZh}</Text>
+          <Text numberOfLines={2} style={styles.sharePreviewEn}>{data.objectEn}</Text>
 
           <View style={styles.sharePreviewInfoGrid}>
             <View style={styles.sharePreviewInfoPill}>
               <Text style={styles.sharePreviewInfoLabel}>稀有度</Text>
-              <Text style={styles.sharePreviewInfoValue}>{data.rarityLabel}</Text>
+              <Text numberOfLines={2} style={styles.sharePreviewInfoValue}>{data.rarityLabel}</Text>
             </View>
             <View style={styles.sharePreviewInfoPill}>
               <Text style={styles.sharePreviewInfoLabel}>馆长等级</Text>
-              <Text style={styles.sharePreviewInfoValue}>{data.curatorTitle}</Text>
+              <Text numberOfLines={2} style={styles.sharePreviewInfoValue}>{data.curatorTitle}</Text>
             </View>
           </View>
 
-          <Text style={styles.sharePreviewMuseum}>所属博物馆：{data.museumTitle}</Text>
-          <Text style={styles.sharePreviewMuseum}>发现日期：{data.discoveredAt}</Text>
-          <Text style={styles.sharePreviewEncouragement}>世界记忆又恢复了一点点 ✨</Text>
-          <Text style={styles.sharePreviewEncouragement}>{data.encouragement}</Text>
-          <Text style={styles.sharePreviewMuseum}>AI魔法识字相机 · 发现真实世界的语言魔法</Text>
+          <Text numberOfLines={2} style={styles.sharePreviewMuseum}>所属博物馆：{data.museumTitle}</Text>
+          <Text numberOfLines={1} style={styles.sharePreviewMuseum}>发现日期：{data.discoveredAt}</Text>
+          <Text numberOfLines={2} style={styles.sharePreviewEncouragement}>世界记忆又恢复了一点点 ✨</Text>
+          <Text numberOfLines={2} style={styles.sharePreviewEncouragement}>{data.encouragement}</Text>
+          <Text numberOfLines={2} style={styles.sharePreviewMuseum}>AI魔法识字相机 · 发现真实世界的语言魔法</Text>
         </View>
 
         <View style={styles.sharePreviewActions}>

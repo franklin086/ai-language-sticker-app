@@ -11,6 +11,8 @@ import { GuildMissionBoard } from './GuildMissionBoard';
 import { GuildStatusCard } from './GuildStatusCard';
 import { KnowledgeCollectionsPanel } from './KnowledgeCollectionsPanel';
 import { LanguageSwitcher } from './LanguageSwitcher';
+import { LearningDashboardPanel } from './LearningDashboardPanel';
+import { LearningProfilePanel } from './LearningProfilePanel';
 import { MuseumCollectionsBookPanel } from './MuseumCollectionsBookPanel';
 
 type MagicGuildInput = Parameters<typeof useMagicGuild>[0];
@@ -92,6 +94,22 @@ export function MagicGuildPanel({
             museumCollectedIds={museumCollectedIds}
             onBack={() => setGuildView('home')}
           />
+        ) : guildView === 'learningProfile' ? (
+          <LearningProfilePanel
+            audioCoverageLevel={audioCoverage.coverageLevel}
+            audioStats={audioCoverage.stats}
+            collection={collection}
+            museumCollectedIds={museumCollectedIds}
+            onBack={() => setGuildView('home')}
+          />
+        ) : guildView === 'learningDashboard' ? (
+          <LearningDashboardPanel
+            audioCoverageLevel={audioCoverage.coverageLevel}
+            audioStats={audioCoverage.stats}
+            collection={collection}
+            museumCollectedIds={museumCollectedIds}
+            onBack={() => setGuildView('home')}
+          />
         ) : (
           <>
             <Pressable
@@ -109,10 +127,10 @@ export function MagicGuildPanel({
             >
               <Text style={{ color: '#6D28D9', fontSize: 12, fontWeight: '900' }}>← {t('back')}</Text>
             </Pressable>
-            <Text style={{ color: '#6D28D9', fontSize: 25, fontWeight: '900', textAlign: 'center' }}>
+            <Text style={{ color: '#6D28D9', fontSize: 23, fontWeight: '900', lineHeight: 30, textAlign: 'center' }}>
               {t('guild_headquarters')}
             </Text>
-            <Text style={{ color: '#7C3AED', fontSize: 14, fontWeight: '800', marginTop: 6, textAlign: 'center' }}>
+            <Text style={{ color: '#7C3AED', fontSize: 13, fontWeight: '800', lineHeight: 19, marginTop: 6, textAlign: 'center' }}>
               {t('guild_welcome')}
             </Text>
 
@@ -165,12 +183,15 @@ function GuildButton({ label, onPress }: { label: string; onPress: () => void })
         borderRadius: 18,
         borderWidth: 1,
         flex: 1,
-        minWidth: 150,
+        minHeight: 54,
+        minWidth: 128,
         padding: 12,
       })}
       onPress={onPress}
     >
-      <Text style={{ color: '#6D28D9', fontSize: 14, fontWeight: '900', textAlign: 'center' }}>{label}</Text>
+      <Text style={{ color: '#6D28D9', flexShrink: 1, fontSize: 13, fontWeight: '900', lineHeight: 18, textAlign: 'center' }}>
+        {label}
+      </Text>
     </Pressable>
   );
 }

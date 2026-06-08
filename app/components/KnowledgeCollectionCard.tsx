@@ -16,13 +16,13 @@ export function KnowledgeCollectionCard({ item }: { item: KnowledgeCollectionPro
         shadowRadius: 10,
       }}
     >
-      <Text style={{ color: '#6D28D9', fontSize: 16, fontWeight: '900' }}>
+      <Text style={{ color: '#6D28D9', fontSize: 15, fontWeight: '900', lineHeight: 21 }}>
         {item.collection.emoji} {item.title}
       </Text>
-      <Text style={{ color: '#7C3AED', fontSize: 12, fontWeight: '800', marginTop: 6 }}>
+      <Text style={{ color: '#7C3AED', fontSize: 12, fontWeight: '800', lineHeight: 18, marginTop: 6 }}>
         已发现：{item.discoveredCount} / {item.totalCount}
       </Text>
-      <Text style={{ color: '#B45309', fontSize: 12, fontWeight: '900', marginTop: 4 }}>
+      <Text style={{ color: '#B45309', fontSize: 12, fontWeight: '900', lineHeight: 18, marginTop: 4 }}>
         完成度：{item.completedPercent}%
       </Text>
       <View style={{ backgroundColor: '#F3E8FF', borderRadius: 999, height: 10, marginTop: 8, overflow: 'hidden' }}>

@@ -42,28 +42,28 @@ export function NationalCityCard({
           })}
           onPress={onBack}
         >
-          <Text style={{ color: '#6D28D9', fontSize: 12, fontWeight: '900' }}>← {t('world_map')}</Text>
+          <Text style={{ color: '#6D28D9', fontSize: 12, fontWeight: '900', lineHeight: 17, textAlign: 'center' }}>← {t('world_map')}</Text>
         </Pressable>
       </View>
 
       <Pressable onPress={() => setExpanded((current) => !current)}>
         <View style={{ alignItems: 'flex-start', flexDirection: 'row', justifyContent: 'space-between', gap: 12 }}>
-          <View style={{ flex: 1 }}>
-            <Text style={{ color: '#5B21B6', fontSize: 18, fontWeight: '900' }}>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <Text style={{ color: '#5B21B6', fontSize: 17, fontWeight: '900', lineHeight: 23 }}>
               {city.emoji} {city.cityName}
             </Text>
-            <Text style={{ color: '#7C3AED', fontSize: 13, fontWeight: '800', marginTop: 5 }}>
+            <Text style={{ color: '#7C3AED', fontSize: 13, fontWeight: '800', lineHeight: 18, marginTop: 5 }}>
               {t('museum')}: {city.completedMuseumCount} / {city.totalMuseumCount}
             </Text>
-            <Text style={{ color: completed ? '#B45309' : '#6D28D9', fontSize: 13, fontWeight: '900', marginTop: 5 }}>
+            <Text style={{ color: completed ? '#B45309' : '#6D28D9', fontSize: 13, fontWeight: '900', lineHeight: 18, marginTop: 5 }}>
               {city.status}
             </Text>
           </View>
-          <View style={{ alignItems: 'flex-end' }}>
+          <View style={{ alignItems: 'flex-end', flexShrink: 0 }}>
             <Text style={{ color: completed ? '#B45309' : '#7C3AED', fontSize: 22, fontWeight: '900' }}>
               {city.percent}%
             </Text>
-            <Text style={{ color: '#A855F7', fontSize: 12, fontWeight: '800', marginTop: 4 }}>
+            <Text style={{ color: '#A855F7', fontSize: 12, fontWeight: '800', lineHeight: 17, marginTop: 4, textAlign: 'right' }}>
               {expanded ? `${t('close')} ▲` : `${t('open')} ${t('museum')} ▼`}
             </Text>
           </View>
@@ -102,19 +102,19 @@ export function NationalCityCard({
               }}
             >
               <View style={{ alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', gap: 8 }}>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ color: '#5B21B6', fontSize: 14, fontWeight: '900' }}>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text style={{ color: '#5B21B6', fontSize: 14, fontWeight: '900', lineHeight: 20 }}>
                     {museum.emoji} {museum.name}
                   </Text>
-                  <Text style={{ color: '#7C3AED', fontSize: 12, fontWeight: '700', marginTop: 4 }}>
+                  <Text style={{ color: '#7C3AED', fontSize: 12, fontWeight: '700', lineHeight: 17, marginTop: 4 }}>
                     {t('collection')}: {museum.collectedCount} / {museum.totalCount}
                   </Text>
                 </View>
-                <Text style={{ color: museum.completed ? '#B45309' : '#7C3AED', fontSize: 15, fontWeight: '900' }}>
+                <Text style={{ color: museum.completed ? '#B45309' : '#7C3AED', flexShrink: 0, fontSize: 15, fontWeight: '900' }}>
                   {museum.percent}%
                 </Text>
               </View>
-              <Text style={{ color: museum.completed ? '#B45309' : '#6D28D9', fontSize: 12, fontWeight: '800', marginTop: 6 }}>
+              <Text style={{ color: museum.completed ? '#B45309' : '#6D28D9', fontSize: 12, fontWeight: '800', lineHeight: 17, marginTop: 6 }}>
                 {museum.status}
               </Text>
               <Pressable
@@ -128,7 +128,7 @@ export function NationalCityCard({
                 })}
                 onPress={() => onOpenMuseum(museum)}
               >
-                <Text style={{ color: '#6D28D9', fontSize: 12, fontWeight: '900', textAlign: 'center' }}>
+                <Text style={{ color: '#6D28D9', fontSize: 12, fontWeight: '900', lineHeight: 17, textAlign: 'center' }}>
                   {t('open')} {t('museum')}
                 </Text>
               </Pressable>

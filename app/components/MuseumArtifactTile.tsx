@@ -71,6 +71,19 @@ export function MuseumArtifactTile({
         <Text style={{ color: '#B45309', fontSize: 11, fontWeight: '800', marginTop: 6, textAlign: 'center' }}>
           {rarityLabel}
         </Text>
+        <View
+          style={{
+            backgroundColor: '#FFF7D6',
+            borderColor: '#FBBF24',
+            borderRadius: 999,
+            borderWidth: 1,
+            marginTop: 8,
+            paddingHorizontal: 10,
+            paddingVertical: 6,
+          }}
+        >
+          <Text style={{ color: '#7C3AED', fontSize: 11, fontWeight: '900', textAlign: 'center' }}>📖 阅读故事</Text>
+        </View>
         <AudioButton artifact={museumArtifact ?? artifact.exhibit} />
       </View>
     </Pressable>

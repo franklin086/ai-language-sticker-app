@@ -14,7 +14,7 @@ function StampSection({
 }) {
   return (
     <View style={{ marginTop: 16 }}>
-      <Text style={{ color: '#6D28D9', fontSize: 16, fontWeight: '900' }}>{title}</Text>
+      <Text style={{ color: '#6D28D9', fontSize: 15, fontWeight: '900', lineHeight: 21 }}>{title}</Text>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>{children}</View>
     </View>
   );
@@ -44,7 +44,7 @@ export function PassportPanel({
       <View style={styles.cityMapHero}>
         <Text style={styles.cityMapTitle}>📕 魔法探索护照</Text>
         <Text style={styles.cityMapHint}>点亮城市，收集世界印章</Text>
-        <Text style={styles.cityMapProgressText}>
+        <Text style={[styles.cityMapProgressText, { textAlign: 'center' }]}>
           城市印章：{unlockedCityCount} / {passport.cityStamps.length} · 国家印章：{unlockedCountryCount} / {passport.countryStamps.length}
         </Text>
       </View>

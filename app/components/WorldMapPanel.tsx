@@ -112,15 +112,15 @@ export function WorldMapPanel({
             padding: 14,
           }}
         >
-          <Text style={{ color: '#6D28D9', fontSize: 14, fontWeight: '900' }}>世界总进度</Text>
+          <Text style={{ color: '#6D28D9', fontSize: 14, fontWeight: '900', lineHeight: 20 }}>世界总进度</Text>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 10 }}>
-            <Text style={{ color: '#7C3AED', fontSize: 13, fontWeight: '800' }}>
+            <Text style={{ color: '#7C3AED', flexBasis: '45%', flexGrow: 1, fontSize: 13, fontWeight: '800', lineHeight: 18 }}>
               城市：{completedCityCount} / {totalCityCount}
             </Text>
-            <Text style={{ color: '#7C3AED', fontSize: 13, fontWeight: '800' }}>
+            <Text style={{ color: '#7C3AED', flexBasis: '45%', flexGrow: 1, fontSize: 13, fontWeight: '800', lineHeight: 18 }}>
               国家：{completedCountryCount} / {countries.length}
             </Text>
-            <Text style={{ color: '#B45309', fontSize: 13, fontWeight: '900' }}>总进度：{totalProgress}%</Text>
+            <Text style={{ color: '#B45309', flexBasis: '45%', flexGrow: 1, fontSize: 13, fontWeight: '900', lineHeight: 18 }}>总进度：{totalProgress}%</Text>
           </View>
           <View style={{ backgroundColor: '#F3E8FF', borderRadius: 999, height: 12, marginTop: 12, overflow: 'hidden' }}>
             <View

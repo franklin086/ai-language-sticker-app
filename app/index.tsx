@@ -30,6 +30,7 @@ import { useDailyDiscoveryStreak } from './hooks/useDailyDiscoveryStreak';
 import { useDiscoveryCelebration } from './hooks/useDiscoveryCelebration';
 import { useFollowUpRecognition } from './hooks/useFollowUpRecognition';
 import { useLimitedEvent, type LimitedEventProgress } from './hooks/useLimitedEvent';
+import { useLanguage } from './hooks/useLanguage';
 import { useTreasureChest } from './hooks/useTreasureChest';
 import {
   findMuseumArtifact,
@@ -1443,6 +1444,7 @@ function CuratorProfileCard({
 }
 
 export default function HomeScreen() {
+  const { t } = useLanguage();
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [isRecognizing, setIsRecognizing] = useState(false);
   const [recognitionResult, setRecognitionResult] = useState<RecognitionResult | null>(null);
@@ -1517,7 +1519,7 @@ export default function HomeScreen() {
   });
   const [shareCard, setShareCard] = useState<ShareCardData | null>(null);
   const [showMagicGuild, setShowMagicGuild] = useState(false);
-  const [hoveredButton, setHoveredButton] = useState<'camera' | 'album' | null>(null);
+  const [hoveredButton, setHoveredButton] = useState<'start' | 'camera' | 'album' | null>(null);
   const [speakingLanguage, setSpeakingLanguage] = useState<'zh' | 'en' | null>(null);
   const { followUpError, isFollowingUp, runFollowUpRecognition } = useFollowUpRecognition(FOLLOW_UP_API_URL);
   const { closeDiscoveryCelebration, discoveryCelebration, triggerDiscoveryCelebration } = useDiscoveryCelebration();
@@ -2516,6 +2518,32 @@ export default function HomeScreen() {
             </View>
             <Text style={styles.title}>{COPY.title}</Text>
             <Text style={styles.subtitle}>{COPY.subtitle}</Text>
+          </View>
+
+          <View style={styles.startGuideCard}>
+            <View style={styles.startGuideCopy}>
+              <Text style={styles.startGuideLine}>🔎 {t('onboarding_discover_world')}</Text>
+              <Text style={styles.startGuideLine}>💎 {t('onboarding_collect_language_treasures')}</Text>
+              <Text style={styles.startGuideLine}>📖 {t('onboarding_unlock_stories_knowledge')}</Text>
+            </View>
+            <Animated.View style={{ transform: [{ scale: buttonBreathScale }] }}>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.startCtaButton,
+                  hoveredButton === 'start' && styles.startCtaButtonHovered,
+                  pressed && styles.buttonPressed,
+                ]}
+                onHoverIn={() => setHoveredButton('start')}
+                onHoverOut={() => setHoveredButton(null)}
+                onPress={takePhoto}
+              >
+                <Animated.View style={[styles.startCtaGlow, { opacity: buttonGlowOpacity }]} />
+                <Animated.View
+                  style={[styles.buttonFlow, { transform: [{ translateX: buttonFlowTranslateX }, { rotate: '16deg' }] }]}
+                />
+                <Text style={styles.startCtaButtonText}>{t('start_exploring_cta')}</Text>
+              </Pressable>
+            </Animated.View>
           </View>
 
           <CuratorProfileCard
@@ -3756,6 +3784,7 @@ function CollectionGallery({
   const selectedExhibit =
     selectedMuseum?.exhibits.find((exhibit) => exhibit.id === selectedExhibitId) ?? selectedMuseum?.exhibits[0];
   const selectedDetails = selectedExhibit ? getGalleryArtifactDetails(selectedExhibit, collection) : null;
+  const selectedDiscoveredItem = selectedExhibit ? getCollectionDiscoveryForExhibit(selectedExhibit, collection) : null;
 
   if (!selectedMuseum || !selectedExhibit || !selectedDetails) {
     return null;
@@ -3798,7 +3827,7 @@ function CollectionGallery({
               onPress: () => {
                 setSelectedExhibitId(exhibit.id);
                 if (!discoveredItem) {
-                  setLockedHint('???????????');
+                  setLockedHint('先发现这个藏品，才能阅读它的故事。');
                   return;
                 }
 
@@ -3831,13 +3860,28 @@ function CollectionGallery({
         <Text style={styles.galleryDetailEmoji}>{selectedDetails.emoji}</Text>
         <Text style={styles.galleryDetailZh}>{selectedExhibit.object_zh}</Text>
         <Text style={styles.galleryDetailEn}>{selectedExhibit.object_en}</Text>
+        {selectedDiscoveredItem ? (
+          <>
+            <View style={styles.galleryStoryFirstBox}>
+              <Text style={styles.galleryStoryFirstText}>先了解这个藏品背后的故事</Text>
+              <View style={styles.galleryStoryFirstButton}>
+                <Text style={styles.galleryStoryFirstButtonText}>📖 阅读故事</Text>
+              </View>
+            </View>
+            <View style={styles.galleryStoryBox}>
+              <Text style={styles.galleryStoryTitle}>📖 藏品故事</Text>
+              <Text style={styles.galleryStoryText}>{selectedDetails.story}</Text>
+            </View>
+          </>
+        ) : (
+          <View style={styles.galleryLockedStoryBox}>
+            <Text style={styles.galleryLockedStoryTitle}>🔒 故事还没解锁</Text>
+            <Text style={styles.galleryLockedStoryText}>先发现这个藏品，再打开它背后的故事。</Text>
+          </View>
+        )}
         <Text style={styles.galleryDetailMeta}>博物馆：{selectedMuseum.title}</Text>
         <Text style={styles.galleryDetailMeta}>稀有度：{selectedDetails.rarityLabel}</Text>
         <Text style={styles.galleryDetailMeta}>首次发现：{selectedDetails.discoveredAt}</Text>
-        <View style={styles.galleryStoryBox}>
-          <Text style={styles.galleryStoryTitle}>📖 藏品故事</Text>
-          <Text style={styles.galleryStoryText}>{selectedDetails.story}</Text>
-        </View>
       </View>
       {detailArtifact ? (
         <ArtifactDetailModal
@@ -4439,9 +4483,9 @@ const styles = StyleSheet.create({
   },
   title: {
     color: '#34214D',
-    fontSize: 34,
+    fontSize: 32,
     fontWeight: '900',
-    lineHeight: 39,
+    lineHeight: 38,
     textAlign: 'center',
   },
   subtitle: {
@@ -4450,6 +4494,67 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     lineHeight: 24,
     marginTop: 10,
+    textAlign: 'center',
+  },
+  startGuideCard: {
+    borderRadius: 30,
+    borderWidth: 2,
+    borderColor: '#FBBF24',
+    backgroundColor: '#FFF9E8',
+    marginBottom: 16,
+    overflow: 'hidden',
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    shadowColor: '#F59E0B',
+    shadowOffset: { width: 0, height: 16 },
+    shadowOpacity: 0.2,
+    shadowRadius: 26,
+    elevation: 6,
+  },
+  startGuideCopy: {
+    gap: 7,
+    marginBottom: 13,
+  },
+  startGuideLine: {
+    color: '#4C2D6F',
+    fontSize: 15,
+    fontWeight: '900',
+    lineHeight: 21,
+    textAlign: 'center',
+  },
+  startCtaButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 64,
+    borderRadius: 26,
+    backgroundColor: '#7C3AED',
+    overflow: 'hidden',
+    paddingHorizontal: 22,
+    paddingVertical: 17,
+    shadowColor: '#7C3AED',
+    shadowOffset: { width: 0, height: 14 },
+    shadowOpacity: 0.3,
+    shadowRadius: 22,
+    elevation: 5,
+  },
+  startCtaButtonHovered: {
+    backgroundColor: '#6D28D9',
+  },
+  startCtaGlow: {
+    position: 'absolute',
+    top: -44,
+    left: -22,
+    width: 180,
+    height: 140,
+    borderRadius: 70,
+    backgroundColor: '#FDE68A',
+    transform: [{ rotate: '-16deg' }],
+  },
+  startCtaButtonText: {
+    color: '#FFFFFF',
+    fontSize: 19,
+    fontWeight: '900',
+    lineHeight: 25,
     textAlign: 'center',
   },
   companionCard: {
@@ -4938,7 +5043,7 @@ const styles = StyleSheet.create({
   sharePreviewShell: {
     alignItems: 'center',
     width: '100%',
-    maxWidth: 360,
+    maxWidth: 370,
   },
   sharePreviewGlow: {
     position: 'absolute',
@@ -4980,8 +5085,8 @@ const styles = StyleSheet.create({
     borderColor: '#F7C948',
     backgroundColor: '#FFF9EB',
     overflow: 'hidden',
-    paddingHorizontal: 20,
-    paddingVertical: 22,
+    paddingHorizontal: 18,
+    paddingVertical: 20,
     shadowColor: '#A855F7',
     shadowOffset: { width: 0, height: 16 },
     shadowOpacity: 0.24,
@@ -4989,9 +5094,9 @@ const styles = StyleSheet.create({
   },
   sharePreviewBrand: {
     color: '#6D28D9',
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: '900',
-    lineHeight: 29,
+    lineHeight: 27,
     textAlign: 'center',
   },
   sharePreviewTitle: {
@@ -5019,28 +5124,30 @@ const styles = StyleSheet.create({
   },
   sharePreviewZh: {
     color: '#3B245F',
-    fontSize: 30,
+    fontSize: 27,
     fontWeight: '900',
-    lineHeight: 38,
+    lineHeight: 34,
     marginTop: 14,
     textAlign: 'center',
   },
   sharePreviewEn: {
     color: '#7C3AED',
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '900',
-    lineHeight: 27,
+    lineHeight: 24,
     marginTop: 2,
     textAlign: 'center',
   },
   sharePreviewInfoGrid: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 10,
     marginTop: 16,
     width: '100%',
   },
   sharePreviewInfoPill: {
     flex: 1,
+    minWidth: 132,
     borderRadius: 18,
     borderWidth: 1,
     borderColor: '#E9D5FF',
@@ -5057,9 +5164,9 @@ const styles = StyleSheet.create({
   },
   sharePreviewInfoValue: {
     color: '#4C2D6F',
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '900',
-    lineHeight: 18,
+    lineHeight: 17,
     marginTop: 2,
     textAlign: 'center',
   },
@@ -5073,10 +5180,10 @@ const styles = StyleSheet.create({
   },
   sharePreviewEncouragement: {
     color: '#6D28D9',
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '900',
-    lineHeight: 23,
-    marginTop: 12,
+    lineHeight: 20,
+    marginTop: 10,
     textAlign: 'center',
   },
   sharePreviewActions: {
@@ -5095,6 +5202,7 @@ const styles = StyleSheet.create({
     borderColor: '#C084FC',
     paddingHorizontal: 22,
     paddingVertical: 10,
+    width: '100%',
     shadowColor: '#A855F7',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.14,
@@ -5117,6 +5225,7 @@ const styles = StyleSheet.create({
     borderColor: '#E9D5FF',
     paddingHorizontal: 24,
     paddingVertical: 9,
+    width: '100%',
     shadowColor: '#4C2D6F',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.12,
@@ -6429,6 +6538,65 @@ const styles = StyleSheet.create({
     marginTop: 3,
     textAlign: 'center',
   },
+  galleryStoryFirstBox: {
+    alignItems: 'center',
+    backgroundColor: '#FFF7D6',
+    borderColor: '#FBBF24',
+    borderRadius: 20,
+    borderWidth: 2,
+    marginTop: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    shadowColor: '#F59E0B',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.14,
+    shadowRadius: 16,
+  },
+  galleryStoryFirstText: {
+    color: '#8B3A10',
+    fontSize: 13,
+    fontWeight: '900',
+    lineHeight: 19,
+    textAlign: 'center',
+  },
+  galleryStoryFirstButton: {
+    backgroundColor: '#7C3AED',
+    borderRadius: 999,
+    marginTop: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  galleryStoryFirstButtonText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '900',
+    lineHeight: 18,
+    textAlign: 'center',
+  },
+  galleryLockedStoryBox: {
+    backgroundColor: '#F8F5FF',
+    borderColor: '#DDD6FE',
+    borderRadius: 18,
+    borderWidth: 1,
+    marginTop: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  galleryLockedStoryTitle: {
+    color: '#6D28D9',
+    fontSize: 14,
+    fontWeight: '900',
+    lineHeight: 20,
+    textAlign: 'center',
+  },
+  galleryLockedStoryText: {
+    color: '#7C3AED',
+    fontSize: 12,
+    fontWeight: '800',
+    lineHeight: 18,
+    marginTop: 4,
+    textAlign: 'center',
+  },
   galleryStoryBox: {
     alignSelf: 'stretch',
     backgroundColor: '#FFFFFF',
@@ -6536,6 +6704,7 @@ const styles = StyleSheet.create({
     borderColor: '#E9D5FF',
     borderRadius: 18,
     borderWidth: 1,
+    marginTop: 12,
     paddingHorizontal: 13,
     paddingVertical: 11,
   },
@@ -6544,6 +6713,46 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '900',
     lineHeight: 20,
+    textAlign: 'center',
+  },
+  artifactDetailStoryFirstBox: {
+    alignSelf: 'stretch',
+    alignItems: 'center',
+    backgroundColor: '#FFF7D6',
+    borderColor: '#FBBF24',
+    borderRadius: 22,
+    borderWidth: 2,
+    marginBottom: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 13,
+    shadowColor: '#F59E0B',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.16,
+    shadowRadius: 18,
+  },
+  artifactDetailStoryFirstText: {
+    color: '#8B3A10',
+    fontSize: 14,
+    fontWeight: '900',
+    lineHeight: 20,
+    textAlign: 'center',
+  },
+  artifactDetailStoryFirstButton: {
+    backgroundColor: '#7C3AED',
+    borderRadius: 999,
+    marginTop: 9,
+    paddingHorizontal: 18,
+    paddingVertical: 9,
+    shadowColor: '#7C3AED',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.2,
+    shadowRadius: 14,
+  },
+  artifactDetailStoryFirstButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '900',
+    lineHeight: 19,
     textAlign: 'center',
   },
   artifactDetailStoryBox: {
@@ -6675,10 +6884,12 @@ const styles = StyleSheet.create({
   cityMapCardHeader: {
     alignItems: 'center',
     flexDirection: 'row',
+    gap: 10,
     justifyContent: 'space-between',
   },
   cityMapCityName: {
     color: '#4C2D6F',
+    flex: 1,
     fontSize: 18,
     fontWeight: '900',
     lineHeight: 24,
@@ -6692,6 +6903,7 @@ const styles = StyleSheet.create({
   },
   cityMapPercent: {
     color: '#7C3AED',
+    flexShrink: 0,
     fontSize: 19,
     fontWeight: '900',
     lineHeight: 25,
@@ -6756,15 +6968,19 @@ const styles = StyleSheet.create({
   },
   cityMapNodeStatus: {
     color: '#7C3AED',
+    flexShrink: 0,
     fontSize: 12,
     fontWeight: '900',
     lineHeight: 17,
+    textAlign: 'right',
   },
   cityMapNodeLockedStatus: {
     color: '#9B7BB7',
+    flexShrink: 0,
     fontSize: 12,
     fontWeight: '900',
     lineHeight: 17,
+    textAlign: 'right',
   },
   badgeWallPanel: {
     borderBottomWidth: 1,

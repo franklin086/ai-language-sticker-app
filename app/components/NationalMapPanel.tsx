@@ -23,10 +23,10 @@ export function NationalMapPanel({
   return (
     <View style={{ backgroundColor: '#FFF7ED', borderColor: '#E9D5FF', borderRadius: 24, borderWidth: 1, padding: 16 }}>
       <View>
-        <Text style={{ color: '#6D28D9', fontSize: 24, fontWeight: '900' }}>
+        <Text style={{ color: '#6D28D9', fontSize: 22, fontWeight: '900', lineHeight: 29 }}>
           {nationalMap.emoji} {nationalMap.countryName} {t('world_map')}
         </Text>
-        <Text style={{ color: '#7C3AED', fontSize: 14, fontWeight: '700', marginTop: 6 }}>
+        <Text style={{ color: '#7C3AED', fontSize: 13, fontWeight: '700', lineHeight: 19, marginTop: 6 }}>
           {t('cities')} / {t('museum')} / {t('progress')}
         </Text>
       </View>
@@ -45,13 +45,13 @@ export function NationalMapPanel({
       >
         <Text style={{ color: '#6D28D9', fontSize: 15, fontWeight: '900' }}>{t('total_completion')}</Text>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 10 }}>
-          <Text style={{ color: '#7C3AED', fontSize: 13, fontWeight: '800' }}>
+          <Text style={{ color: '#7C3AED', flexBasis: '45%', flexGrow: 1, fontSize: 13, fontWeight: '800', lineHeight: 18 }}>
             {t('cities')}: {nationalMap.completedCityCount} / {nationalMap.totalCityCount}
           </Text>
-          <Text style={{ color: '#7C3AED', fontSize: 13, fontWeight: '800' }}>
+          <Text style={{ color: '#7C3AED', flexBasis: '45%', flexGrow: 1, fontSize: 13, fontWeight: '800', lineHeight: 18 }}>
             {t('museum')}: {nationalMap.completedMuseumCount} / {nationalMap.totalMuseumCount}
           </Text>
-          <Text style={{ color: '#B45309', fontSize: 13, fontWeight: '900' }}>
+          <Text style={{ color: '#B45309', flexBasis: '45%', flexGrow: 1, fontSize: 13, fontWeight: '900', lineHeight: 18 }}>
             {t('completed')}: {nationalMap.percent}%
           </Text>
         </View>
@@ -96,7 +96,7 @@ export function NationalMapPanel({
         })}
         onPress={onBack}
       >
-        <Text style={{ color: '#6D28D9', fontSize: 14, fontWeight: '900', textAlign: 'center' }}>
+        <Text style={{ color: '#6D28D9', fontSize: 14, fontWeight: '900', lineHeight: 20, textAlign: 'center' }}>
           {t('back')} {t('world_map')}
         </Text>
       </Pressable>

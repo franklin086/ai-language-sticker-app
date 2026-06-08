@@ -89,24 +89,24 @@ export function MuseumExplorerPanel({
         })}
         onPress={onBack}
       >
-        <Text style={{ color: '#6D28D9', fontSize: 12, fontWeight: '900' }}>← {t('back')}</Text>
+        <Text style={{ color: '#6D28D9', fontSize: 12, fontWeight: '900', lineHeight: 17, textAlign: 'center' }}>← {t('back')}</Text>
       </Pressable>
-      <Text style={{ color: '#6D28D9', fontSize: 24, fontWeight: '900' }}>🏛 {t('museum')}</Text>
-      <Text style={{ color: '#5B21B6', fontSize: 20, fontWeight: '900', marginTop: 8 }}>{data.museumName}</Text>
-      <Text style={{ color: '#7C3AED', fontSize: 13, fontWeight: '700', marginTop: 6 }}>
+      <Text style={{ color: '#6D28D9', fontSize: 22, fontWeight: '900', lineHeight: 29 }}>🏛 {t('museum')}</Text>
+      <Text style={{ color: '#5B21B6', fontSize: 18, fontWeight: '900', lineHeight: 24, marginTop: 8 }}>{data.museumName}</Text>
+      <Text style={{ color: '#7C3AED', fontSize: 13, fontWeight: '700', lineHeight: 18, marginTop: 6 }}>
         {data.countryName} / {data.cityName}
       </Text>
 
       <MuseumNpcCard collectedCount={data.collectedCount} museumName={data.museum.title} totalCount={data.totalCount} />
 
       <View style={{ backgroundColor: data.completed ? '#FFFBEB' : '#FFFFFF', borderColor: data.completed ? '#FBBF24' : '#E9D5FF', borderRadius: 18, borderWidth: 1, marginTop: 14, padding: 14 }}>
-        <Text style={{ color: data.completed ? '#B45309' : '#6D28D9', fontSize: 16, fontWeight: '900' }}>
+        <Text style={{ color: data.completed ? '#B45309' : '#6D28D9', fontSize: 15, fontWeight: '900', lineHeight: 21 }}>
           {data.completed ? `🏆 ${t('completed')}` : t('unknown')}
         </Text>
-        <Text style={{ color: '#7C3AED', fontSize: 13, fontWeight: '800', marginTop: 10 }}>
+        <Text style={{ color: '#7C3AED', fontSize: 13, fontWeight: '800', lineHeight: 18, marginTop: 10 }}>
           {t('collection')}: {data.collectedCount} / {data.totalCount}
         </Text>
-        <Text style={{ color: '#B45309', fontSize: 15, fontWeight: '900', marginTop: 4 }}>
+        <Text style={{ color: '#B45309', fontSize: 15, fontWeight: '900', lineHeight: 20, marginTop: 4 }}>
           {t('completed')}: {data.percent}%
         </Text>
         <View style={{ backgroundColor: '#F3E8FF', borderRadius: 999, height: 12, marginTop: 10, overflow: 'hidden' }}>
@@ -131,7 +131,7 @@ export function MuseumExplorerPanel({
         })}
         onPress={onBack}
       >
-        <Text style={{ color: '#6D28D9', fontSize: 14, fontWeight: '900', textAlign: 'center' }}>
+        <Text style={{ color: '#6D28D9', fontSize: 14, fontWeight: '900', lineHeight: 20, textAlign: 'center' }}>
           {t('back')} {t('world_map')}
         </Text>
       </Pressable>

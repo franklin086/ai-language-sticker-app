@@ -319,6 +319,204 @@ Completed
 
 ---
 
+## MILESTONE-040
+
+## Learning Analytics Foundation
+
+### Status
+
+COMPLETED
+
+### Version Range
+
+v0.67A - v0.67E
+
+### Scope
+
+Learning Analytics first-stage foundation is complete.
+
+### Completed Systems
+
+- Learning Profile
+- Learning Statistics
+- Knowledge Mastery
+- Learning Timeline
+- Learning Dashboard
+
+### Entry Points
+
+- Magic Guild: Learning Profile
+- Magic Guild: Learning Dashboard
+
+### Analytics Sources
+
+- museumCollectedIds
+- Knowledge Collections
+- Knowledge Quiz
+- Explorer Academy
+- Audio Coverage
+- Current Learning State
+
+### Architecture Decisions
+
+- Analytics are derived from current learning state.
+- Learning Timeline is generated from current learning state.
+- No timeline localStorage was introduced.
+- No analytics database was introduced.
+- No backend analytics service was introduced.
+- No historical event storage was introduced.
+
+### Product Meaning
+
+The app now has a first complete learning analytics layer:
+
+```text
+Discover
+
+↓
+
+Learn
+
+↓
+
+Measure
+
+↓
+
+Reflect
+
+↓
+
+Continue Exploring
+```
+
+### Compatible Principles
+
+- Discovery Rule
+- Learn By Discovery
+- Current-state-derived analytics
+
+### Release Impact
+
+This milestone completes the first learning analytics foundation without adding storage complexity or backend dependency.
+
+---
+
+## MILESTONE-032
+
+## Learning Timeline Architecture Decision
+
+### Version
+
+v0.67D Learning Timeline
+
+### Decision
+
+The first version of Learning Timeline uses derived learning state instead of persisted event history.
+
+### Current Approach
+
+```text
+Current Learning State
+
+↓
+
+Derived Learning Timeline
+```
+
+### Data Sources
+
+- museumCollectedIds
+- Knowledge Collections
+- Knowledge Quiz
+- Explorer Academy
+
+### Explicitly Not Added
+
+- localStorage timeline events
+- database timeline events
+- historical event records
+- event migration logic
+- historical compatibility layer
+- versioned timeline sync
+
+### Reason
+
+This matches the current project stage. The product needs a visible learning growth path, but it does not yet need a full event-sourcing or history-storage system.
+
+Adding persistent events now would introduce early technical debt:
+
+- event storage design
+- event migration
+- historical compatibility
+- version upgrades
+- data synchronization
+
+### Development Rule
+
+Until a real history requirement appears, Learning Timeline should continue to be generated from current learning state.
+
+Do not add timeline persistence, timeline database tables, or timeline synchronization unless explicitly requested.
+
+### Release Impact
+
+Supports Learning Analytics without blocking release or increasing architecture risk.
+
+### Status
+
+Completed
+
+---
+
+## MILESTONE-031
+
+## RC1 Review Completed
+
+### Version
+
+v0.66F RC Fixes
+
+### Review Result
+
+RC1 review completed.
+
+### Closed Issues
+
+- RC-001
+- RC-002
+- RC-003
+- RC-004
+- RC-005
+- RC-006
+- RC-008
+- RC-010
+
+### Remaining
+
+- RC-009
+
+### Remaining Status
+
+Deferred
+
+### Reason
+
+Architecture Optimization
+
+### Release Impact
+
+Does not block release.
+
+### Development Rule
+
+Do not continue RC Fix work in the next phase unless explicitly requested.
+
+### Status
+
+Completed
+
+---
+
 ### DESIGN PRINCIPLE-005
 
 ## Learn By Discovery

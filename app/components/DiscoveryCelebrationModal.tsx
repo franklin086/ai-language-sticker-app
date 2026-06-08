@@ -64,6 +64,7 @@ export function DiscoveryCelebrationModal({
           borderRadius: 28,
           borderWidth: 3,
           maxWidth: 420,
+          overflow: 'hidden',
           padding: 22,
           shadowColor: colors.glow,
           shadowOpacity: 0.32,
@@ -71,10 +72,27 @@ export function DiscoveryCelebrationModal({
           width: '100%',
         }}
       >
-        <Text style={{ color: '#6D28D9', fontSize: 26, fontWeight: '900', textAlign: 'center' }}>{colors.title}</Text>
-        <Text style={{ color: '#7C3AED', fontSize: 14, fontWeight: '800', marginTop: 6, textAlign: 'center' }}>
-          世界记忆恢复了一点点
+        <View
+          pointerEvents="none"
+          style={{
+            backgroundColor: colors.glow,
+            borderRadius: 90,
+            height: 180,
+            opacity: 0.14,
+            position: 'absolute',
+            right: -58,
+            top: -72,
+            width: 180,
+          }}
+        />
+        <Text style={{ color: '#8B3A10', fontSize: 16, fontWeight: '900', textAlign: 'center' }}>🎉 发现新藏品！</Text>
+        <Text style={{ color: '#6D28D9', fontSize: 27, fontWeight: '900', lineHeight: 34, marginTop: 4, textAlign: 'center' }}>
+          ✨ 太棒了！
         </Text>
+        <Text style={{ color: '#DB2777', fontSize: 16, fontWeight: '900', marginTop: 4, textAlign: 'center' }}>
+          🌟 语言宝藏已解锁！
+        </Text>
+        <Text style={{ color: '#7C3AED', fontSize: 13, fontWeight: '900', marginTop: 7, textAlign: 'center' }}>{colors.title}</Text>
 
         <View
           style={{
@@ -82,17 +100,63 @@ export function DiscoveryCelebrationModal({
             backgroundColor: '#FFFFFF',
             borderColor: '#FDE68A',
             borderRadius: 22,
-            borderWidth: 1,
+            borderWidth: 2,
             marginTop: 16,
             padding: 16,
+            shadowColor: colors.glow,
+            shadowOpacity: 0.16,
+            shadowRadius: 18,
           }}
         >
           <Text style={{ fontSize: 58 }}>{data.emoji}</Text>
-          <Text style={{ color: '#5B21B6', fontSize: 22, fontWeight: '900', marginTop: 8 }}>{data.objectZh}</Text>
-          <Text style={{ color: '#7C3AED', fontSize: 15, fontWeight: '800', marginTop: 4 }}>{data.objectEn}</Text>
-          <Text style={{ color: '#B45309', fontSize: 13, fontWeight: '900', marginTop: 10 }}>
-            {data.museumTitle} · {data.rarityLabel}
-          </Text>
+          <Text style={{ color: '#A05A16', fontSize: 12, fontWeight: '900', marginTop: 8 }}>中文</Text>
+          <Text style={{ color: '#5B21B6', fontSize: 24, fontWeight: '900', lineHeight: 31 }}>{data.objectZh}</Text>
+          <Text style={{ color: '#A05A16', fontSize: 12, fontWeight: '900', marginTop: 8 }}>English</Text>
+          <Text style={{ color: '#7C3AED', fontSize: 17, fontWeight: '900', lineHeight: 23 }}>{data.objectEn}</Text>
+
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center', marginTop: 12 }}>
+            <View style={{ backgroundColor: '#FFF7D6', borderRadius: 999, paddingHorizontal: 12, paddingVertical: 7 }}>
+              <Text style={{ color: '#92400E', fontSize: 12, fontWeight: '900' }}>稀有度：{data.rarityLabel}</Text>
+            </View>
+            <View style={{ backgroundColor: '#F5E8FF', borderRadius: 999, paddingHorizontal: 12, paddingVertical: 7 }}>
+              <Text style={{ color: '#6D28D9', fontSize: 12, fontWeight: '900' }}>所属博物馆：{data.museumTitle}</Text>
+            </View>
+          </View>
+        </View>
+
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 14 }}>
+          <Pressable
+            style={({ pressed }) => ({
+              alignItems: 'center',
+              backgroundColor: pressed ? '#FDE68A' : '#FFF7D6',
+              borderColor: '#FBBF24',
+              borderRadius: 18,
+              borderWidth: 1,
+              flex: 1,
+              minWidth: 132,
+              paddingHorizontal: 12,
+              paddingVertical: 12,
+            })}
+            onPress={onClose}
+          >
+            <Text style={{ color: '#7C3AED', fontSize: 14, fontWeight: '900', textAlign: 'center' }}>📖 阅读故事</Text>
+          </Pressable>
+          <Pressable
+            style={({ pressed }) => ({
+              alignItems: 'center',
+              backgroundColor: pressed ? '#DDD6FE' : '#F5E8FF',
+              borderColor: '#C4B5FD',
+              borderRadius: 18,
+              borderWidth: 1,
+              flex: 1,
+              minWidth: 132,
+              paddingHorizontal: 12,
+              paddingVertical: 12,
+            })}
+            onPress={onClose}
+          >
+            <Text style={{ color: '#6D28D9', fontSize: 14, fontWeight: '900', textAlign: 'center' }}>🧠 查看知识</Text>
+          </Pressable>
         </View>
 
         <View style={{ backgroundColor: '#FFFBEB', borderColor: '#FBBF24', borderRadius: 18, borderWidth: 1, marginTop: 14, padding: 12 }}>

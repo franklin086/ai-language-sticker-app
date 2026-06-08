@@ -7,6 +7,7 @@ import {
   type QuizAnswerState,
 } from '../utils/knowledgeQuizHelpers';
 import { KnowledgeQuizCard } from './KnowledgeQuizCard';
+import { LearningBackButton } from './LearningBackButton';
 
 export function KnowledgeQuizPanel({
   collection,
@@ -47,22 +48,9 @@ export function KnowledgeQuizPanel({
 
   return (
     <View>
-      <Pressable
-        style={({ pressed }) => ({
-          alignSelf: 'flex-start',
-          backgroundColor: pressed ? '#DDD6FE' : '#FFFFFF',
-          borderColor: '#C4B5FD',
-          borderRadius: 999,
-          borderWidth: 1,
-          paddingHorizontal: 12,
-          paddingVertical: 8,
-        })}
-        onPress={onBack}
-      >
-        <Text style={{ color: '#6D28D9', fontSize: 12, fontWeight: '900' }}>← {t('back_to_guild')}</Text>
-      </Pressable>
+      <LearningBackButton label={t('back')} onPress={onBack} />
 
-      <Text style={{ color: '#6D28D9', fontSize: 25, fontWeight: '900', marginTop: 14, textAlign: 'center' }}>
+      <Text style={{ color: '#6D28D9', fontSize: 23, fontWeight: '900', lineHeight: 30, marginTop: 14, textAlign: 'center' }}>
         🧠 知识挑战
       </Text>
       <Text style={{ color: '#7C3AED', fontSize: 13, fontWeight: '800', marginTop: 6, textAlign: 'center' }}>
@@ -70,7 +58,7 @@ export function KnowledgeQuizPanel({
       </Text>
 
       <View style={{ backgroundColor: '#FFFFFF', borderColor: '#FBBF24', borderRadius: 20, borderWidth: 2, marginTop: 14, padding: 14 }}>
-        <Text style={{ color: '#6D28D9', fontSize: 15, fontWeight: '900' }}>挑战统计</Text>
+        <Text style={{ color: '#6D28D9', fontSize: 15, fontWeight: '900', lineHeight: 21 }}>挑战统计</Text>
         <Text style={{ color: '#7C3AED', fontSize: 12, fontWeight: '800', marginTop: 8 }}>
           总题目：{progress.totalQuestionCount}
         </Text>
@@ -102,7 +90,7 @@ export function KnowledgeQuizPanel({
             })}
             onPress={handleNextQuestion}
           >
-            <Text style={{ color: '#FFFFFF', fontSize: 14, fontWeight: '900', textAlign: 'center' }}>下一题</Text>
+            <Text style={{ color: '#FFFFFF', fontSize: 14, fontWeight: '900', lineHeight: 20, textAlign: 'center' }}>下一题</Text>
           </Pressable>
         </>
       ) : (
