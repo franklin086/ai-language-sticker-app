@@ -2,6 +2,7 @@ import { Text, View } from 'react-native';
 import { useLanguage } from '../hooks/useLanguage';
 import type { AudioCoverageStats } from '../utils/audioCoverageHelpers';
 import { buildLearningDashboard } from '../utils/learningDashboardHelpers';
+import { JourneyPanel } from './JourneyPanel';
 import { KnowledgeMasteryPanel } from './KnowledgeMasteryPanel';
 import { LearningBackButton } from './LearningBackButton';
 import { LearningDashboardCard } from './LearningDashboardCard';
@@ -139,6 +140,12 @@ export function LearningDashboardPanel({
         </View>
       </View>
 
+      <JourneyPanel
+        audioCoverageLevel={audioCoverageLevel}
+        audioStats={audioStats}
+        collection={collection}
+        museumCollectedIds={museumCollectedIds}
+      />
       <LearningMotivationPanel audioStats={audioStats} collection={collection} museumCollectedIds={museumCollectedIds} />
       <KnowledgeMasteryPanel collection={collection} museumCollectedIds={museumCollectedIds} />
       <LearningStatisticsPanel audioStats={audioStats} collection={collection} museumCollectedIds={museumCollectedIds} />
