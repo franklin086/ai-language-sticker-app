@@ -5,6 +5,7 @@ import { buildLearningDashboard } from '../utils/learningDashboardHelpers';
 import { JourneyPanel } from './JourneyPanel';
 import { KnowledgeMasteryPanel } from './KnowledgeMasteryPanel';
 import { LearningBackButton } from './LearningBackButton';
+import { LearningCoachPanel } from './LearningCoachPanel';
 import { LearningDashboardCard } from './LearningDashboardCard';
 import { LearningMotivationPanel } from './LearningMotivationPanel';
 import { LearningStatisticsPanel } from './LearningStatisticsPanel';
@@ -140,6 +141,12 @@ export function LearningDashboardPanel({
         </View>
       </View>
 
+      <LearningCoachPanel
+        audioCoverageLevel={audioCoverageLevel}
+        audioStats={audioStats}
+        collection={collection}
+        museumCollectedIds={museumCollectedIds}
+      />
       <JourneyPanel
         audioCoverageLevel={audioCoverageLevel}
         audioStats={audioStats}
