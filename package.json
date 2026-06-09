@@ -8,7 +8,9 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "set BROWSER=none&& expo start --web --offline --max-workers 1",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "typecheck": "tsc --noEmit",
+    "verify": "npm run lint && npm run typecheck"
   },
   "dependencies": {
     "expo": "~54.0.33",

@@ -5,6 +5,7 @@ import { buildLearningDashboard } from '../utils/learningDashboardHelpers';
 import { KnowledgeMasteryPanel } from './KnowledgeMasteryPanel';
 import { LearningBackButton } from './LearningBackButton';
 import { LearningDashboardCard } from './LearningDashboardCard';
+import { LearningMotivationPanel } from './LearningMotivationPanel';
 import { LearningStatisticsPanel } from './LearningStatisticsPanel';
 import { LearningTimelinePanel } from './LearningTimelinePanel';
 
@@ -138,6 +139,7 @@ export function LearningDashboardPanel({
         </View>
       </View>
 
+      <LearningMotivationPanel audioStats={audioStats} collection={collection} museumCollectedIds={museumCollectedIds} />
       <KnowledgeMasteryPanel collection={collection} museumCollectedIds={museumCollectedIds} />
       <LearningStatisticsPanel audioStats={audioStats} collection={collection} museumCollectedIds={museumCollectedIds} />
       <LearningTimelinePanel collection={collection} museumCollectedIds={museumCollectedIds} />
