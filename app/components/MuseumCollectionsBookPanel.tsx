@@ -55,13 +55,22 @@ export function MuseumCollectionsBookPanel({
           })}
           onPress={() => setShowEncyclopedia(true)}
         >
-          <Text style={{ color: '#6D28D9', fontSize: 12, fontWeight: '900' }}>📚 {t('encyclopedia')}</Text>
+          <Text style={{ color: '#6D28D9', fontSize: 12, fontWeight: '900' }}>📚 查百科</Text>
         </Pressable>
       </View>
 
       <Text style={{ color: '#6D28D9', fontSize: 25, fontWeight: '900', marginTop: 14, textAlign: 'center' }}>
         📖 {t('collection_book')}
       </Text>
+
+      <View style={{ backgroundColor: '#FFFBEB', borderColor: '#FBBF24', borderRadius: 18, borderWidth: 1, marginTop: 12, padding: 12 }}>
+        <Text style={{ color: '#6D28D9', fontSize: 14, fontWeight: '900', lineHeight: 20, textAlign: 'center' }}>
+          📖 故事 → 🧠 知识 → 📚 百科
+        </Text>
+        <Text style={{ color: '#92400E', fontSize: 12, fontWeight: '800', lineHeight: 18, marginTop: 4, textAlign: 'center' }}>
+          先读故事，再学知识，最后查百科。
+        </Text>
+      </View>
 
       <View style={{ backgroundColor: '#FFFFFF', borderColor: '#FBBF24', borderRadius: 20, borderWidth: 2, marginTop: 14, padding: 14 }}>
         <Text style={{ color: '#6D28D9', fontSize: 16, fontWeight: '900' }}>{t('collection_book_completion')}</Text>

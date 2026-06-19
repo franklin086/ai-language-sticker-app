@@ -75,7 +75,7 @@ export function CollectionBookArtifactCard({
         })}
         onPress={onPressStory}
       >
-        <Text style={{ color: '#7C3AED', fontSize: 11, fontWeight: '900', textAlign: 'center' }}>📖 阅读故事</Text>
+        <Text style={{ color: '#7C3AED', fontSize: 11, fontWeight: '900', textAlign: 'center' }}>📚 查百科</Text>
       </Pressable>
       <Text numberOfLines={1} style={{ color: '#6D28D9', fontSize: 10, fontWeight: '700', marginTop: 4, textAlign: 'center' }}>
         {item.artifact.museum}

@@ -42,7 +42,7 @@ export function DiscoveryFactCard({
         }}
       >
         <Text style={{ color: '#92400E', fontSize: 12, fontWeight: '900', lineHeight: 17, textAlign: 'center' }}>
-          📚 本知识来自你发现的藏品
+          这是从你发现的藏品中提炼出的一个关键知识点。
         </Text>
       </View>
       <Text style={{ color: '#6D28D9', fontSize: 14, fontWeight: '900' }}>💡 你知道吗？</Text>

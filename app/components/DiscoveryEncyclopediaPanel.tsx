@@ -64,6 +64,15 @@ export function DiscoveryEncyclopediaPanel({
         {t('magic_discovery_encyclopedia')}
       </Text>
 
+      <View style={{ backgroundColor: '#FFFBEB', borderColor: '#FBBF24', borderRadius: 18, borderWidth: 1, marginTop: 12, padding: 12 }}>
+        <Text style={{ color: '#6D28D9', fontSize: 14, fontWeight: '900', lineHeight: 20, textAlign: 'center' }}>
+          📚 百科是完整资料页。
+        </Text>
+        <Text style={{ color: '#92400E', fontSize: 12, fontWeight: '800', lineHeight: 18, marginTop: 4, textAlign: 'center' }}>
+          如果你刚发现这个藏品，建议先读故事，再学知识。
+        </Text>
+      </View>
+
       <View style={{ backgroundColor: '#FFFFFF', borderColor: '#FBBF24', borderRadius: 20, borderWidth: 2, marginTop: 14, padding: 14 }}>
         <Text style={{ color: '#6D28D9', fontSize: 15, fontWeight: '900', lineHeight: 21 }}>{t('encyclopedia_completion')}</Text>
         <Text style={{ color: '#B45309', fontSize: 28, fontWeight: '900', marginTop: 8 }}>
@@ -165,7 +174,7 @@ export function DiscoveryEncyclopediaPanel({
                 }}
               >
                 <Text style={{ color: '#92400E', fontSize: 13, fontWeight: '900', textAlign: 'center' }}>
-                  先了解这个藏品背后的故事
+                  先读故事，理解它为什么有趣。
                 </Text>
                 <View
                   style={{
@@ -177,7 +186,7 @@ export function DiscoveryEncyclopediaPanel({
                     paddingVertical: 8,
                   }}
                 >
-                  <Text style={{ color: '#FFFFFF', fontSize: 13, fontWeight: '900' }}>📖 阅读故事</Text>
+                  <Text style={{ color: '#FFFFFF', fontSize: 13, fontWeight: '900' }}>📖 读故事</Text>
                 </View>
               </View>
 

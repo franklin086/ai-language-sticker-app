@@ -82,7 +82,7 @@ export function MuseumArtifactTile({
             paddingVertical: 6,
           }}
         >
-          <Text style={{ color: '#7C3AED', fontSize: 11, fontWeight: '900', textAlign: 'center' }}>📖 阅读故事</Text>
+          <Text style={{ color: '#7C3AED', fontSize: 11, fontWeight: '900', textAlign: 'center' }}>📖 读故事</Text>
         </View>
         <AudioButton artifact={museumArtifact ?? artifact.exhibit} />
       </View>

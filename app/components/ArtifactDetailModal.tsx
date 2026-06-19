@@ -159,23 +159,25 @@ export function ArtifactDetailModal({
           <Text style={styles.artifactDetailZh}>{specificZh}</Text>
           <Text style={styles.artifactDetailEn}>{specificEn}</Text>
           <View style={styles.artifactDetailStoryFirstBox}>
-            <Text style={styles.artifactDetailStoryFirstText}>先读故事</Text>
+            <Text style={styles.artifactDetailStoryFirstText}>📖 故事：先理解这个藏品为什么有趣。</Text>
             <View style={styles.artifactDetailStoryFirstButton}>
-              <Text style={styles.artifactDetailStoryFirstButtonText}>📖 阅读故事</Text>
+              <Text style={styles.artifactDetailStoryFirstButtonText}>📖 读故事</Text>
             </View>
           </View>
           <View style={styles.artifactDetailStoryBox}>
-            <Text style={styles.artifactDetailStoryTitle}>📖 藏品故事</Text>
+            <Text style={styles.artifactDetailStoryTitle}>📖 故事</Text>
             <Text style={styles.artifactStoryText}>{details.story}</Text>
           </View>
           <View style={{ backgroundColor: '#FFFBEB', borderColor: '#FBBF24', borderRadius: 16, borderWidth: 1, marginTop: 10, padding: 11 }}>
             <Text style={{ color: '#92400E', fontSize: 12, fontWeight: '900', lineHeight: 18 }}>
-              读完故事后，可以继续学知识。
+              先读故事，理解它为什么重要。
+              再看知识，记住一个关键点。
+              最后查百科，了解更多背景。
             </Text>
           </View>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 }}>
             <DetailAction label="🧠 学知识" onPress={onLearnKnowledge} tone="purple" />
-            <DetailAction label={hasQuiz ? '🎯 挑战这个藏品' : '✨ 继续发现'} onPress={hasQuiz ? onChallenge : onContinueDiscover} tone="blue" />
+            <DetailAction label={hasQuiz ? '🎯 去挑战' : '✨ 继续发现'} onPress={hasQuiz ? onChallenge : onContinueDiscover} tone="blue" />
             <DetailAction label="📊 看进度" onPress={onViewProgress} tone="gold" />
           </View>
           <View style={styles.artifactDetailInfoBox}>
