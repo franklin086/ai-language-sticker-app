@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useAudioCoverage } from '../hooks/useAudioCoverage';
 import { useLanguage } from '../hooks/useLanguage';
@@ -25,13 +25,54 @@ export function MagicGuildPanel({
   museumCollectedIds,
   museums,
   onClose,
+  initialKnowledgeMode = 'collections',
+  initialQuizArtifactKey = null,
+  initialView = 'home',
   totalArtifactCount,
 }: MagicGuildInput & {
   onClose: () => void;
+  initialKnowledgeMode?: 'collections' | 'quiz';
+  initialQuizArtifactKey?: string | null;
+  initialView?: MagicGuildView;
 }) {
-  const [guildView, setGuildView] = useState<MagicGuildView>('home');
+  const [guildView, setGuildView] = useState<MagicGuildView>(initialView);
+  const [knowledgeMode, setKnowledgeMode] = useState<'collections' | 'quiz'>(initialKnowledgeMode);
+  const [quizArtifactKey, setQuizArtifactKey] = useState<string | null>(initialQuizArtifactKey);
   const { t } = useLanguage();
   const audioCoverage = useAudioCoverage('en');
+
+  useEffect(() => {
+    setGuildView(initialView);
+    setKnowledgeMode(initialKnowledgeMode);
+    setQuizArtifactKey(initialQuizArtifactKey);
+  }, [initialKnowledgeMode, initialQuizArtifactKey, initialView]);
+
+  function openGuildView(view: MagicGuildView, nextKnowledgeMode: 'collections' | 'quiz' = 'collections') {
+    setGuildView(view);
+    setKnowledgeMode(nextKnowledgeMode);
+    if (view !== 'knowledgeCollections' || nextKnowledgeMode !== 'quiz') {
+      setQuizArtifactKey(null);
+    }
+  }
+
+  function handleRecommendedAction(actionId: 'discoverArtifact' | 'completeKnowledgeBook' | 'joinChallenge' | 'improveAcademy' | 'completed') {
+    if (actionId === 'completeKnowledgeBook') {
+      openGuildView('knowledgeCollections', 'collections');
+      return;
+    }
+
+    if (actionId === 'joinChallenge') {
+      openGuildView('knowledgeCollections', 'quiz');
+      return;
+    }
+
+    if (actionId === 'improveAcademy') {
+      openGuildView('explorerAcademy');
+      return;
+    }
+
+    onClose();
+  }
   const guild = useMagicGuild({
     cityMapCompletedNodeIds,
     cityMaps,
@@ -85,8 +126,15 @@ export function MagicGuildPanel({
         ) : guildView === 'knowledgeCollections' ? (
           <KnowledgeCollectionsPanel
             collection={collection}
+            initialShowQuiz={knowledgeMode === 'quiz'}
             museumCollectedIds={museumCollectedIds}
-            onBack={() => setGuildView('home')}
+            onBack={() => {
+              setGuildView('home');
+              setKnowledgeMode('collections');
+              setQuizArtifactKey(null);
+            }}
+            onOpenLearningDashboard={() => setGuildView('learningDashboard')}
+            preferredQuizArtifactKey={quizArtifactKey}
           />
         ) : guildView === 'explorerAcademy' ? (
           <ExplorerAcademyPanel
@@ -109,6 +157,7 @@ export function MagicGuildPanel({
             collection={collection}
             museumCollectedIds={museumCollectedIds}
             onBack={() => setGuildView('home')}
+            onRecommendedAction={handleRecommendedAction}
           />
         ) : (
           <>
@@ -145,7 +194,7 @@ export function MagicGuildPanel({
 
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 14 }}>
               {guildNavigationItems.map((item) => (
-                <GuildButton key={item.id} label={t(item.labelKey)} onPress={() => setGuildView(item.id)} />
+                <GuildButton key={item.id} label={t(item.labelKey)} onPress={() => openGuildView(item.id)} />
               ))}
             </View>
 

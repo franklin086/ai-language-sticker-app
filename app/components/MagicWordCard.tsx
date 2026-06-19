@@ -46,17 +46,59 @@ function SpeechButton({
   );
 }
 
+function ActionButton({
+  label,
+  onPress,
+  tone,
+}: {
+  label: string;
+  onPress: () => void;
+  tone: 'gold' | 'purple' | 'blue' | 'white';
+}) {
+  const colors = {
+    blue: { background: '#EDE9FE', border: '#A78BFA', pressed: '#DDD6FE', text: '#5B21B6' },
+    gold: { background: '#FFF7D6', border: '#FBBF24', pressed: '#FDE68A', text: '#7C3AED' },
+    purple: { background: '#F5E8FF', border: '#C4B5FD', pressed: '#DDD6FE', text: '#6D28D9' },
+    white: { background: '#FFFFFF', border: '#E9D5FF', pressed: '#F5E8FF', text: '#6D28D9' },
+  }[tone];
+
+  return (
+    <Pressable
+      style={({ pressed }) => ({
+        alignItems: 'center',
+        backgroundColor: pressed ? colors.pressed : colors.background,
+        borderColor: colors.border,
+        borderRadius: 999,
+        borderWidth: 1,
+        flexGrow: 1,
+        paddingHorizontal: 11,
+        paddingVertical: 9,
+      })}
+      onPress={onPress}
+    >
+      <Text style={{ color: colors.text, fontSize: 12, fontWeight: '900', lineHeight: 17, textAlign: 'center' }}>
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
 export function MagicWordCard({
   artifactFact,
   celebrateText,
   confidenceLabel,
   confidenceText,
   foundTitle,
+  hasQuiz,
   magicEmoji,
   museumProgress,
+  onChallenge,
+  onLearnKnowledge,
+  onReadStory,
   onShare,
   onSpeakChinese,
   onSpeakEnglish,
+  onViewProgress,
   rarityCategory,
   rarityLabel,
   result,
@@ -70,11 +112,16 @@ export function MagicWordCard({
   confidenceLabel: string;
   confidenceText: string;
   foundTitle: string;
+  hasQuiz: boolean;
   magicEmoji: string;
   museumProgress: MuseumProgress | null;
+  onChallenge: () => void;
+  onLearnKnowledge: () => void;
+  onReadStory: () => void;
   onShare: () => void;
   onSpeakChinese: () => void;
   onSpeakEnglish: () => void;
+  onViewProgress: () => void;
   rarityCategory: StickerCategoryKey;
   rarityLabel: string;
   result: RecognitionResult;
@@ -119,13 +166,11 @@ export function MagicWordCard({
       <View style={{ backgroundColor: '#FFFBEB', borderColor: '#FBBF24', borderRadius: 18, borderWidth: 1, marginTop: 12, padding: 12 }}>
         <Text style={{ color: '#92400E', fontSize: 13, fontWeight: '900' }}>下一步</Text>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 9 }}>
-          <Text style={{ backgroundColor: '#FFF7D6', borderRadius: 999, color: '#7C3AED', fontSize: 12, fontWeight: '900', paddingHorizontal: 10, paddingVertical: 7 }}>📖 读故事</Text>
-          <Text style={{ backgroundColor: '#F5E8FF', borderRadius: 999, color: '#6D28D9', fontSize: 12, fontWeight: '900', paddingHorizontal: 10, paddingVertical: 7 }}>🧠 学知识</Text>
-          <Text style={{ backgroundColor: '#EDE9FE', borderRadius: 999, color: '#5B21B6', fontSize: 12, fontWeight: '900', paddingHorizontal: 10, paddingVertical: 7 }}>🎯 去挑战</Text>
+          <ActionButton label="📖 读故事" onPress={onReadStory} tone="gold" />
+          <ActionButton label="🧠 学知识" onPress={onLearnKnowledge} tone="purple" />
+          <ActionButton label={hasQuiz ? '🎯 挑战这个藏品' : '✨ 继续发现'} onPress={onChallenge} tone="blue" />
+          <ActionButton label="📊 看进度" onPress={onViewProgress} tone="white" />
         </View>
-        <Text style={{ color: '#7C3AED', fontSize: 12, fontWeight: '800', lineHeight: 18, marginTop: 9 }}>
-          先读藏品故事，再学习知识点，最后用知识挑战巩固记忆。
-        </Text>
       </View>
       {museumProgress ? <MuseumProgressCard progress={museumProgress} styles={styles} /> : null}
       <Pressable style={({ pressed }) => [styles.shareButton, pressed && styles.shareButtonPressed]} onPress={onShare}>

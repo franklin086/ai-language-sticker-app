@@ -49,29 +49,73 @@ function SpeechButton({
   );
 }
 
+function DetailAction({
+  label,
+  onPress,
+  tone,
+}: {
+  label: string;
+  onPress: () => void;
+  tone: 'gold' | 'purple' | 'blue';
+}) {
+  const colors = {
+    blue: { background: '#EDE9FE', border: '#A78BFA', pressed: '#DDD6FE', text: '#5B21B6' },
+    gold: { background: '#FFF7D6', border: '#FBBF24', pressed: '#FDE68A', text: '#7C3AED' },
+    purple: { background: '#F5E8FF', border: '#C4B5FD', pressed: '#DDD6FE', text: '#6D28D9' },
+  }[tone];
+
+  return (
+    <Pressable
+      style={({ pressed }) => ({
+        alignItems: 'center',
+        backgroundColor: pressed ? colors.pressed : colors.background,
+        borderColor: colors.border,
+        borderRadius: 16,
+        borderWidth: 1,
+        flex: 1,
+        minWidth: 120,
+        paddingHorizontal: 10,
+        paddingVertical: 10,
+      })}
+      onPress={onPress}
+    >
+      <Text style={{ color: colors.text, fontSize: 12, fontWeight: '900', lineHeight: 17, textAlign: 'center' }}>{label}</Text>
+    </Pressable>
+  );
+}
+
 export function ArtifactDetailModal({
   exhibit,
+  formatConfidence,
+  formatDiscoveredAt,
+  getGalleryArtifactDetails,
+  getStickerCategory,
+  hasQuiz,
   item,
   museum,
+  onChallenge,
   onClose,
+  onContinueDiscover,
+  onLearnKnowledge,
   onShare,
   onSpeakChinese,
   onSpeakEnglish,
+  onViewProgress,
   speakButtonScale,
   speakingLanguage,
   styles,
-  getGalleryArtifactDetails,
-  getStickerCategory,
-  formatDiscoveredAt,
-  formatConfidence,
 }: {
   exhibit: MuseumExhibit;
   item: CollectionItem;
   museum: MagicMuseum;
+  onChallenge: () => void;
   onClose: () => void;
+  onContinueDiscover: () => void;
+  onLearnKnowledge: () => void;
   onShare: () => void;
   onSpeakChinese: () => void;
   onSpeakEnglish: () => void;
+  onViewProgress: () => void;
   speakButtonScale: Animated.AnimatedInterpolation<string | number>;
   speakingLanguage: 'zh' | 'en' | null;
   styles: ComponentStyles;
@@ -79,6 +123,7 @@ export function ArtifactDetailModal({
   getStickerCategory: (item: RecognitionResult) => StickerCategoryKey;
   formatDiscoveredAt: (discoveredAt: string) => string;
   formatConfidence: (confidence: string) => string;
+  hasQuiz: boolean;
 }) {
   const details = getGalleryArtifactDetails(exhibit, [item]);
   const rarityCategory = getStickerCategory(item);
@@ -114,24 +159,24 @@ export function ArtifactDetailModal({
           <Text style={styles.artifactDetailZh}>{specificZh}</Text>
           <Text style={styles.artifactDetailEn}>{specificEn}</Text>
           <View style={styles.artifactDetailStoryFirstBox}>
-            <Text style={styles.artifactDetailStoryFirstText}>先了解这个藏品背后的故事</Text>
+            <Text style={styles.artifactDetailStoryFirstText}>先读故事</Text>
             <View style={styles.artifactDetailStoryFirstButton}>
               <Text style={styles.artifactDetailStoryFirstButtonText}>📖 阅读故事</Text>
             </View>
           </View>
           <View style={styles.artifactDetailStoryBox}>
             <Text style={styles.artifactDetailStoryTitle}>📖 藏品故事</Text>
-            <Text style={styles.artifactDetailStoryText}>{details.story}</Text>
+            <Text style={styles.artifactStoryText}>{details.story}</Text>
           </View>
           <View style={{ backgroundColor: '#FFFBEB', borderColor: '#FBBF24', borderRadius: 16, borderWidth: 1, marginTop: 10, padding: 11 }}>
             <Text style={{ color: '#92400E', fontSize: 12, fontWeight: '900', lineHeight: 18 }}>
-              读完故事后，可以继续查看知识点。
+              读完故事后，可以继续学知识。
             </Text>
           </View>
-          <View style={{ backgroundColor: '#F5E8FF', borderColor: '#C4B5FD', borderRadius: 16, borderWidth: 1, marginTop: 10, padding: 11 }}>
-            <Text style={{ color: '#6D28D9', fontSize: 12, fontWeight: '900', lineHeight: 18 }}>
-              学完知识后，可以去完成知识挑战。
-            </Text>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 }}>
+            <DetailAction label="🧠 学知识" onPress={onLearnKnowledge} tone="purple" />
+            <DetailAction label={hasQuiz ? '🎯 挑战这个藏品' : '✨ 继续发现'} onPress={hasQuiz ? onChallenge : onContinueDiscover} tone="blue" />
+            <DetailAction label="📊 看进度" onPress={onViewProgress} tone="gold" />
           </View>
           <View style={styles.artifactDetailInfoBox}>
             <Text style={styles.artifactDetailMeta}>基础词：{baseZh} / {baseEn}</Text>

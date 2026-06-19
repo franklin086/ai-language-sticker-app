@@ -1,7 +1,7 @@
-import { Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { useLanguage } from '../hooks/useLanguage';
 import type { AudioCoverageStats } from '../utils/audioCoverageHelpers';
-import { buildLearningDashboard } from '../utils/learningDashboardHelpers';
+import { buildLearningDashboard, type LearningRecommendedNextAction } from '../utils/learningDashboardHelpers';
 import { JourneyPanel } from './JourneyPanel';
 import { KnowledgeMasteryPanel } from './KnowledgeMasteryPanel';
 import { LearningBackButton } from './LearningBackButton';
@@ -110,18 +110,36 @@ const copy = {
   },
 };
 
+function getRecommendedActionButtonLabel(actionId: LearningRecommendedNextAction['id']) {
+  if (actionId === 'completeKnowledgeBook') {
+    return '学知识';
+  }
+
+  if (actionId === 'joinChallenge') {
+    return '去挑战';
+  }
+
+  if (actionId === 'improveAcademy') {
+    return '看进度';
+  }
+
+  return '继续发现';
+}
+
 export function LearningDashboardPanel({
   audioCoverageLevel,
   audioStats,
   collection,
   museumCollectedIds,
   onBack,
+  onRecommendedAction,
 }: {
   audioCoverageLevel: string;
   audioStats: AudioCoverageStats;
   collection: CollectionLike[];
   museumCollectedIds: string[];
   onBack: () => void;
+  onRecommendedAction?: (actionId: LearningRecommendedNextAction['id']) => void;
 }) {
   const { currentLanguage, t } = useLanguage();
   const labels = copy[currentLanguage] ?? copy.en;
@@ -182,6 +200,23 @@ export function LearningDashboardPanel({
         <Text style={{ color: '#7C3AED', fontSize: 12, fontWeight: '800', lineHeight: 18, marginTop: 6 }}>
           {recommendedNextAction.detail}
         </Text>
+        {onRecommendedAction ? (
+          <Pressable
+            style={({ pressed }) => ({
+              alignItems: 'center',
+              backgroundColor: pressed ? '#7C3AED' : '#8B5CF6',
+              borderRadius: 16,
+              marginTop: 12,
+              paddingHorizontal: 14,
+              paddingVertical: 11,
+            })}
+            onPress={() => onRecommendedAction(recommendedNextAction.id)}
+          >
+            <Text style={{ color: '#FFFFFF', fontSize: 13, fontWeight: '900', textAlign: 'center' }}>
+              {getRecommendedActionButtonLabel(recommendedNextAction.id)}
+            </Text>
+          </Pressable>
+        ) : null}
       </View>
 
       <View

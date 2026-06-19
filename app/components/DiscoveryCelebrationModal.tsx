@@ -33,12 +33,55 @@ function getGlowColors(category: DiscoveryCelebrationData['rarityCategory']) {
   };
 }
 
+function CelebrationAction({
+  label,
+  onPress,
+  tone,
+}: {
+  label: string;
+  onPress: () => void;
+  tone: 'gold' | 'purple' | 'blue';
+}) {
+  const colors = {
+    blue: { background: '#EDE9FE', border: '#A78BFA', pressed: '#DDD6FE', text: '#5B21B6' },
+    gold: { background: '#FFF7D6', border: '#FBBF24', pressed: '#FDE68A', text: '#7C3AED' },
+    purple: { background: '#F5E8FF', border: '#C4B5FD', pressed: '#DDD6FE', text: '#6D28D9' },
+  }[tone];
+
+  return (
+    <Pressable
+      style={({ pressed }) => ({
+        alignItems: 'center',
+        backgroundColor: pressed ? colors.pressed : colors.background,
+        borderColor: colors.border,
+        borderRadius: 18,
+        borderWidth: 1,
+        flex: 1,
+        minWidth: 132,
+        paddingHorizontal: 12,
+        paddingVertical: 12,
+      })}
+      onPress={onPress}
+    >
+      <Text style={{ color: colors.text, fontSize: 14, fontWeight: '900', textAlign: 'center' }}>{label}</Text>
+    </Pressable>
+  );
+}
+
 export function DiscoveryCelebrationModal({
   data,
+  onChallenge,
   onClose,
+  onContinueDiscover,
+  onLearnKnowledge,
+  onReadStory,
 }: {
   data: DiscoveryCelebrationData;
+  onChallenge: () => void;
   onClose: () => void;
+  onContinueDiscover: () => void;
+  onLearnKnowledge: () => void;
+  onReadStory: () => void;
 }) {
   const colors = getGlowColors(data.rarityCategory);
 
@@ -119,62 +162,15 @@ export function DiscoveryCelebrationModal({
               <Text style={{ color: '#92400E', fontSize: 12, fontWeight: '900' }}>稀有度：{data.rarityLabel}</Text>
             </View>
             <View style={{ backgroundColor: '#F5E8FF', borderRadius: 999, paddingHorizontal: 12, paddingVertical: 7 }}>
-              <Text style={{ color: '#6D28D9', fontSize: 12, fontWeight: '900' }}>所属博物馆：{data.museumTitle}</Text>
+              <Text style={{ color: '#6D28D9', fontSize: 12, fontWeight: '900' }}>博物馆：{data.museumTitle}</Text>
             </View>
           </View>
         </View>
 
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 14 }}>
-          <Pressable
-            style={({ pressed }) => ({
-              alignItems: 'center',
-              backgroundColor: pressed ? '#FDE68A' : '#FFF7D6',
-              borderColor: '#FBBF24',
-              borderRadius: 18,
-              borderWidth: 1,
-              flex: 1,
-              minWidth: 132,
-              paddingHorizontal: 12,
-              paddingVertical: 12,
-            })}
-            onPress={onClose}
-          >
-            <Text style={{ color: '#7C3AED', fontSize: 14, fontWeight: '900', textAlign: 'center' }}>📖 阅读故事</Text>
-          </Pressable>
-          <Pressable
-            style={({ pressed }) => ({
-              alignItems: 'center',
-              backgroundColor: pressed ? '#DDD6FE' : '#F5E8FF',
-              borderColor: '#C4B5FD',
-              borderRadius: 18,
-              borderWidth: 1,
-              flex: 1,
-              minWidth: 132,
-              paddingHorizontal: 12,
-              paddingVertical: 12,
-            })}
-            onPress={onClose}
-          >
-            <Text style={{ color: '#6D28D9', fontSize: 14, fontWeight: '900', textAlign: 'center' }}>🧠 查看知识</Text>
-          </Pressable>
-          <Pressable
-            style={({ pressed }) => ({
-              alignItems: 'center',
-              backgroundColor: data.hasQuiz ? (pressed ? '#C4B5FD' : '#EDE9FE') : (pressed ? '#FDE68A' : '#FFFBEB'),
-              borderColor: data.hasQuiz ? '#A78BFA' : '#FBBF24',
-              borderRadius: 18,
-              borderWidth: 1,
-              flex: 1,
-              minWidth: 132,
-              paddingHorizontal: 12,
-              paddingVertical: 12,
-            })}
-            onPress={onClose}
-          >
-            <Text style={{ color: '#6D28D9', fontSize: 14, fontWeight: '900', textAlign: 'center' }}>
-              {data.hasQuiz ? '🎯 去挑战' : '🔎 继续发现'}
-            </Text>
-          </Pressable>
+          <CelebrationAction label="📖 读故事" onPress={onReadStory} tone="gold" />
+          <CelebrationAction label="🧠 学知识" onPress={onLearnKnowledge} tone="purple" />
+          <CelebrationAction label={data.hasQuiz ? '🎯 去挑战' : '✨ 继续发现'} onPress={data.hasQuiz ? onChallenge : onContinueDiscover} tone="blue" />
         </View>
 
         <View style={{ backgroundColor: '#FFFBEB', borderColor: '#FBBF24', borderRadius: 18, borderWidth: 1, marginTop: 14, padding: 12 }}>
@@ -196,9 +192,13 @@ export function DiscoveryCelebrationModal({
             marginTop: 16,
             padding: 14,
           })}
-          onPress={onClose}
+          onPress={onContinueDiscover}
         >
-          <Text style={{ color: '#FFFFFF', fontSize: 15, fontWeight: '900', textAlign: 'center' }}>继续探索</Text>
+          <Text style={{ color: '#FFFFFF', fontSize: 15, fontWeight: '900', textAlign: 'center' }}>继续发现</Text>
+        </Pressable>
+
+        <Pressable style={{ marginTop: 10, padding: 6 }} onPress={onClose}>
+          <Text style={{ color: '#7C3AED', fontSize: 12, fontWeight: '900', textAlign: 'center' }}>关闭</Text>
         </Pressable>
       </View>
     </View>

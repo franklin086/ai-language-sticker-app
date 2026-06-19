@@ -32,12 +32,15 @@ import { useFollowUpRecognition } from './hooks/useFollowUpRecognition';
 import { useLimitedEvent, type LimitedEventProgress } from './hooks/useLimitedEvent';
 import { useLanguage } from './hooks/useLanguage';
 import { useTreasureChest } from './hooks/useTreasureChest';
+import type { GuildView } from './utils/navigationMap';
 import {
   findMuseumArtifact,
   getMuseumArtifactCategory,
   getMuseumArtifactMuseumMeta,
   mergeMagicMuseumsWithArtifacts,
 } from './utils/artifactHelpers';
+import { getArtifactFactKey } from './utils/artifactFactHelpers';
+import { getDiscoveredQuizQuestions } from './utils/knowledgeQuizHelpers';
 import { getRarityVisualStyles } from './utils/rarity';
 import {
   ARTIFACT_STORY_STORAGE_KEY,
@@ -1518,6 +1521,10 @@ export default function HomeScreen() {
     title: getCuratorTitle(1),
   });
   const [shareCard, setShareCard] = useState<ShareCardData | null>(null);
+  const [currentDetailItem, setCurrentDetailItem] = useState<CollectionItem | null>(null);
+  const [magicGuildInitialView, setMagicGuildInitialView] = useState<GuildView | 'home'>('home');
+  const [magicGuildInitialKnowledgeMode, setMagicGuildInitialKnowledgeMode] = useState<'collections' | 'quiz'>('collections');
+  const [magicGuildQuizArtifactKey, setMagicGuildQuizArtifactKey] = useState<string | null>(null);
   const [showMagicGuild, setShowMagicGuild] = useState(false);
   const [hoveredButton, setHoveredButton] = useState<'start' | 'camera' | 'album' | null>(null);
   const [speakingLanguage, setSpeakingLanguage] = useState<'zh' | 'en' | null>(null);
@@ -2482,6 +2489,112 @@ export default function HomeScreen() {
       }),
     );
   };
+  const getCollectionItemForResult = (result: RecognitionResult): CollectionItem => {
+    const resultExhibitIds = getMatchedMuseumExhibitIds(result);
+    const storedItem =
+      collection.find((item) => item.object_en === result.object_en && item.object_zh === result.object_zh) ??
+      collection.find((item) => getMatchedMuseumExhibitIds(item).some((id) => resultExhibitIds.includes(id)));
+
+    return storedItem ?? {
+      ...result,
+      discoveredAt: new Date().toISOString(),
+      emoji: getMagicEmoji(result),
+    };
+  };
+
+  const getDetailTargetForItem = (item: CollectionItem) => {
+    const matchedIds = getMatchedMuseumExhibitIds(item);
+
+    for (const museum of MAGIC_MUSEUMS_WITH_ARTIFACTS) {
+      const exhibit = museum.exhibits.find((candidate) => matchedIds.includes(candidate.id));
+
+      if (exhibit) {
+        return { exhibit, museum };
+      }
+    }
+
+    return null;
+  };
+
+  const getUnlockedQuizArtifactKeyForResult = (result: RecognitionResult) => {
+    const artifact = findMuseumArtifact(result);
+    const artifactKey = artifact ? getArtifactFactKey(artifact) : null;
+
+    if (!artifactKey) {
+      return null;
+    }
+
+    const currentItem = getCollectionItemForResult(result);
+    const learningCollection = [currentItem, ...collection];
+    const unlockedQuestions = getDiscoveredQuizQuestions({
+      collection: learningCollection,
+      museumCollectedIds,
+    });
+
+    return unlockedQuestions.some((question) => question.artifactKey === artifactKey) ? artifactKey : null;
+  };
+
+  const openMagicGuildView = (
+    view: GuildView | 'home',
+    knowledgeMode: 'collections' | 'quiz' = 'collections',
+    quizArtifactKey: string | null = null,
+  ) => {
+    setMagicGuildInitialView(view);
+    setMagicGuildInitialKnowledgeMode(knowledgeMode);
+    setMagicGuildQuizArtifactKey(quizArtifactKey);
+    setShowMagicGuild(true);
+  };
+
+  const closeMagicGuild = () => {
+    setShowMagicGuild(false);
+    setMagicGuildInitialView('home');
+    setMagicGuildInitialKnowledgeMode('collections');
+    setMagicGuildQuizArtifactKey(null);
+  };
+
+  const openResultStory = () => {
+    closeDiscoveryCelebration();
+
+    if (recognitionResult) {
+      setCurrentDetailItem(getCollectionItemForResult(recognitionResult));
+    }
+  };
+
+  const openResultKnowledge = () => {
+    closeDiscoveryCelebration();
+    setCurrentDetailItem(null);
+    openMagicGuildView('knowledgeCollections', 'collections');
+  };
+
+  const openResultChallenge = () => {
+    closeDiscoveryCelebration();
+    setCurrentDetailItem(null);
+
+    if (!recognitionResult) {
+      return;
+    }
+
+    const quizArtifactKey = getUnlockedQuizArtifactKeyForResult(recognitionResult);
+
+    if (quizArtifactKey) {
+      openMagicGuildView('knowledgeCollections', 'quiz', quizArtifactKey);
+      return;
+    }
+
+    closeMagicGuild();
+  };
+
+  const openLearningDashboard = () => {
+    closeDiscoveryCelebration();
+    setCurrentDetailItem(null);
+    openMagicGuildView('learningDashboard');
+  };
+
+  const continueDiscover = () => {
+    closeDiscoveryCelebration();
+    setCurrentDetailItem(null);
+    closeMagicGuild();
+  };
 
   useEffect(() => {
     unlockAchievements({
@@ -2507,6 +2620,8 @@ export default function HomeScreen() {
       openMagicChest,
     });
   }, [addCompanionXp, addXpAmount, collection, openMagicChest, updateLimitedEventRewards]);
+
+  const currentDetailTarget = currentDetailItem ? getDetailTargetForItem(currentDetailItem) : null;
 
   return (
     <SafeAreaView style={styles.screen}>
@@ -2667,11 +2782,16 @@ export default function HomeScreen() {
                   confidenceLabel={COPY.confidence}
                   confidenceText={formatConfidence(recognitionResult.confidence)}
                   foundTitle={COPY.found}
+                  hasQuiz={Boolean(getUnlockedQuizArtifactKeyForResult(recognitionResult))}
                   magicEmoji={getMagicEmoji(recognitionResult)}
                   museumProgress={getMuseumProgressForResult(recognitionResult, collection)}
+                  onChallenge={openResultChallenge}
+                  onLearnKnowledge={openResultKnowledge}
+                  onReadStory={openResultStory}
                   onShare={() => openShareCard('AI Magic Word Camera', 'I found a new magic artifact!', recognitionResult)}
                   onSpeakChinese={() => speakWord(getDisplayZh(recognitionResult), 'zh')}
                   onSpeakEnglish={() => speakWord(getDisplayEn(recognitionResult), 'en')}
+                  onViewProgress={openLearningDashboard}
                   rarityCategory={getStickerCategory(recognitionResult)}
                   rarityLabel={getStickerCategoryLabel(getStickerCategory(recognitionResult))}
                   result={recognitionResult}
@@ -2831,7 +2951,7 @@ export default function HomeScreen() {
 
             <Pressable
               style={({ pressed }) => [styles.secondaryButton, pressed && styles.secondaryButtonPressed]}
-              onPress={() => setShowMagicGuild(true)}
+              onPress={() => openMagicGuildView('home')}
             >
               <Text style={styles.secondaryButtonText}>🏛 公会总部</Text>
             </Pressable>
@@ -2845,7 +2965,10 @@ export default function HomeScreen() {
           collection={collection}
           museumCollectedIds={museumCollectedIds}
           museums={MAGIC_MUSEUMS_WITH_ARTIFACTS}
-          onClose={() => setShowMagicGuild(false)}
+          initialKnowledgeMode={magicGuildInitialKnowledgeMode}
+          initialQuizArtifactKey={magicGuildQuizArtifactKey}
+          initialView={magicGuildInitialView}
+          onClose={closeMagicGuild}
           totalArtifactCount={STICKER_TOTAL}
         />
       ) : null}
@@ -2856,8 +2979,38 @@ export default function HomeScreen() {
           styles={styles}
         />
       ) : null}
+      {currentDetailItem && currentDetailTarget ? (
+        <ArtifactDetailModal
+          exhibit={currentDetailTarget.exhibit}
+          formatConfidence={formatConfidence}
+          formatDiscoveredAt={formatDiscoveredAt}
+          getGalleryArtifactDetails={getGalleryArtifactDetails}
+          getStickerCategory={getStickerCategory}
+          hasQuiz={Boolean(getUnlockedQuizArtifactKeyForResult(currentDetailItem))}
+          item={currentDetailItem}
+          museum={currentDetailTarget.museum}
+          onChallenge={openResultChallenge}
+          onClose={() => setCurrentDetailItem(null)}
+          onContinueDiscover={continueDiscover}
+          onLearnKnowledge={openResultKnowledge}
+          onShare={() => openShareCard('AI Magic Encyclopedia', 'I found a new magic artifact!', currentDetailItem)}
+          onSpeakChinese={() => speakWord(currentDetailItem.specific_zh?.trim() || currentDetailItem.object_zh, 'zh')}
+          onSpeakEnglish={() => speakWord(currentDetailItem.specific_en?.trim() || currentDetailItem.object_en, 'en')}
+          onViewProgress={openLearningDashboard}
+          speakButtonScale={speakButtonScale}
+          speakingLanguage={speakingLanguage}
+          styles={styles}
+        />
+      ) : null}
       {discoveryCelebration ? (
-        <DiscoveryCelebrationModal data={discoveryCelebration} onClose={closeDiscoveryCelebration} />
+        <DiscoveryCelebrationModal
+          data={discoveryCelebration}
+          onChallenge={openResultChallenge}
+          onClose={closeDiscoveryCelebration}
+          onContinueDiscover={continueDiscover}
+          onLearnKnowledge={openResultKnowledge}
+          onReadStory={openResultStory}
+        />
       ) : null}
       {shareCard ? <ShareCardPreview data={shareCard} onClose={() => setShareCard(null)} onSave={saveShareCardAsPngV2} styles={styles} /> : null}
     </SafeAreaView>
@@ -3897,6 +4050,11 @@ function CollectionGallery({
           styles={styles}
           getGalleryArtifactDetails={getGalleryArtifactDetails}
           getStickerCategory={getStickerCategory}
+          hasQuiz={false}
+          onChallenge={() => setDetailArtifact(null)}
+          onContinueDiscover={() => setDetailArtifact(null)}
+          onLearnKnowledge={() => setDetailArtifact(null)}
+          onViewProgress={() => setDetailArtifact(null)}
           formatDiscoveredAt={formatDiscoveredAt}
           formatConfidence={formatConfidence}
         />

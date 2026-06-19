@@ -8,14 +8,20 @@ import { LearningBackButton } from './LearningBackButton';
 
 export function KnowledgeCollectionsPanel({
   collection,
+  initialShowQuiz = false,
   museumCollectedIds,
   onBack,
+  onOpenLearningDashboard,
+  preferredQuizArtifactKey,
 }: {
   collection: Parameters<typeof buildKnowledgeCollectionsState>[0]['collection'];
+  initialShowQuiz?: boolean;
   museumCollectedIds: string[];
   onBack: () => void;
+  onOpenLearningDashboard?: () => void;
+  preferredQuizArtifactKey?: string | null;
 }) {
-  const [showQuiz, setShowQuiz] = useState(false);
+  const [showQuiz, setShowQuiz] = useState(initialShowQuiz);
   const { currentLanguage, t } = useLanguage();
   const state = buildKnowledgeCollectionsState({
     collection,
@@ -29,6 +35,8 @@ export function KnowledgeCollectionsPanel({
         collection={collection}
         museumCollectedIds={museumCollectedIds}
         onBack={() => setShowQuiz(false)}
+        onOpenLearningDashboard={onOpenLearningDashboard}
+        preferredArtifactKey={preferredQuizArtifactKey}
       />
     );
   }

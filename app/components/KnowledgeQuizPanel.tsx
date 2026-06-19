@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useLanguage } from '../hooks/useLanguage';
 import {
@@ -13,10 +13,14 @@ export function KnowledgeQuizPanel({
   collection,
   museumCollectedIds,
   onBack,
+  onOpenLearningDashboard,
+  preferredArtifactKey,
 }: {
   collection: Parameters<typeof getDiscoveredQuizQuestions>[0]['collection'];
   museumCollectedIds: string[];
   onBack: () => void;
+  onOpenLearningDashboard?: () => void;
+  preferredArtifactKey?: string | null;
 }) {
   const { currentLanguage, t } = useLanguage();
   const [answerState, setAnswerState] = useState<QuizAnswerState>({});
@@ -28,6 +32,19 @@ export function KnowledgeQuizPanel({
   );
   const progress = getQuizProgress({ answerState, collection, museumCollectedIds });
   const currentQuestion = questions[currentIndex] ?? null;
+
+  useEffect(() => {
+    if (!preferredArtifactKey) {
+      return;
+    }
+
+    const preferredIndex = questions.findIndex((question) => question.artifactKey === preferredArtifactKey);
+
+    if (preferredIndex >= 0) {
+      setCurrentIndex(preferredIndex);
+      setSelectedAnswer(null);
+    }
+  }, [preferredArtifactKey, questions]);
 
   function handleAnswer(answer: string, correct: boolean) {
     if (!currentQuestion) {
@@ -87,22 +104,41 @@ export function KnowledgeQuizPanel({
             question={currentQuestion}
             selectedAnswer={selectedAnswer}
           />
-          <Pressable
-            style={({ pressed }) => ({
-              backgroundColor: pressed ? '#7C3AED' : '#8B5CF6',
-              borderRadius: 18,
-              marginTop: 12,
-              padding: 12,
-            })}
-            onPress={handleNextQuestion}
-          >
-            <Text style={{ color: '#FFFFFF', fontSize: 14, fontWeight: '900', lineHeight: 20, textAlign: 'center' }}>下一题</Text>
-          </Pressable>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 12 }}>
+            <Pressable
+              style={({ pressed }) => ({
+                backgroundColor: pressed ? '#7C3AED' : '#8B5CF6',
+                borderRadius: 18,
+                flex: 1,
+                minWidth: 120,
+                padding: 12,
+              })}
+              onPress={handleNextQuestion}
+            >
+              <Text style={{ color: '#FFFFFF', fontSize: 14, fontWeight: '900', lineHeight: 20, textAlign: 'center' }}>下一题</Text>
+            </Pressable>
+            {onOpenLearningDashboard ? (
+              <Pressable
+                style={({ pressed }) => ({
+                  backgroundColor: pressed ? '#FDE68A' : '#FFF7D6',
+                  borderColor: '#FBBF24',
+                  borderRadius: 18,
+                  borderWidth: 1,
+                  flex: 1,
+                  minWidth: 120,
+                  padding: 12,
+                })}
+                onPress={onOpenLearningDashboard}
+              >
+                <Text style={{ color: '#6D28D9', fontSize: 14, fontWeight: '900', lineHeight: 20, textAlign: 'center' }}>📊 看进度</Text>
+              </Pressable>
+            ) : null}
+          </View>
         </>
       ) : (
         <View style={{ backgroundColor: '#FFF7ED', borderColor: '#FBBF24', borderRadius: 18, borderWidth: 1, marginTop: 14, padding: 14 }}>
           <Text style={{ color: '#6D28D9', fontSize: 14, fontWeight: '900', textAlign: 'center' }}>
-            继续探索，发现知识后解锁挑战
+            继续发现，解锁挑战
           </Text>
         </View>
       )}

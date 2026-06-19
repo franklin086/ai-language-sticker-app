@@ -174,6 +174,11 @@ export function MuseumExplorerPanel({
               },
             })
           }
+          hasQuiz={false}
+          onChallenge={() => setSelectedArtifact(null)}
+          onContinueDiscover={() => setSelectedArtifact(null)}
+          onLearnKnowledge={() => setSelectedArtifact(null)}
+          onViewProgress={onBack}
           formatDiscoveredAt={formatDate}
           formatConfidence={formatConfidence}
         />
