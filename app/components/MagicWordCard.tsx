@@ -116,6 +116,17 @@ export function MagicWordCard({
         <Text style={styles.artifactStoryTitle}>📖 藏品故事</Text>
         <Text style={styles.artifactStoryText}>{artifactFact}</Text>
       </View>
+      <View style={{ backgroundColor: '#FFFBEB', borderColor: '#FBBF24', borderRadius: 18, borderWidth: 1, marginTop: 12, padding: 12 }}>
+        <Text style={{ color: '#92400E', fontSize: 13, fontWeight: '900' }}>下一步</Text>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 9 }}>
+          <Text style={{ backgroundColor: '#FFF7D6', borderRadius: 999, color: '#7C3AED', fontSize: 12, fontWeight: '900', paddingHorizontal: 10, paddingVertical: 7 }}>📖 读故事</Text>
+          <Text style={{ backgroundColor: '#F5E8FF', borderRadius: 999, color: '#6D28D9', fontSize: 12, fontWeight: '900', paddingHorizontal: 10, paddingVertical: 7 }}>🧠 学知识</Text>
+          <Text style={{ backgroundColor: '#EDE9FE', borderRadius: 999, color: '#5B21B6', fontSize: 12, fontWeight: '900', paddingHorizontal: 10, paddingVertical: 7 }}>🎯 去挑战</Text>
+        </View>
+        <Text style={{ color: '#7C3AED', fontSize: 12, fontWeight: '800', lineHeight: 18, marginTop: 9 }}>
+          先读藏品故事，再学习知识点，最后用知识挑战巩固记忆。
+        </Text>
+      </View>
       {museumProgress ? <MuseumProgressCard progress={museumProgress} styles={styles} /> : null}
       <Pressable style={({ pressed }) => [styles.shareButton, pressed && styles.shareButtonPressed]} onPress={onShare}>
         <Text style={styles.shareButtonText}>{shareButtonLabel}</Text>

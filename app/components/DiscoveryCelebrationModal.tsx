@@ -157,6 +157,24 @@ export function DiscoveryCelebrationModal({
           >
             <Text style={{ color: '#6D28D9', fontSize: 14, fontWeight: '900', textAlign: 'center' }}>🧠 查看知识</Text>
           </Pressable>
+          <Pressable
+            style={({ pressed }) => ({
+              alignItems: 'center',
+              backgroundColor: data.hasQuiz ? (pressed ? '#C4B5FD' : '#EDE9FE') : (pressed ? '#FDE68A' : '#FFFBEB'),
+              borderColor: data.hasQuiz ? '#A78BFA' : '#FBBF24',
+              borderRadius: 18,
+              borderWidth: 1,
+              flex: 1,
+              minWidth: 132,
+              paddingHorizontal: 12,
+              paddingVertical: 12,
+            })}
+            onPress={onClose}
+          >
+            <Text style={{ color: '#6D28D9', fontSize: 14, fontWeight: '900', textAlign: 'center' }}>
+              {data.hasQuiz ? '🎯 去挑战' : '🔎 继续发现'}
+            </Text>
+          </Pressable>
         </View>
 
         <View style={{ backgroundColor: '#FFFBEB', borderColor: '#FBBF24', borderRadius: 18, borderWidth: 1, marginTop: 14, padding: 12 }}>

@@ -123,6 +123,16 @@ export function ArtifactDetailModal({
             <Text style={styles.artifactDetailStoryTitle}>📖 藏品故事</Text>
             <Text style={styles.artifactDetailStoryText}>{details.story}</Text>
           </View>
+          <View style={{ backgroundColor: '#FFFBEB', borderColor: '#FBBF24', borderRadius: 16, borderWidth: 1, marginTop: 10, padding: 11 }}>
+            <Text style={{ color: '#92400E', fontSize: 12, fontWeight: '900', lineHeight: 18 }}>
+              读完故事后，可以继续查看知识点。
+            </Text>
+          </View>
+          <View style={{ backgroundColor: '#F5E8FF', borderColor: '#C4B5FD', borderRadius: 16, borderWidth: 1, marginTop: 10, padding: 11 }}>
+            <Text style={{ color: '#6D28D9', fontSize: 12, fontWeight: '900', lineHeight: 18 }}>
+              学完知识后，可以去完成知识挑战。
+            </Text>
+          </View>
           <View style={styles.artifactDetailInfoBox}>
             <Text style={styles.artifactDetailMeta}>基础词：{baseZh} / {baseEn}</Text>
             <Text style={styles.artifactDetailMeta}>具体识别：{specificZh} / {specificEn}</Text>

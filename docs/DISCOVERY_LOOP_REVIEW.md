@@ -508,3 +508,55 @@ MILESTONE-033 Discovery Loop Action Design
 - Dashboard 需要成为下一轮探索启动器
 
 Status: REVIEW_COMPLETED
+
+## MILESTONE-033 Planned Fixes
+
+Status: IMPLEMENTED_IN_PRODUCT_POLISH
+
+Purpose:
+
+Strengthen the Discovery -> Learning action path without adding new systems, storage, rewards, tasks, achievements, backend APIs, or Gemini changes.
+
+Planned fixes applied:
+
+1. Result Card Action Path
+
+- Added a clearer next-step area on the successful recognition result card.
+- Recommended order is now visible:
+  - 📖 读故事
+  - 🧠 学知识
+  - 🎯 去挑战
+
+2. Artifact Detail Action Path
+
+- Added guidance after the story area:
+  - 读完故事后，可以继续查看知识点。
+- Added guidance after the knowledge path:
+  - 学完知识后，可以去完成知识挑战。
+
+3. Discovery Celebration Action Path
+
+- Discovery celebration now checks whether the discovered artifact has an unlocked quiz source.
+- If quiz content exists, it shows:
+  - 🎯 去挑战
+- If quiz content does not exist, it shows:
+  - 🔎 继续发现
+
+4. Knowledge Quiz Goal Clarity
+
+- Added a goal statement:
+  - 完成挑战，让世界记忆恢复更多。
+
+5. Learning Dashboard Recommended Next Action
+
+Recommended Next Action is now biased toward the next discovery loop:
+
+- 继续发现新藏品
+- 完成未完成知识册
+- 参与已解锁挑战
+- 查看学院进度
+
+Discovery Rule compatibility:
+
+- 未发现内容仍不展示故事、知识点、百科正文或 Quiz 答案。
+- 本次只增加行动提示，不提前泄露未发现内容。

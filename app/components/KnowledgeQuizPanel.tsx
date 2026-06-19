@@ -57,6 +57,12 @@ export function KnowledgeQuizPanel({
         只挑战你已经发现的知识
       </Text>
 
+      <View style={{ backgroundColor: '#FFFBEB', borderColor: '#FBBF24', borderRadius: 18, borderWidth: 1, marginTop: 12, padding: 12 }}>
+        <Text style={{ color: '#92400E', fontSize: 13, fontWeight: '900', lineHeight: 19, textAlign: 'center' }}>
+          完成挑战，让世界记忆恢复更多。
+        </Text>
+      </View>
+
       <View style={{ backgroundColor: '#FFFFFF', borderColor: '#FBBF24', borderRadius: 20, borderWidth: 2, marginTop: 14, padding: 14 }}>
         <Text style={{ color: '#6D28D9', fontSize: 15, fontWeight: '900', lineHeight: 21 }}>挑战统计</Text>
         <Text style={{ color: '#7C3AED', fontSize: 12, fontWeight: '800', marginTop: 8 }}>

@@ -5,6 +5,8 @@ import {
   type MagicMuseum,
   type StickerCategoryKey,
 } from './artifactHelpers';
+import { knowledgeQuizData } from '../data/knowledgeQuizData';
+import { getArtifactFactKey } from './artifactFactHelpers';
 import { buildWorldExpeditionState } from './worldExpeditionHelpers';
 
 export type DiscoveryCelebrationItem = {
@@ -21,6 +23,7 @@ export type DiscoveryCelebrationData = {
   curatorBlessing: string;
   emoji: string;
   expeditionHint: string;
+  hasQuiz: boolean;
   museumTitle: string;
   objectEn: string;
   objectZh: string;
@@ -65,6 +68,18 @@ function getMuseumInfo(item: DiscoveryCelebrationItem) {
     museumTitle: artifact.museum,
     rarityCategory: getMuseumArtifactCategory(artifact),
   };
+}
+
+function hasQuizForItem(item: DiscoveryCelebrationItem) {
+  const artifact = findMuseumArtifact(item);
+
+  if (!artifact) {
+    return false;
+  }
+
+  const artifactKey = getArtifactFactKey(artifact);
+
+  return knowledgeQuizData.some((question) => question.artifactKey === artifactKey);
 }
 
 function getExpeditionHint({
@@ -121,6 +136,7 @@ export function buildDiscoveryCelebration({
       museumCollectedIds,
       museums,
     }),
+    hasQuiz: hasQuizForItem(item),
     museumTitle: museumInfo.museumTitle,
     objectEn,
     objectZh,
