@@ -174,7 +174,7 @@ export function MagicGuildPanel({
               })}
               onPress={onClose}
             >
-              <Text style={{ color: '#6D28D9', fontSize: 12, fontWeight: '900' }}>← {t('back')}</Text>
+              <Text style={{ color: '#6D28D9', fontSize: 12, fontWeight: '900' }}>← {t('return_home')}</Text>
             </Pressable>
             <Text style={{ color: '#6D28D9', fontSize: 23, fontWeight: '900', lineHeight: 30, textAlign: 'center' }}>
               {t('guild_headquarters')}

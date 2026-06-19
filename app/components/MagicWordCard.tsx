@@ -168,7 +168,7 @@ export function MagicWordCard({
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 9 }}>
           <ActionButton label="📖 读故事" onPress={onReadStory} tone="gold" />
           <ActionButton label="🧠 学知识" onPress={onLearnKnowledge} tone="purple" />
-          <ActionButton label={hasQuiz ? '🎯 挑战这个藏品' : '✨ 继续发现'} onPress={onChallenge} tone="blue" />
+          <ActionButton label={hasQuiz ? '🎯 去挑战' : '✨ 继续发现'} onPress={onChallenge} tone="blue" />
           <ActionButton label="📊 看进度" onPress={onViewProgress} tone="white" />
         </View>
       </View>

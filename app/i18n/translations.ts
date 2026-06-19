@@ -87,6 +87,10 @@ export type TranslationKey =
   | 'status'
   | 'story'
   | 'theme'
+  | 'today_guidance_title'
+  | 'today_guidance_discover'
+  | 'today_guidance_story'
+  | 'today_guidance_challenge'
   | 'today_status'
   | 'total_completion'
   | 'onboarding_collect_language_treasures'
@@ -154,7 +158,7 @@ const zh: TranslationTable = {
   guild_connected_body: '馆长等级、世界远征、主线剧情、魔法护照和世界地图都会在这里汇总显示。',
   guild_headquarters: '🏛 魔法探索者公会总部',
   guild_welcome: '欢迎回来，小馆长',
-  language: '🌐 Language',
+  language: '🌐 语言',
   learning_dashboard: '📊 学习驾驶舱',
   learning_profile: '📊 学习档案',
   league_badge: '联盟徽章',
@@ -195,6 +199,10 @@ const zh: TranslationTable = {
   status: '状态',
   story: '藏品故事',
   theme: '主题',
+  today_guidance_title: '今天可以做什么？',
+  today_guidance_discover: '发现一个新藏品',
+  today_guidance_story: '读一个故事',
+  today_guidance_challenge: '完成一次挑战',
   today_status: '今日状态',
   total_completion: '总完成度',
   onboarding_collect_language_treasures: '收集语言宝藏',
@@ -294,6 +302,10 @@ const en: TranslationTable = {
   status: 'Status',
   story: 'Artifact Story',
   theme: 'Theme',
+  today_guidance_title: 'What can we do today?',
+  today_guidance_discover: 'Discover something new',
+  today_guidance_story: 'Read a story',
+  today_guidance_challenge: 'Try one challenge',
   today_status: 'Today',
   total_completion: 'Total Progress',
   onboarding_collect_language_treasures: 'Collect language treasures',
@@ -351,6 +363,10 @@ const es: TranslationTable = {
   onboarding_collect_language_treasures: 'Colecciona tesoros de palabras',
   onboarding_discover_world: 'Descubre el mundo real',
   onboarding_unlock_stories_knowledge: 'Desbloquea historias y conocimiento',
+  today_guidance_title: '¿Qué hacemos hoy?',
+  today_guidance_discover: 'Descubre algo nuevo',
+  today_guidance_story: 'Lee una historia',
+  today_guidance_challenge: 'Haz un reto',
   unknown: 'Sigue explorando para desbloquear',
   world_map: 'Mapa mundial',
 };
@@ -397,6 +413,10 @@ const pt: TranslationTable = {
   onboarding_collect_language_treasures: 'Colecione tesouros de palavras',
   onboarding_discover_world: 'Descubra o mundo real',
   onboarding_unlock_stories_knowledge: 'Desbloqueie histórias e conhecimento',
+  today_guidance_title: 'O que fazer hoje?',
+  today_guidance_discover: 'Descobrir algo novo',
+  today_guidance_story: 'Ler uma história',
+  today_guidance_challenge: 'Fazer um desafio',
   unknown: 'Continue explorando para desbloquear',
   world_map: 'Mapa mundial',
 };
@@ -444,6 +464,10 @@ const ja: TranslationTable = {
   onboarding_collect_language_treasures: 'ことばの宝物を集める',
   onboarding_discover_world: '本物の世界を発見する',
   onboarding_unlock_stories_knowledge: '物語と知識を解き放つ',
+  today_guidance_title: '今日は何をする？',
+  today_guidance_discover: '新しい発見をする',
+  today_guidance_story: '物語を読む',
+  today_guidance_challenge: 'チャレンジする',
   unknown: '探索を続けて解放',
   world_map: '世界地図',
 };

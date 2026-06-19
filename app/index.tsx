@@ -2916,6 +2916,17 @@ export default function HomeScreen() {
             recognitionResult={recognitionResult}
           />
 
+          <View style={{ backgroundColor: '#FFFBEB', borderColor: '#FBBF24', borderRadius: 22, borderWidth: 2, marginTop: 16, padding: 14 }}>
+            <Text style={{ color: '#6D28D9', fontSize: 17, fontWeight: '900', lineHeight: 23, textAlign: 'center' }}>
+              {t('today_guidance_title')}
+            </Text>
+            <View style={{ gap: 8, marginTop: 10 }}>
+              <Text style={{ color: '#7C3AED', fontSize: 14, fontWeight: '900', lineHeight: 20 }}>1. {t('today_guidance_discover')}</Text>
+              <Text style={{ color: '#7C3AED', fontSize: 14, fontWeight: '900', lineHeight: 20 }}>2. {t('today_guidance_story')}</Text>
+              <Text style={{ color: '#7C3AED', fontSize: 14, fontWeight: '900', lineHeight: 20 }}>3. {t('today_guidance_challenge')}</Text>
+            </View>
+          </View>
+
           <View style={styles.actions}>
             <Animated.View style={{ transform: [{ scale: buttonBreathScale }] }}>
               <Pressable
@@ -4016,13 +4027,13 @@ function CollectionGallery({
         {selectedDiscoveredItem ? (
           <>
             <View style={styles.galleryStoryFirstBox}>
-              <Text style={styles.galleryStoryFirstText}>先了解这个藏品背后的故事</Text>
+              <Text style={styles.galleryStoryFirstText}>先读故事，理解它为什么有趣。</Text>
               <View style={styles.galleryStoryFirstButton}>
-                <Text style={styles.galleryStoryFirstButtonText}>📖 阅读故事</Text>
+                <Text style={styles.galleryStoryFirstButtonText}>📖 读故事</Text>
               </View>
             </View>
             <View style={styles.galleryStoryBox}>
-              <Text style={styles.galleryStoryTitle}>📖 藏品故事</Text>
+              <Text style={styles.galleryStoryTitle}>📖 故事</Text>
               <Text style={styles.galleryStoryText}>{selectedDetails.story}</Text>
             </View>
           </>
