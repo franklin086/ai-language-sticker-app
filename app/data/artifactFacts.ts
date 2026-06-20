@@ -29,6 +29,13 @@ export const artifactFacts: Record<string, ArtifactFact[]> = {
       pt: 'Uma câmera transforma um momento em foto e ajuda a lembrar viagens, família e descobertas.',
       ja: 'カメラは一瞬を写真に変え、旅や家族、特別な発見を思い出に残します。',
     },
+    {
+      zh: '早期相机需要很长曝光时间，现在轻轻一按就能记录世界。',
+      en: 'Early cameras needed long exposure times; today one tap can record the world.',
+      es: 'Las primeras cámaras necesitaban mucha exposición; hoy un toque puede registrar el mundo.',
+      pt: 'As primeiras câmeras precisavam de longa exposição; hoje um toque registra o mundo.',
+      ja: '昔のカメラは長い時間が必要でしたが、今は一回押すだけで世界を記録できます。',
+    },
   ],
   car: [
     {
@@ -36,7 +43,14 @@ export const artifactFacts: Record<string, ArtifactFact[]> = {
       en: 'Cars make travel easier and have changed city roads and the way people move around.',
       es: 'Los autos hacen más fácil viajar y han cambiado las calles y la forma de moverse.',
       pt: 'Os carros facilitam as viagens e mudaram as ruas e a forma como as pessoas se deslocam.',
-      ja: '自動車は移動を便利にし、街の道路や旅の形を変えました。',
+      ja: '車は移動を便利にし、街の道路や旅の形を変えました。',
+    },
+    {
+      zh: '现代汽车由许多零件组成，发动机、电池、车轮和方向盘会一起工作。',
+      en: 'Modern cars have many parts, with engines, batteries, wheels, and steering working together.',
+      es: 'Los autos modernos tienen muchas piezas que trabajan juntas, como motor, batería y ruedas.',
+      pt: 'Carros modernos têm muitas peças trabalhando juntas, como motor, bateria e rodas.',
+      ja: '現代の車は多くの部品でできていて、エンジンや電池、車輪が一緒に働きます。',
     },
   ],
   cat: [
@@ -119,6 +133,13 @@ export const artifactFacts: Record<string, ArtifactFact[]> = {
       pt: 'A Mona Lisa é famosa por seu sorriso, que pode parecer diferente de vários ângulos.',
       ja: 'モナ・リザは微笑みで有名で、見る角度によって印象が変わります。',
     },
+    {
+      zh: '这幅画收藏在法国卢浮宫，是世界上最受关注的艺术作品之一。',
+      en: 'This painting is kept in the Louvre in France and is one of the world’s most watched artworks.',
+      es: 'Esta pintura está en el Louvre de Francia y es una de las obras más observadas del mundo.',
+      pt: 'Esta pintura fica no Louvre, na França, e é uma das obras mais observadas do mundo.',
+      ja: 'この絵はフランスのルーブル美術館にあり、世界でとても注目される作品です。',
+    },
   ],
   panda: [
     {
@@ -127,6 +148,13 @@ export const artifactFacts: Record<string, ArtifactFact[]> = {
       es: 'Los pandas comen mucho bambú cada día y son uno de los animales más famosos de China.',
       pt: 'Os pandas comem muito bambu todos os dias e são um dos animais mais famosos da China.',
       ja: 'パンダは毎日たくさんの竹を食べる、中国を代表する動物です。',
+    },
+    {
+      zh: '熊猫黑白相间的身体像自然里的小徽章，也提醒我们保护动物朋友。',
+      en: 'A panda’s black-and-white body is like a nature badge that reminds us to protect animal friends.',
+      es: 'El cuerpo blanco y negro del panda parece una insignia natural que recuerda proteger animales.',
+      pt: 'O corpo preto e branco do panda parece um emblema da natureza que lembra proteger animais.',
+      ja: '白黒の体は自然のバッジのようで、動物を守る大切さを教えてくれます。',
     },
   ],
   phone: [
@@ -145,6 +173,13 @@ export const artifactFacts: Record<string, ArtifactFact[]> = {
       es: 'Los cohetes usan gran empuje para subir y pueden llevar satélites y astronautas al espacio.',
       pt: 'Os foguetes usam grande impulso para subir e podem levar satélites e astronautas ao espaço.',
       ja: 'ロケットは強い推進力で空へ飛び、人工衛星や宇宙飛行士を宇宙へ運びます。',
+    },
+    {
+      zh: '火箭升空时会分阶段工作，像一步一步爬上太空的巨大阶梯。',
+      en: 'A rocket can work in stages, like a giant ladder climbing step by step into space.',
+      es: 'Un cohete puede trabajar por etapas, como una gran escalera que sube al espacio.',
+      pt: 'Um foguete trabalha em etapas, como uma grande escada subindo ao espaço.',
+      ja: 'ロケットは段階ごとに働き、大きな階段のように宇宙へ上っていきます。',
     },
   ],
   'rosetta-stone': [
