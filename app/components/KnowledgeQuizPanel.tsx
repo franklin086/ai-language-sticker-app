@@ -137,9 +137,39 @@ export function KnowledgeQuizPanel({
         </>
       ) : (
         <View style={{ backgroundColor: '#FFF7ED', borderColor: '#FBBF24', borderRadius: 18, borderWidth: 1, marginTop: 14, padding: 14 }}>
-          <Text style={{ color: '#6D28D9', fontSize: 14, fontWeight: '900', textAlign: 'center' }}>
+          <Text style={{ color: '#6D28D9', fontSize: 14, fontWeight: '900', lineHeight: 20, textAlign: 'center' }}>
             继续发现，解锁挑战
           </Text>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 12 }}>
+            {onOpenLearningDashboard ? (
+              <Pressable
+                style={({ pressed }) => ({
+                  backgroundColor: pressed ? '#7C3AED' : '#8B5CF6',
+                  borderRadius: 18,
+                  flex: 1,
+                  minWidth: 120,
+                  padding: 12,
+                })}
+                onPress={onOpenLearningDashboard}
+              >
+                <Text style={{ color: '#FFFFFF', fontSize: 14, fontWeight: '900', lineHeight: 20, textAlign: 'center' }}>📊 看进度</Text>
+              </Pressable>
+            ) : null}
+            <Pressable
+              style={({ pressed }) => ({
+                backgroundColor: pressed ? '#FDE68A' : '#FFF7D6',
+                borderColor: '#FBBF24',
+                borderRadius: 18,
+                borderWidth: 1,
+                flex: 1,
+                minWidth: 120,
+                padding: 12,
+              })}
+              onPress={onBack}
+            >
+              <Text style={{ color: '#6D28D9', fontSize: 14, fontWeight: '900', lineHeight: 20, textAlign: 'center' }}>✨ 继续发现</Text>
+            </Pressable>
+          </View>
         </View>
       )}
     </View>

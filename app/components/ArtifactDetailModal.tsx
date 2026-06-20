@@ -53,10 +53,12 @@ function DetailAction({
   label,
   onPress,
   tone,
+  variant = 'secondary',
 }: {
   label: string;
   onPress: () => void;
   tone: 'gold' | 'purple' | 'blue';
+  variant?: 'primary' | 'secondary';
 }) {
   const colors = {
     blue: { background: '#EDE9FE', border: '#A78BFA', pressed: '#DDD6FE', text: '#5B21B6' },
@@ -71,15 +73,16 @@ function DetailAction({
         backgroundColor: pressed ? colors.pressed : colors.background,
         borderColor: colors.border,
         borderRadius: 16,
-        borderWidth: 1,
+        borderWidth: variant === 'primary' ? 2 : 1,
         flex: 1,
+        flexBasis: variant === 'primary' ? '100%' : undefined,
         minWidth: 120,
-        paddingHorizontal: 10,
-        paddingVertical: 10,
+        paddingHorizontal: variant === 'primary' ? 12 : 10,
+        paddingVertical: variant === 'primary' ? 12 : 10,
       })}
       onPress={onPress}
     >
-      <Text style={{ color: colors.text, fontSize: 12, fontWeight: '900', lineHeight: 17, textAlign: 'center' }}>{label}</Text>
+      <Text style={{ color: colors.text, fontSize: variant === 'primary' ? 14 : 12, fontWeight: '900', lineHeight: variant === 'primary' ? 20 : 17, textAlign: 'center' }}>{label}</Text>
     </Pressable>
   );
 }
@@ -178,7 +181,7 @@ export function ArtifactDetailModal({
             </Text>
           </View>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 }}>
-            <DetailAction label="🧠 学知识" onPress={onLearnKnowledge} tone="purple" />
+            <DetailAction label="🧠 学知识" onPress={onLearnKnowledge} tone="purple" variant="primary" />
             <DetailAction label={hasQuiz ? '🎯 去挑战' : '✨ 继续发现'} onPress={hasQuiz ? onChallenge : onContinueDiscover} tone="blue" />
             <DetailAction label="📊 看进度" onPress={onViewProgress} tone="gold" />
           </View>

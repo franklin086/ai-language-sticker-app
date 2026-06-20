@@ -1524,6 +1524,7 @@ export default function HomeScreen() {
   const [currentDetailItem, setCurrentDetailItem] = useState<CollectionItem | null>(null);
   const [magicGuildInitialView, setMagicGuildInitialView] = useState<GuildView | 'home'>('home');
   const [magicGuildInitialCollectionsBookMode, setMagicGuildInitialCollectionsBookMode] = useState<'book' | 'encyclopedia'>('book');
+  const [magicGuildEncyclopediaArtifactId, setMagicGuildEncyclopediaArtifactId] = useState<string | null>(null);
   const [magicGuildInitialKnowledgeMode, setMagicGuildInitialKnowledgeMode] = useState<'collections' | 'quiz'>('collections');
   const [magicGuildQuizArtifactKey, setMagicGuildQuizArtifactKey] = useState<string | null>(null);
   const [showMagicGuild, setShowMagicGuild] = useState(false);
@@ -2540,9 +2541,11 @@ export default function HomeScreen() {
     knowledgeMode: 'collections' | 'quiz' = 'collections',
     quizArtifactKey: string | null = null,
     collectionsBookMode: 'book' | 'encyclopedia' = 'book',
+    encyclopediaArtifactId: string | null = null,
   ) => {
     setMagicGuildInitialView(view);
     setMagicGuildInitialCollectionsBookMode(collectionsBookMode);
+    setMagicGuildEncyclopediaArtifactId(encyclopediaArtifactId);
     setMagicGuildInitialKnowledgeMode(knowledgeMode);
     setMagicGuildQuizArtifactKey(quizArtifactKey);
     setShowMagicGuild(true);
@@ -2553,6 +2556,7 @@ export default function HomeScreen() {
     setMagicGuildInitialView('home');
     setMagicGuildInitialKnowledgeMode('collections');
     setMagicGuildInitialCollectionsBookMode('book');
+    setMagicGuildEncyclopediaArtifactId(null);
     setMagicGuildQuizArtifactKey(null);
   };
 
@@ -2597,7 +2601,15 @@ export default function HomeScreen() {
   const openResultEncyclopedia = () => {
     closeDiscoveryCelebration();
     setCurrentDetailItem(null);
-    openMagicGuildView('collectionsBook', 'collections', null, 'encyclopedia');
+
+    if (!recognitionResult) {
+      openMagicGuildView('collectionsBook', 'collections', null, 'encyclopedia');
+      return;
+    }
+
+    const artifact = findMuseumArtifact(recognitionResult);
+    const artifactKey = artifact ? getArtifactFactKey(artifact) : null;
+    openMagicGuildView('collectionsBook', 'collections', null, 'encyclopedia', artifactKey);
   };
 
   const continueDiscover = () => {
@@ -2987,6 +2999,7 @@ export default function HomeScreen() {
           museumCollectedIds={museumCollectedIds}
           museums={MAGIC_MUSEUMS_WITH_ARTIFACTS}
           initialCollectionsBookMode={magicGuildInitialCollectionsBookMode}
+          initialEncyclopediaArtifactId={magicGuildEncyclopediaArtifactId}
           initialKnowledgeMode={magicGuildInitialKnowledgeMode}
           initialQuizArtifactKey={magicGuildQuizArtifactKey}
           initialView={magicGuildInitialView}

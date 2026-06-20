@@ -27,6 +27,7 @@ export function MagicGuildPanel({
   onClose,
   initialCollectionsBookMode = 'book',
   initialKnowledgeMode = 'collections',
+  initialEncyclopediaArtifactId = null,
   initialQuizArtifactKey = null,
   initialView = 'home',
   totalArtifactCount,
@@ -34,11 +35,13 @@ export function MagicGuildPanel({
   onClose: () => void;
   initialCollectionsBookMode?: 'book' | 'encyclopedia';
   initialKnowledgeMode?: 'collections' | 'quiz';
+  initialEncyclopediaArtifactId?: string | null;
   initialQuizArtifactKey?: string | null;
   initialView?: MagicGuildView;
 }) {
   const [guildView, setGuildView] = useState<MagicGuildView>(initialView);
   const [collectionsBookMode, setCollectionsBookMode] = useState<'book' | 'encyclopedia'>(initialCollectionsBookMode);
+  const [encyclopediaArtifactId, setEncyclopediaArtifactId] = useState<string | null>(initialEncyclopediaArtifactId);
   const [knowledgeMode, setKnowledgeMode] = useState<'collections' | 'quiz'>(initialKnowledgeMode);
   const [quizArtifactKey, setQuizArtifactKey] = useState<string | null>(initialQuizArtifactKey);
   const { t } = useLanguage();
@@ -48,13 +51,15 @@ export function MagicGuildPanel({
     setGuildView(initialView);
     setCollectionsBookMode(initialCollectionsBookMode);
     setKnowledgeMode(initialKnowledgeMode);
+    setEncyclopediaArtifactId(initialEncyclopediaArtifactId);
     setQuizArtifactKey(initialQuizArtifactKey);
-  }, [initialCollectionsBookMode, initialKnowledgeMode, initialQuizArtifactKey, initialView]);
+  }, [initialCollectionsBookMode, initialEncyclopediaArtifactId, initialKnowledgeMode, initialQuizArtifactKey, initialView]);
 
   function openGuildView(view: MagicGuildView, nextKnowledgeMode: 'collections' | 'quiz' = 'collections') {
     setGuildView(view);
     setCollectionsBookMode('book');
     setKnowledgeMode(nextKnowledgeMode);
+    setEncyclopediaArtifactId(null);
     if (view !== 'knowledgeCollections' || nextKnowledgeMode !== 'quiz') {
       setQuizArtifactKey(null);
     }
@@ -121,6 +126,7 @@ export function MagicGuildPanel({
             collection={collection}
             museumCollectedIds={museumCollectedIds}
             initialShowEncyclopedia={collectionsBookMode === 'encyclopedia'}
+            preferredEncyclopediaArtifactId={encyclopediaArtifactId}
             onBack={() => {
               setCollectionsBookMode('book');
               setGuildView('home');

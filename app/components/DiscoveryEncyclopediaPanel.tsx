@@ -35,14 +35,18 @@ export function DiscoveryEncyclopediaPanel({
   collection,
   museumCollectedIds,
   onBack,
+  preferredArtifactId = null,
 }: Parameters<typeof useDiscoveryEncyclopedia>[0] & {
   onBack: () => void;
+  preferredArtifactId?: string | null;
 }) {
-  const encyclopedia = useDiscoveryEncyclopedia({ collection, museumCollectedIds });
+  const encyclopedia = useDiscoveryEncyclopedia({ collection, museumCollectedIds, preferredArtifactId });
   const { getArtifactDescription, getArtifactName } = useContentLanguage();
   const { currentLanguage, t } = useLanguage();
   const selectedEntry = encyclopedia.selectedEntry;
   const canRevealSelectedEntry = selectedEntry ? canRevealArtifactLearningContent(selectedEntry.discovered) : false;
+  const selectedStory = selectedEntry?.artifact.story?.trim() || '更多资料正在完善中';
+  const selectedFact = selectedEntry?.fact?.trim() || '更多资料正在完善中';
 
   useEffect(() => {
     if (!selectedEntry) {
@@ -191,7 +195,7 @@ export function DiscoveryEncyclopediaPanel({
               </View>
 
               <EncyclopediaSection title={`📖 ${t('story')}`}>
-                <Text style={{ color: '#7C3AED', fontSize: 12, fontWeight: '800', lineHeight: 18 }}>{selectedEntry.artifact.story}</Text>
+                <Text style={{ color: '#7C3AED', fontSize: 12, fontWeight: '800', lineHeight: 18 }}>{selectedStory}</Text>
               </EncyclopediaSection>
 
               <EncyclopediaSection title={`🏛 ${t('collection')}`}>
@@ -213,7 +217,7 @@ export function DiscoveryEncyclopediaPanel({
               />
 
               <EncyclopediaSection title={`🔍 ${t('you_know')}`}>
-                <Text style={{ color: '#7C3AED', fontSize: 12, fontWeight: '800', lineHeight: 18 }}>{selectedEntry.fact}</Text>
+                <Text style={{ color: '#7C3AED', fontSize: 12, fontWeight: '800', lineHeight: 18 }}>{selectedFact}</Text>
               </EncyclopediaSection>
             </>
           ) : (

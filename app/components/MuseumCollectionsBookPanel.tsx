@@ -11,9 +11,11 @@ export function MuseumCollectionsBookPanel({
   museumCollectedIds,
   onBack,
   initialShowEncyclopedia = false,
+  preferredEncyclopediaArtifactId = null,
 }: Parameters<typeof useMuseumCollectionsBook>[0] & {
   onBack: () => void;
   initialShowEncyclopedia?: boolean;
+  preferredEncyclopediaArtifactId?: string | null;
 }) {
   const [showEncyclopedia, setShowEncyclopedia] = useState(initialShowEncyclopedia);
   const { t } = useLanguage();
@@ -29,6 +31,7 @@ export function MuseumCollectionsBookPanel({
         collection={collection}
         museumCollectedIds={museumCollectedIds}
         onBack={() => setShowEncyclopedia(false)}
+        preferredArtifactId={preferredEncyclopediaArtifactId}
       />
     );
   }

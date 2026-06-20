@@ -50,10 +50,12 @@ function ActionButton({
   label,
   onPress,
   tone,
+  variant = 'secondary',
 }: {
   label: string;
   onPress: () => void;
   tone: 'gold' | 'purple' | 'blue' | 'white';
+  variant?: 'primary' | 'secondary';
 }) {
   const colors = {
     blue: { background: '#EDE9FE', border: '#A78BFA', pressed: '#DDD6FE', text: '#5B21B6' },
@@ -69,14 +71,15 @@ function ActionButton({
         backgroundColor: pressed ? colors.pressed : colors.background,
         borderColor: colors.border,
         borderRadius: 999,
-        borderWidth: 1,
+        borderWidth: variant === 'primary' ? 2 : 1,
+        flexBasis: variant === 'primary' ? '100%' : undefined,
         flexGrow: 1,
-        paddingHorizontal: 11,
-        paddingVertical: 9,
+        paddingHorizontal: variant === 'primary' ? 14 : 11,
+        paddingVertical: variant === 'primary' ? 12 : 9,
       })}
       onPress={onPress}
     >
-      <Text style={{ color: colors.text, fontSize: 12, fontWeight: '900', lineHeight: 17, textAlign: 'center' }}>
+      <Text style={{ color: colors.text, fontSize: variant === 'primary' ? 14 : 12, fontWeight: '900', lineHeight: variant === 'primary' ? 20 : 17, textAlign: 'center' }}>
         {label}
       </Text>
     </Pressable>
@@ -166,7 +169,7 @@ export function MagicWordCard({
       <View style={{ backgroundColor: '#FFFBEB', borderColor: '#FBBF24', borderRadius: 18, borderWidth: 1, marginTop: 12, padding: 12 }}>
         <Text style={{ color: '#92400E', fontSize: 13, fontWeight: '900' }}>下一步</Text>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 9 }}>
-          <ActionButton label="📖 读故事" onPress={onReadStory} tone="gold" />
+          <ActionButton label="📖 读故事" onPress={onReadStory} tone="gold" variant="primary" />
           <ActionButton label="🧠 学知识" onPress={onLearnKnowledge} tone="purple" />
           <ActionButton label={hasQuiz ? '🎯 去挑战' : '✨ 继续发现'} onPress={onChallenge} tone="blue" />
           <ActionButton label="📊 看进度" onPress={onViewProgress} tone="white" />

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   buildDiscoveryEncyclopediaState,
   type EncyclopediaFilterKey,
@@ -8,13 +8,21 @@ import {
 export function useDiscoveryEncyclopedia({
   collection,
   museumCollectedIds,
+  preferredArtifactId = null,
 }: {
   collection: Parameters<typeof buildDiscoveryEncyclopediaState>[0]['collection'];
   museumCollectedIds: string[];
+  preferredArtifactId?: string | null;
 }) {
   const [filterKey, setFilterKey] = useState<EncyclopediaFilterKey>('all');
   const [sortKey, setSortKey] = useState<EncyclopediaSortKey>('latest');
   const [selectedArtifactId, setSelectedArtifactId] = useState<string | null>(null);
+  useEffect(() => {
+    if (preferredArtifactId) {
+      setSelectedArtifactId(preferredArtifactId);
+    }
+  }, [preferredArtifactId]);
+
   const encyclopediaState = useMemo(
     () =>
       buildDiscoveryEncyclopediaState({
