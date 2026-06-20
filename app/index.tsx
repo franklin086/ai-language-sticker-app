@@ -240,7 +240,7 @@ const COPY = {
   chestOpened: '✨ 宝箱开启！',
   chestReward: '🎉 获得神秘奖励！',
   levelUp: '✨ LEVEL UP!',
-  confidence: 'Confidence',
+  confidence: '可信度',
   camera: '📷 拍照识别',
   album: '🖼️ 从相册选择',
 };
@@ -2810,7 +2810,7 @@ export default function HomeScreen() {
                   onChallenge={openResultChallenge}
                   onLearnKnowledge={openResultKnowledge}
                   onReadStory={openResultStory}
-                  onShare={() => openShareCard('AI Magic Word Camera', 'I found a new magic artifact!', recognitionResult)}
+                  onShare={() => openShareCard('AI魔法识字相机', '我发现了一个新魔法藏品！', recognitionResult)}
                   onSpeakChinese={() => speakWord(getDisplayZh(recognitionResult), 'zh')}
                   onSpeakEnglish={() => speakWord(getDisplayEn(recognitionResult), 'en')}
                   onViewProgress={openLearningDashboard}
@@ -2920,7 +2920,7 @@ export default function HomeScreen() {
             unlockedAchievementIds={unlockedAchievementIds}
             nextDailyDiscoveryMilestone={nextMilestone}
             onClearLatestDailyDiscoveryMilestone={clearLatestDailyDiscoveryMilestone}
-            onShareArtifact={(item) => openShareCard('AI Magic Encyclopedia', 'I found a new magic artifact!', item)}
+            onShareArtifact={(item) => openShareCard('AI魔法识字相机', '我发现了一个新魔法藏品！', item)}
             onToggleArtifactStory={toggleArtifactStory}
             onSpeakArtifactChinese={(text) => speakWord(text, 'zh')}
             onSpeakArtifactEnglish={(text) => speakWord(text, 'en')}
@@ -3029,7 +3029,7 @@ export default function HomeScreen() {
           onContinueDiscover={continueDiscover}
           onLearnKnowledge={openResultKnowledge}
           onOpenEncyclopedia={openResultEncyclopedia}
-          onShare={() => openShareCard('AI Magic Encyclopedia', 'I found a new magic artifact!', currentDetailItem)}
+          onShare={() => openShareCard('AI魔法识字相机', '我发现了一个新魔法藏品！', currentDetailItem)}
           onSpeakChinese={() => speakWord(currentDetailItem.specific_zh?.trim() || currentDetailItem.object_zh, 'zh')}
           onSpeakEnglish={() => speakWord(currentDetailItem.specific_en?.trim() || currentDetailItem.object_en, 'en')}
           onViewProgress={openLearningDashboard}

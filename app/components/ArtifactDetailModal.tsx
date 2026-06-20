@@ -145,13 +145,13 @@ export function ArtifactDetailModal({
         <View style={[styles.artifactDetailCard, rarityVisual.card]}>
           {rarityCategory === 'legendary' ? (
             <View style={styles.legendaryBanner}>
-              <Text style={styles.legendaryBannerTitle}>🌈 LEGENDARY!</Text>
+              <Text style={styles.legendaryBannerTitle}>🌈 传奇发现！</Text>
               <Text style={styles.legendaryBannerText}>✨ 传奇发现！</Text>
             </View>
           ) : null}
           <Text style={[styles.artifactDetailSparkle, styles.artifactDetailSparkleOne]}>✨</Text>
           <Text style={[styles.artifactDetailSparkle, styles.artifactDetailSparkleTwo]}>🌟</Text>
-          <Text style={styles.artifactDetailKicker}>Magic Encyclopedia</Text>
+          <Text style={styles.artifactDetailKicker}>魔法百科</Text>
           <View style={[styles.artifactDetailEmojiStage, rarityVisual.emojiStage]}>
             {rarityCategory === 'legendary' ? (
               <Text style={[styles.raritySparkle, styles.raritySparkleOne]}>✨</Text>
@@ -208,7 +208,7 @@ export function ArtifactDetailModal({
             <Text style={styles.artifactDetailMeta}>所属博物馆：{museum.title}</Text>
             <Text style={styles.artifactDetailMeta}>稀有度：{details.rarityLabel}</Text>
             <Text style={styles.artifactDetailMeta}>首次发现：{formatDiscoveredAt(item.discoveredAt)}</Text>
-            <Text style={styles.artifactDetailMeta}>Confidence：{formatConfidence(item.confidence)}</Text>
+            <Text style={styles.artifactDetailMeta}>可信度：{formatConfidence(item.confidence)}</Text>
           </View>
           <View style={styles.artifactDetailSpeechRow}>
             <SpeechButton

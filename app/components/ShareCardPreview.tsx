@@ -44,7 +44,7 @@ export function ShareCardPreview({
         <View style={[styles.sharePreviewCard, rarityVisual.card]}>
           {rarityCategory === 'legendary' ? (
             <View style={styles.legendaryBanner}>
-              <Text style={styles.legendaryBannerTitle}>🌈 LEGENDARY!</Text>
+              <Text style={styles.legendaryBannerTitle}>🌈 传奇发现！</Text>
               <Text style={styles.legendaryBannerText}>✨ 传奇发现！</Text>
             </View>
           ) : null}

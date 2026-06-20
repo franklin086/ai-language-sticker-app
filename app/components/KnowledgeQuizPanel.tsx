@@ -167,7 +167,7 @@ export function KnowledgeQuizPanel({
               })}
               onPress={onBack}
             >
-              <Text style={{ color: '#6D28D9', fontSize: 14, fontWeight: '900', lineHeight: 20, textAlign: 'center' }}>✨ 继续发现</Text>
+              <Text style={{ color: '#6D28D9', fontSize: 14, fontWeight: '900', lineHeight: 20, textAlign: 'center' }}>← 返回知识册</Text>
             </Pressable>
           </View>
         </View>
