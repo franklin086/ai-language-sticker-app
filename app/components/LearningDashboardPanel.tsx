@@ -28,6 +28,7 @@ const copy = {
     knowledgeMastery: '知识掌握度',
     knowledgePoints: '总知识点',
     nextAction: '下一步推荐',
+    todayRecommendation: '今天推荐',
     nextGoal: '下一目标',
     recentActivity: '最近行动',
     snapshot: '今日学习快照',
@@ -46,6 +47,7 @@ const copy = {
     knowledgeMastery: 'Knowledge Mastery',
     knowledgePoints: 'Knowledge Points',
     nextAction: 'Recommended Next Action',
+    todayRecommendation: 'Today Recommendation',
     nextGoal: 'Next Goal',
     recentActivity: 'Recent Activity',
     snapshot: 'Dashboard Snapshot',
@@ -64,6 +66,7 @@ const copy = {
     knowledgeMastery: 'Dominio del conocimiento',
     knowledgePoints: 'Puntos de conocimiento',
     nextAction: 'Siguiente acción recomendada',
+    todayRecommendation: 'Recomendación de hoy',
     nextGoal: 'Siguiente objetivo',
     recentActivity: 'Actividad reciente',
     snapshot: 'Resumen del panel',
@@ -82,6 +85,7 @@ const copy = {
     knowledgeMastery: 'Domínio do conhecimento',
     knowledgePoints: 'Pontos de conhecimento',
     nextAction: 'Próxima ação recomendada',
+    todayRecommendation: 'Recomendação de hoje',
     nextGoal: 'Próxima meta',
     recentActivity: 'Atividade recente',
     snapshot: 'Resumo do painel',
@@ -100,6 +104,7 @@ const copy = {
     knowledgeMastery: '知識習熟度',
     knowledgePoints: '知識ポイント',
     nextAction: 'おすすめの次の行動',
+    todayRecommendation: '今日のおすすめ',
     nextGoal: '次の目標',
     recentActivity: '最近の活動',
     snapshot: 'ダッシュボード概要',
@@ -165,6 +170,45 @@ export function LearningDashboardPanel({
 
       <View
         style={{
+          backgroundColor: '#8B5CF6',
+          borderColor: '#FBBF24',
+          borderRadius: 22,
+          borderWidth: 2,
+          marginTop: 14,
+          padding: 16,
+          shadowColor: '#7C3AED',
+          shadowOpacity: 0.18,
+          shadowRadius: 14,
+        }}
+      >
+        <Text style={{ color: '#FEF3C7', fontSize: 14, fontWeight: '900' }}>{labels.todayRecommendation}</Text>
+        <Text style={{ color: '#FFFFFF', fontSize: 23, fontWeight: '900', lineHeight: 30, marginTop: 6 }}>
+          {recommendedNextAction.emoji} {recommendedNextAction.title}
+        </Text>
+        <Text style={{ color: '#F5E8FF', fontSize: 12, fontWeight: '800', lineHeight: 18, marginTop: 6 }}>
+          {recommendedNextAction.detail}
+        </Text>
+        {onRecommendedAction ? (
+          <Pressable
+            style={({ pressed }) => ({
+              alignItems: 'center',
+              backgroundColor: pressed ? '#FDE68A' : '#FBBF24',
+              borderRadius: 16,
+              marginTop: 12,
+              paddingHorizontal: 14,
+              paddingVertical: 11,
+            })}
+            onPress={() => onRecommendedAction(recommendedNextAction.id)}
+          >
+            <Text style={{ color: '#5B21B6', fontSize: 14, fontWeight: '900', textAlign: 'center' }}>
+              {getRecommendedActionButtonLabel(recommendedNextAction.id)}
+            </Text>
+          </Pressable>
+        ) : null}
+      </View>
+
+      <View
+        style={{
           backgroundColor: '#FFFBEB',
           borderColor: '#FBBF24',
           borderRadius: 22,
@@ -183,41 +227,6 @@ export function LearningDashboardPanel({
         </View>
       </View>
 
-      <View
-        style={{
-          backgroundColor: '#FFFFFF',
-          borderColor: '#C4B5FD',
-          borderRadius: 20,
-          borderWidth: 1,
-          marginTop: 12,
-          padding: 14,
-        }}
-      >
-        <Text style={{ color: '#6D28D9', fontSize: 16, fontWeight: '900' }}>{labels.nextAction}</Text>
-        <Text style={{ color: '#5B21B6', fontSize: 22, fontWeight: '900', marginTop: 8 }}>
-          {recommendedNextAction.emoji} {recommendedNextAction.title}
-        </Text>
-        <Text style={{ color: '#7C3AED', fontSize: 12, fontWeight: '800', lineHeight: 18, marginTop: 6 }}>
-          {recommendedNextAction.detail}
-        </Text>
-        {onRecommendedAction ? (
-          <Pressable
-            style={({ pressed }) => ({
-              alignItems: 'center',
-              backgroundColor: pressed ? '#7C3AED' : '#8B5CF6',
-              borderRadius: 16,
-              marginTop: 12,
-              paddingHorizontal: 14,
-              paddingVertical: 11,
-            })}
-            onPress={() => onRecommendedAction(recommendedNextAction.id)}
-          >
-            <Text style={{ color: '#FFFFFF', fontSize: 13, fontWeight: '900', textAlign: 'center' }}>
-              {getRecommendedActionButtonLabel(recommendedNextAction.id)}
-            </Text>
-          </Pressable>
-        ) : null}
-      </View>
 
       <View
         style={{

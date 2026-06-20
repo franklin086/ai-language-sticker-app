@@ -1523,6 +1523,7 @@ export default function HomeScreen() {
   const [shareCard, setShareCard] = useState<ShareCardData | null>(null);
   const [currentDetailItem, setCurrentDetailItem] = useState<CollectionItem | null>(null);
   const [magicGuildInitialView, setMagicGuildInitialView] = useState<GuildView | 'home'>('home');
+  const [magicGuildInitialCollectionsBookMode, setMagicGuildInitialCollectionsBookMode] = useState<'book' | 'encyclopedia'>('book');
   const [magicGuildInitialKnowledgeMode, setMagicGuildInitialKnowledgeMode] = useState<'collections' | 'quiz'>('collections');
   const [magicGuildQuizArtifactKey, setMagicGuildQuizArtifactKey] = useState<string | null>(null);
   const [showMagicGuild, setShowMagicGuild] = useState(false);
@@ -2538,8 +2539,10 @@ export default function HomeScreen() {
     view: GuildView | 'home',
     knowledgeMode: 'collections' | 'quiz' = 'collections',
     quizArtifactKey: string | null = null,
+    collectionsBookMode: 'book' | 'encyclopedia' = 'book',
   ) => {
     setMagicGuildInitialView(view);
+    setMagicGuildInitialCollectionsBookMode(collectionsBookMode);
     setMagicGuildInitialKnowledgeMode(knowledgeMode);
     setMagicGuildQuizArtifactKey(quizArtifactKey);
     setShowMagicGuild(true);
@@ -2549,6 +2552,7 @@ export default function HomeScreen() {
     setShowMagicGuild(false);
     setMagicGuildInitialView('home');
     setMagicGuildInitialKnowledgeMode('collections');
+    setMagicGuildInitialCollectionsBookMode('book');
     setMagicGuildQuizArtifactKey(null);
   };
 
@@ -2588,6 +2592,12 @@ export default function HomeScreen() {
     closeDiscoveryCelebration();
     setCurrentDetailItem(null);
     openMagicGuildView('learningDashboard');
+  };
+
+  const openResultEncyclopedia = () => {
+    closeDiscoveryCelebration();
+    setCurrentDetailItem(null);
+    openMagicGuildView('collectionsBook', 'collections', null, 'encyclopedia');
   };
 
   const continueDiscover = () => {
@@ -2976,6 +2986,7 @@ export default function HomeScreen() {
           collection={collection}
           museumCollectedIds={museumCollectedIds}
           museums={MAGIC_MUSEUMS_WITH_ARTIFACTS}
+          initialCollectionsBookMode={magicGuildInitialCollectionsBookMode}
           initialKnowledgeMode={magicGuildInitialKnowledgeMode}
           initialQuizArtifactKey={magicGuildQuizArtifactKey}
           initialView={magicGuildInitialView}
@@ -3004,6 +3015,7 @@ export default function HomeScreen() {
           onClose={() => setCurrentDetailItem(null)}
           onContinueDiscover={continueDiscover}
           onLearnKnowledge={openResultKnowledge}
+          onOpenEncyclopedia={openResultEncyclopedia}
           onShare={() => openShareCard('AI Magic Encyclopedia', 'I found a new magic artifact!', currentDetailItem)}
           onSpeakChinese={() => speakWord(currentDetailItem.specific_zh?.trim() || currentDetailItem.object_zh, 'zh')}
           onSpeakEnglish={() => speakWord(currentDetailItem.specific_en?.trim() || currentDetailItem.object_en, 'en')}

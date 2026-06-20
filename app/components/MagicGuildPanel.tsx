@@ -25,17 +25,20 @@ export function MagicGuildPanel({
   museumCollectedIds,
   museums,
   onClose,
+  initialCollectionsBookMode = 'book',
   initialKnowledgeMode = 'collections',
   initialQuizArtifactKey = null,
   initialView = 'home',
   totalArtifactCount,
 }: MagicGuildInput & {
   onClose: () => void;
+  initialCollectionsBookMode?: 'book' | 'encyclopedia';
   initialKnowledgeMode?: 'collections' | 'quiz';
   initialQuizArtifactKey?: string | null;
   initialView?: MagicGuildView;
 }) {
   const [guildView, setGuildView] = useState<MagicGuildView>(initialView);
+  const [collectionsBookMode, setCollectionsBookMode] = useState<'book' | 'encyclopedia'>(initialCollectionsBookMode);
   const [knowledgeMode, setKnowledgeMode] = useState<'collections' | 'quiz'>(initialKnowledgeMode);
   const [quizArtifactKey, setQuizArtifactKey] = useState<string | null>(initialQuizArtifactKey);
   const { t } = useLanguage();
@@ -43,12 +46,14 @@ export function MagicGuildPanel({
 
   useEffect(() => {
     setGuildView(initialView);
+    setCollectionsBookMode(initialCollectionsBookMode);
     setKnowledgeMode(initialKnowledgeMode);
     setQuizArtifactKey(initialQuizArtifactKey);
-  }, [initialKnowledgeMode, initialQuizArtifactKey, initialView]);
+  }, [initialCollectionsBookMode, initialKnowledgeMode, initialQuizArtifactKey, initialView]);
 
   function openGuildView(view: MagicGuildView, nextKnowledgeMode: 'collections' | 'quiz' = 'collections') {
     setGuildView(view);
+    setCollectionsBookMode('book');
     setKnowledgeMode(nextKnowledgeMode);
     if (view !== 'knowledgeCollections' || nextKnowledgeMode !== 'quiz') {
       setQuizArtifactKey(null);
@@ -115,13 +120,20 @@ export function MagicGuildPanel({
           <MuseumCollectionsBookPanel
             collection={collection}
             museumCollectedIds={museumCollectedIds}
-            onBack={() => setGuildView('home')}
+            initialShowEncyclopedia={collectionsBookMode === 'encyclopedia'}
+            onBack={() => {
+              setCollectionsBookMode('book');
+              setGuildView('home');
+            }}
           />
         ) : guildView === 'collectionSets' ? (
           <CollectionSetPanel
             collection={collection}
             museumCollectedIds={museumCollectedIds}
-            onBack={() => setGuildView('home')}
+            onBack={() => {
+              setCollectionsBookMode('book');
+              setGuildView('home');
+            }}
           />
         ) : guildView === 'knowledgeCollections' ? (
           <KnowledgeCollectionsPanel
@@ -140,7 +152,10 @@ export function MagicGuildPanel({
           <ExplorerAcademyPanel
             collection={collection}
             museumCollectedIds={museumCollectedIds}
-            onBack={() => setGuildView('home')}
+            onBack={() => {
+              setCollectionsBookMode('book');
+              setGuildView('home');
+            }}
           />
         ) : guildView === 'learningProfile' ? (
           <LearningProfilePanel
@@ -148,7 +163,10 @@ export function MagicGuildPanel({
             audioStats={audioCoverage.stats}
             collection={collection}
             museumCollectedIds={museumCollectedIds}
-            onBack={() => setGuildView('home')}
+            onBack={() => {
+              setCollectionsBookMode('book');
+              setGuildView('home');
+            }}
           />
         ) : guildView === 'learningDashboard' ? (
           <LearningDashboardPanel

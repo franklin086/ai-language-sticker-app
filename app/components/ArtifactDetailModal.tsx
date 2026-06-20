@@ -97,6 +97,7 @@ export function ArtifactDetailModal({
   onClose,
   onContinueDiscover,
   onLearnKnowledge,
+  onOpenEncyclopedia,
   onShare,
   onSpeakChinese,
   onSpeakEnglish,
@@ -112,6 +113,7 @@ export function ArtifactDetailModal({
   onClose: () => void;
   onContinueDiscover: () => void;
   onLearnKnowledge: () => void;
+  onOpenEncyclopedia?: () => void;
   onShare: () => void;
   onSpeakChinese: () => void;
   onSpeakEnglish: () => void;
@@ -180,6 +182,23 @@ export function ArtifactDetailModal({
             <DetailAction label={hasQuiz ? '🎯 去挑战' : '✨ 继续发现'} onPress={hasQuiz ? onChallenge : onContinueDiscover} tone="blue" />
             <DetailAction label="📊 看进度" onPress={onViewProgress} tone="gold" />
           </View>
+          {onOpenEncyclopedia ? (
+            <Pressable
+              style={({ pressed }) => ({
+                alignItems: 'center',
+                backgroundColor: pressed ? '#FEF3C7' : '#FFFFFF',
+                borderColor: '#FBBF24',
+                borderRadius: 999,
+                borderWidth: 1,
+                marginTop: 8,
+                paddingHorizontal: 12,
+                paddingVertical: 9,
+              })}
+              onPress={onOpenEncyclopedia}
+            >
+              <Text style={{ color: '#7C3AED', fontSize: 12, fontWeight: '900', lineHeight: 17, textAlign: 'center' }}>📚 查百科</Text>
+            </Pressable>
+          ) : null}
           <View style={styles.artifactDetailInfoBox}>
             <Text style={styles.artifactDetailMeta}>基础词：{baseZh} / {baseEn}</Text>
             <Text style={styles.artifactDetailMeta}>具体识别：{specificZh} / {specificEn}</Text>

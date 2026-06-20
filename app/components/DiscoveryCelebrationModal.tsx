@@ -37,16 +37,19 @@ function CelebrationAction({
   label,
   onPress,
   tone,
+  variant = 'secondary',
 }: {
   label: string;
   onPress: () => void;
   tone: 'gold' | 'purple' | 'blue';
+  variant?: 'primary' | 'secondary';
 }) {
   const colors = {
     blue: { background: '#EDE9FE', border: '#A78BFA', pressed: '#DDD6FE', text: '#5B21B6' },
     gold: { background: '#FFF7D6', border: '#FBBF24', pressed: '#FDE68A', text: '#7C3AED' },
     purple: { background: '#F5E8FF', border: '#C4B5FD', pressed: '#DDD6FE', text: '#6D28D9' },
   }[tone];
+  const isPrimary = variant === 'primary';
 
   return (
     <Pressable
@@ -54,16 +57,20 @@ function CelebrationAction({
         alignItems: 'center',
         backgroundColor: pressed ? colors.pressed : colors.background,
         borderColor: colors.border,
-        borderRadius: 18,
-        borderWidth: 1,
-        flex: 1,
-        minWidth: 132,
-        paddingHorizontal: 12,
-        paddingVertical: 12,
+        borderRadius: isPrimary ? 20 : 16,
+        borderWidth: isPrimary ? 2 : 1,
+        flex: isPrimary ? undefined : 1,
+        minWidth: isPrimary ? undefined : 132,
+        paddingHorizontal: isPrimary ? 16 : 12,
+        paddingVertical: isPrimary ? 15 : 11,
+        shadowColor: isPrimary ? '#F59E0B' : 'transparent',
+        shadowOpacity: isPrimary ? 0.22 : 0,
+        shadowRadius: isPrimary ? 12 : 0,
+        width: isPrimary ? '100%' : undefined,
       })}
       onPress={onPress}
     >
-      <Text style={{ color: colors.text, fontSize: 14, fontWeight: '900', textAlign: 'center' }}>{label}</Text>
+      <Text style={{ color: colors.text, fontSize: isPrimary ? 16 : 13, fontWeight: '900', textAlign: 'center' }}>{label}</Text>
     </Pressable>
   );
 }
@@ -167,10 +174,12 @@ export function DiscoveryCelebrationModal({
           </View>
         </View>
 
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 14 }}>
-          <CelebrationAction label="📖 读故事" onPress={onReadStory} tone="gold" />
-          <CelebrationAction label="🧠 学知识" onPress={onLearnKnowledge} tone="purple" />
-          <CelebrationAction label={data.hasQuiz ? '🎯 去挑战' : '✨ 继续发现'} onPress={data.hasQuiz ? onChallenge : onContinueDiscover} tone="blue" />
+        <View style={{ gap: 10, marginTop: 14 }}>
+          <CelebrationAction label="📖 读故事" onPress={onReadStory} tone="gold" variant="primary" />
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
+            <CelebrationAction label="🧠 学知识" onPress={onLearnKnowledge} tone="purple" />
+            <CelebrationAction label={data.hasQuiz ? '🎯 去挑战' : '✨ 继续发现'} onPress={data.hasQuiz ? onChallenge : onContinueDiscover} tone="blue" />
+          </View>
         </View>
 
         <View style={{ backgroundColor: '#FFFBEB', borderColor: '#FBBF24', borderRadius: 18, borderWidth: 1, marginTop: 14, padding: 12 }}>
@@ -185,17 +194,21 @@ export function DiscoveryCelebrationModal({
           </Text>
         </View>
 
-        <Pressable
-          style={({ pressed }) => ({
-            backgroundColor: pressed ? '#7C3AED' : '#8B5CF6',
-            borderRadius: 18,
-            marginTop: 16,
-            padding: 14,
-          })}
-          onPress={onContinueDiscover}
-        >
-          <Text style={{ color: '#FFFFFF', fontSize: 15, fontWeight: '900', textAlign: 'center' }}>继续发现</Text>
-        </Pressable>
+        {data.hasQuiz ? (
+          <Pressable
+            style={({ pressed }) => ({
+              backgroundColor: pressed ? '#FEF3C7' : '#FFFFFF',
+              borderColor: '#FBBF24',
+              borderRadius: 16,
+              borderWidth: 1,
+              marginTop: 12,
+              padding: 11,
+            })}
+            onPress={onContinueDiscover}
+          >
+            <Text style={{ color: '#7C3AED', fontSize: 13, fontWeight: '900', textAlign: 'center' }}>✨ 继续发现</Text>
+          </Pressable>
+        ) : null}
 
         <Pressable style={{ marginTop: 10, padding: 6 }} onPress={onClose}>
           <Text style={{ color: '#7C3AED', fontSize: 12, fontWeight: '900', textAlign: 'center' }}>关闭</Text>

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useLanguage } from '../hooks/useLanguage';
 import { useMuseumCollectionsBook } from '../hooks/useMuseumCollectionsBook';
@@ -10,12 +10,18 @@ export function MuseumCollectionsBookPanel({
   collection,
   museumCollectedIds,
   onBack,
+  initialShowEncyclopedia = false,
 }: Parameters<typeof useMuseumCollectionsBook>[0] & {
   onBack: () => void;
+  initialShowEncyclopedia?: boolean;
 }) {
-  const [showEncyclopedia, setShowEncyclopedia] = useState(false);
+  const [showEncyclopedia, setShowEncyclopedia] = useState(initialShowEncyclopedia);
   const { t } = useLanguage();
   const book = useMuseumCollectionsBook({ collection, museumCollectedIds });
+
+  useEffect(() => {
+    setShowEncyclopedia(initialShowEncyclopedia);
+  }, [initialShowEncyclopedia]);
 
   if (showEncyclopedia) {
     return (
