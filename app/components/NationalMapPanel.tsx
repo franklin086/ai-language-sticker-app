@@ -3,6 +3,7 @@ import { useLanguage } from '../hooks/useLanguage';
 import type { NationalMapProgress } from '../utils/nationalMapHelpers';
 import { NationalCityCard } from './NationalCityCard';
 import { NationalNpcCard } from './NationalNpcCard';
+import { LearningBackButton } from './LearningBackButton';
 
 export function NationalMapPanel({
   nationalMap,
@@ -22,6 +23,7 @@ export function NationalMapPanel({
 
   return (
     <View style={{ backgroundColor: '#FFF7ED', borderColor: '#E9D5FF', borderRadius: 24, borderWidth: 1, padding: 16 }}>
+      <LearningBackButton label="返回世界地图" onPress={onBack} />
       <View>
         <Text style={{ color: '#6D28D9', fontSize: 22, fontWeight: '900', lineHeight: 29 }}>
           {nationalMap.emoji} {nationalMap.countryName} {t('world_map')}

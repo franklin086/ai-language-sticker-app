@@ -35,8 +35,10 @@ import { useTreasureChest } from './hooks/useTreasureChest';
 import type { GuildView } from './utils/navigationMap';
 import {
   findMuseumArtifact,
+  findMuseumArtifactMatchDetails,
   getMuseumArtifactCategory,
   getMuseumArtifactMuseumMeta,
+  getMuseumArtifactRecognitionCandidates,
   mergeMagicMuseumsWithArtifacts,
 } from './utils/artifactHelpers';
 import { getArtifactFactKey } from './utils/artifactFactHelpers';
@@ -100,6 +102,7 @@ type CollectionItem = RecognitionResult & {
 };
 
 type StickerCategoryKey = 'common' | 'rare' | 'epic' | 'legendary';
+type HomeNavigationGroup = 'today' | 'learning' | 'world';
 type RecognitionErrorType =
   | 'api_timeout'
   | 'backend_unreachable'
@@ -1499,6 +1502,111 @@ function buildCustomMuseumItem(result: RecognitionResult): CustomMuseumItem {
   };
 }
 
+function HomeNavigationPanel({
+  activeGroup,
+  onChooseFromAlbum,
+  onOpenCollectionBook,
+  onOpenCollectionSets,
+  onOpenExplorerAcademy,
+  onOpenGuild,
+  onOpenKnowledgeBooks,
+  onOpenKnowledgeQuiz,
+  onOpenLearningDashboard,
+  onSelectGroup,
+  onTakePhoto,
+}: {
+  activeGroup: HomeNavigationGroup;
+  onChooseFromAlbum: () => void;
+  onOpenCollectionBook: () => void;
+  onOpenCollectionSets: () => void;
+  onOpenExplorerAcademy: () => void;
+  onOpenGuild: () => void;
+  onOpenKnowledgeBooks: () => void;
+  onOpenKnowledgeQuiz: () => void;
+  onOpenLearningDashboard: () => void;
+  onSelectGroup: (group: HomeNavigationGroup) => void;
+  onTakePhoto: () => void;
+}) {
+  const groups: { id: HomeNavigationGroup; label: string }[] = [
+    { id: 'today', label: '今日行动' },
+    { id: 'learning', label: '学习成长' },
+    { id: 'world', label: '收藏世界' },
+  ];
+  const actions = activeGroup === 'today'
+    ? [
+        { label: '✨ 开始发现', onPress: onTakePhoto, primary: true },
+        { label: '🖼 从相册选择', onPress: onChooseFromAlbum },
+        { label: '🏛 公会总部', onPress: onOpenGuild },
+      ]
+    : activeGroup === 'learning'
+      ? [
+          { label: '📊 学习驾驶舱', onPress: onOpenLearningDashboard, primary: true },
+          { label: '📚 知识册', onPress: onOpenKnowledgeBooks },
+          { label: '🎯 知识挑战', onPress: onOpenKnowledgeQuiz },
+          { label: '🎓 探索学院', onPress: onOpenExplorerAcademy },
+        ]
+      : [
+          { label: '📖 魔法图鉴', onPress: onOpenCollectionBook, primary: true },
+          { label: '🎁 收藏套装', onPress: onOpenCollectionSets },
+          { label: '🌍 世界地图', onPress: () => onSelectGroup('world') },
+          { label: '📕 护照', onPress: () => onSelectGroup('world') },
+        ];
+
+  return (
+    <View style={{ backgroundColor: '#FFF7ED', borderColor: '#E9D5FF', borderRadius: 22, borderWidth: 1, marginTop: 14, padding: 12 }}>
+      <View style={{ flexDirection: 'row', gap: 8 }}>
+        {groups.map((group) => {
+          const active = group.id === activeGroup;
+          return (
+            <Pressable
+              key={group.id}
+              style={({ pressed }) => ({
+                alignItems: 'center',
+                backgroundColor: active ? '#8B5CF6' : pressed ? '#F3E8FF' : '#FFFFFF',
+                borderColor: active ? '#7C3AED' : '#E9D5FF',
+                borderRadius: 999,
+                borderWidth: 1,
+                flex: 1,
+                minHeight: 40,
+                justifyContent: 'center',
+                paddingHorizontal: 8,
+                paddingVertical: 9,
+              })}
+              onPress={() => onSelectGroup(group.id)}
+            >
+              <Text style={{ color: active ? '#FFFFFF' : '#6D28D9', fontSize: 12, fontWeight: '900', lineHeight: 17, textAlign: 'center' }}>{group.label}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
+
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 9, marginTop: 12 }}>
+        {actions.map((action) => (
+          <Pressable
+            key={action.label}
+            style={({ pressed }) => ({
+              alignItems: 'center',
+              backgroundColor: action.primary ? (pressed ? '#7C3AED' : '#8B5CF6') : pressed ? '#FEF3C7' : '#FFFFFF',
+              borderColor: action.primary ? '#7C3AED' : '#FBBF24',
+              borderRadius: 16,
+              borderWidth: 1,
+              flexBasis: action.primary ? '100%' : '45%',
+              flexGrow: 1,
+              minHeight: 48,
+              justifyContent: 'center',
+              paddingHorizontal: 12,
+              paddingVertical: 11,
+            })}
+            onPress={action.onPress}
+          >
+            <Text style={{ color: action.primary ? '#FFFFFF' : '#6D28D9', fontSize: action.primary ? 15 : 13, fontWeight: '900', lineHeight: 19, textAlign: 'center' }}>{action.label}</Text>
+          </Pressable>
+        ))}
+      </View>
+    </View>
+  );
+}
+
 function CuratorProfileCard({
   badgeCount,
   completedMuseumCount,
@@ -1707,9 +1815,11 @@ export default function HomeScreen() {
   const [magicGuildInitialView, setMagicGuildInitialView] = useState<GuildView | 'home'>('home');
   const [magicGuildInitialCollectionsBookMode, setMagicGuildInitialCollectionsBookMode] = useState<'book' | 'encyclopedia'>('book');
   const [magicGuildEncyclopediaArtifactId, setMagicGuildEncyclopediaArtifactId] = useState<string | null>(null);
+  const [magicGuildShowEncyclopediaFallback, setMagicGuildShowEncyclopediaFallback] = useState(false);
   const [magicGuildInitialKnowledgeMode, setMagicGuildInitialKnowledgeMode] = useState<'collections' | 'quiz'>('collections');
   const [magicGuildQuizArtifactKey, setMagicGuildQuizArtifactKey] = useState<string | null>(null);
   const [showMagicGuild, setShowMagicGuild] = useState(false);
+  const [homeNavigationGroup, setHomeNavigationGroup] = useState<HomeNavigationGroup>('today');
   const [hoveredButton, setHoveredButton] = useState<'start' | 'camera' | 'album' | null>(null);
   const [speakingLanguage, setSpeakingLanguage] = useState<'zh' | 'en' | null>(null);
   const followUpApiUrl = getRecognitionApiUrl('/api/recognize/follow-up');
@@ -2428,8 +2538,20 @@ export default function HomeScreen() {
         specific_zh: parsed.specific_zh ?? parsed.object_zh ?? '',
         subtype: parsed.subtype ?? '',
       };
-      const matchedMuseumArtifact = findMuseumArtifact(recognizedData);
+      const recognitionCandidates = getMuseumArtifactRecognitionCandidates(recognizedData);
+      const matchDetails = findMuseumArtifactMatchDetails(recognizedData);
+      const matchedMuseumArtifact = matchDetails?.artifact ?? null;
       const recognitionFallbackReason = matchedMuseumArtifact ? 'none' : 'unmatched_museum_artifact';
+      console.log('Recognition candidates', recognitionCandidates.map((candidate) => ({
+        field: candidate.field,
+        value: candidate.value,
+      })));
+      console.log('Normalized candidates', recognitionCandidates.map((candidate) => ({
+        field: candidate.field,
+        value: candidate.normalizedValue,
+      })));
+      console.log('Matched artifact id', matchDetails?.artifactId ?? 'none');
+      console.log('Matched by field', matchDetails ? matchDetails.field + ' -> ' + matchDetails.matchedBy : 'none');
       console.log('Matched museum artifact', matchedMuseumArtifact ? 'yes' : 'no');
       console.log('Recognition accepted', 'true');
       console.log('Recognition fallback reason', recognitionFallbackReason);
@@ -2795,10 +2917,12 @@ export default function HomeScreen() {
     quizArtifactKey: string | null = null,
     collectionsBookMode: 'book' | 'encyclopedia' = 'book',
     encyclopediaArtifactId: string | null = null,
+    showEncyclopediaFallback = false,
   ) => {
     setMagicGuildInitialView(view);
     setMagicGuildInitialCollectionsBookMode(collectionsBookMode);
     setMagicGuildEncyclopediaArtifactId(encyclopediaArtifactId);
+    setMagicGuildShowEncyclopediaFallback(showEncyclopediaFallback);
     setMagicGuildInitialKnowledgeMode(knowledgeMode);
     setMagicGuildQuizArtifactKey(quizArtifactKey);
     setShowMagicGuild(true);
@@ -2810,6 +2934,7 @@ export default function HomeScreen() {
     setMagicGuildInitialKnowledgeMode('collections');
     setMagicGuildInitialCollectionsBookMode('book');
     setMagicGuildEncyclopediaArtifactId(null);
+    setMagicGuildShowEncyclopediaFallback(false);
     setMagicGuildQuizArtifactKey(null);
   };
 
@@ -2817,6 +2942,7 @@ export default function HomeScreen() {
     closeDiscoveryCelebration();
 
     if (recognitionResult) {
+      setShowMagicGuild(false);
       setCurrentDetailItem(getCollectionItemForResult(recognitionResult));
     }
   };
@@ -2856,13 +2982,13 @@ export default function HomeScreen() {
     setCurrentDetailItem(null);
 
     if (!recognitionResult) {
-      openMagicGuildView('collectionsBook', 'collections', null, 'encyclopedia');
+      openMagicGuildView('collectionsBook', 'collections', null, 'encyclopedia', null, true);
       return;
     }
 
     const artifact = findMuseumArtifact(recognitionResult);
     const artifactKey = artifact ? getArtifactFactKey(artifact) : null;
-    openMagicGuildView('collectionsBook', 'collections', null, 'encyclopedia', artifactKey);
+    openMagicGuildView('collectionsBook', 'collections', null, 'encyclopedia', artifactKey, !artifactKey);
   };
 
   const continueDiscover = () => {
@@ -2913,9 +3039,10 @@ export default function HomeScreen() {
 
           <View style={styles.startGuideCard}>
             <View style={styles.startGuideCopy}>
-              <Text style={styles.startGuideLine}>🔎 {t('onboarding_discover_world')}</Text>
-              <Text style={styles.startGuideLine}>💎 {t('onboarding_collect_language_treasures')}</Text>
-              <Text style={styles.startGuideLine}>📖 {t('onboarding_unlock_stories_knowledge')}</Text>
+              <Text style={{ color: '#6D28D9', fontSize: 18, fontWeight: '900', lineHeight: 24, textAlign: 'center' }}>{t('today_guidance_title')}</Text>
+              <Text style={styles.startGuideLine}>1. {t('today_guidance_discover')}</Text>
+              <Text style={styles.startGuideLine}>2. {t('today_guidance_story')}</Text>
+              <Text style={styles.startGuideLine}>3. {t('today_guidance_challenge')}</Text>
             </View>
             <Animated.View style={{ transform: [{ scale: buttonBreathScale }] }}>
               <Pressable
@@ -2936,6 +3063,22 @@ export default function HomeScreen() {
               </Pressable>
             </Animated.View>
           </View>
+
+
+
+          <HomeNavigationPanel
+            activeGroup={homeNavigationGroup}
+            onChooseFromAlbum={chooseFromAlbum}
+            onOpenCollectionBook={() => openMagicGuildView('collectionsBook')}
+            onOpenCollectionSets={() => openMagicGuildView('collectionSets')}
+            onOpenGuild={() => openMagicGuildView('home')}
+            onOpenKnowledgeBooks={() => openMagicGuildView('knowledgeCollections', 'collections')}
+            onOpenKnowledgeQuiz={() => openMagicGuildView('knowledgeCollections', 'quiz')}
+            onOpenLearningDashboard={() => openMagicGuildView('learningDashboard')}
+            onOpenExplorerAcademy={() => openMagicGuildView('explorerAcademy')}
+            onSelectGroup={setHomeNavigationGroup}
+            onTakePhoto={takePhoto}
+          />
 
           <CuratorProfileCard
             badgeCount={museumBadgeIds.length}
@@ -3173,6 +3316,8 @@ export default function HomeScreen() {
             xpLevelUpScale={xpLevelUpScale}
             xpState={xpState}
             unlockedAchievementIds={unlockedAchievementIds}
+            homeNavigationGroup={homeNavigationGroup}
+            onReturnHome={() => setHomeNavigationGroup('today')}
             nextDailyDiscoveryMilestone={nextMilestone}
             onClearLatestDailyDiscoveryMilestone={clearLatestDailyDiscoveryMilestone}
             onShareArtifact={(item) => openShareCard('AI魔法识字相机', '我发现了一个新魔法藏品！', item)}
@@ -3184,6 +3329,7 @@ export default function HomeScreen() {
             onShareMuseumBadge={(badge) => openShareCard(`${badge.emoji} ${badge.title}`, '这座博物馆被你点亮了，真了不起！')}
           />
 
+          {homeNavigationGroup === 'world' ? (
           <CustomMuseumPanel
             customMuseums={customMuseums}
             museumCollectedIds={museumCollectedIds}
@@ -3192,58 +3338,8 @@ export default function HomeScreen() {
             onChangeCustomMuseums={updateCustomMuseums}
             recognitionResult={recognitionResult}
           />
+          ) : null}
 
-          <View style={{ backgroundColor: '#FFFBEB', borderColor: '#FBBF24', borderRadius: 22, borderWidth: 2, marginTop: 16, padding: 14 }}>
-            <Text style={{ color: '#6D28D9', fontSize: 17, fontWeight: '900', lineHeight: 23, textAlign: 'center' }}>
-              {t('today_guidance_title')}
-            </Text>
-            <View style={{ gap: 8, marginTop: 10 }}>
-              <Text style={{ color: '#7C3AED', fontSize: 14, fontWeight: '900', lineHeight: 20 }}>1. {t('today_guidance_discover')}</Text>
-              <Text style={{ color: '#7C3AED', fontSize: 14, fontWeight: '900', lineHeight: 20 }}>2. {t('today_guidance_story')}</Text>
-              <Text style={{ color: '#7C3AED', fontSize: 14, fontWeight: '900', lineHeight: 20 }}>3. {t('today_guidance_challenge')}</Text>
-            </View>
-          </View>
-
-          <View style={styles.actions}>
-            <Animated.View style={{ transform: [{ scale: buttonBreathScale }] }}>
-              <Pressable
-                style={({ pressed }) => [
-                  styles.button,
-                  hoveredButton === 'camera' && styles.buttonHovered,
-                  pressed && styles.buttonPressed,
-                ]}
-                onHoverIn={() => setHoveredButton('camera')}
-                onHoverOut={() => setHoveredButton(null)}
-                onPress={takePhoto}
-              >
-                <Animated.View style={[styles.buttonGlow, { opacity: buttonGlowOpacity }]} />
-                <Animated.View
-                  style={[styles.buttonFlow, { transform: [{ translateX: buttonFlowTranslateX }, { rotate: '16deg' }] }]}
-                />
-                <Text style={styles.buttonText}>{COPY.camera}</Text>
-              </Pressable>
-            </Animated.View>
-
-            <Pressable
-              style={({ pressed }) => [
-                styles.secondaryButton,
-                hoveredButton === 'album' && styles.secondaryButtonHovered,
-                pressed && styles.secondaryButtonPressed,
-              ]}
-              onHoverIn={() => setHoveredButton('album')}
-              onHoverOut={() => setHoveredButton(null)}
-              onPress={chooseFromAlbum}
-            >
-              <Text style={styles.secondaryButtonText}>{COPY.album}</Text>
-            </Pressable>
-
-            <Pressable
-              style={({ pressed }) => [styles.secondaryButton, pressed && styles.secondaryButtonPressed]}
-              onPress={() => openMagicGuildView('home')}
-            >
-              <Text style={styles.secondaryButtonText}>🏛 公会总部</Text>
-            </Pressable>
-          </View>
         </View>
       </ScrollView>
       {showMagicGuild ? (
@@ -3255,10 +3351,13 @@ export default function HomeScreen() {
           museums={MAGIC_MUSEUMS_WITH_ARTIFACTS}
           initialCollectionsBookMode={magicGuildInitialCollectionsBookMode}
           initialEncyclopediaArtifactId={magicGuildEncyclopediaArtifactId}
+          initialEncyclopediaFallback={magicGuildShowEncyclopediaFallback}
           initialKnowledgeMode={magicGuildInitialKnowledgeMode}
           initialQuizArtifactKey={magicGuildQuizArtifactKey}
           initialView={magicGuildInitialView}
           onClose={closeMagicGuild}
+          onContinueDiscover={continueDiscover}
+          onReadStory={openResultStory}
           totalArtifactCount={STICKER_TOTAL}
         />
       ) : null}
@@ -3751,6 +3850,8 @@ function MagicCollection({
   onToggleArtifactStory,
   speakButtonScale,
   speakingLanguage,
+  homeNavigationGroup,
+  onReturnHome,
 }: {
   achievementGlowScale: Animated.AnimatedInterpolation<string | number>;
   achievementOpacity: Animated.AnimatedInterpolation<string | number>;
@@ -3814,12 +3915,16 @@ function MagicCollection({
   onToggleArtifactStory: (artifactId: string) => void;
   speakButtonScale: Animated.AnimatedInterpolation<string | number>;
   speakingLanguage: 'zh' | 'en' | null;
+  homeNavigationGroup: HomeNavigationGroup;
+  onReturnHome: () => void;
 }) {
   const collectedCount = collection.length;
   const completionPercent = Math.min(100, Math.round((collectedCount / STICKER_TOTAL) * 100));
 
   return (
     <View style={styles.collectionPanel}>
+      {homeNavigationGroup === 'today' ? (
+        <>
       <MagicRewardPanel
         chestGlowScale={chestGlowScale}
         chestOpened={chestOpened}
@@ -3858,6 +3963,11 @@ function MagicCollection({
         styles={styles}
       />
 
+        </>
+      ) : null}
+
+      {homeNavigationGroup === 'learning' ? (
+        <>
       <AchievementPanel
         achievementGlowScale={achievementGlowScale}
         achievementOpacity={achievementOpacity}
@@ -3908,6 +4018,11 @@ function MagicCollection({
         styles={styles}
       />
 
+        </>
+      ) : null}
+
+      {homeNavigationGroup === 'world' ? (
+        <>
       <MagicMuseumPanel museumCollectedIds={museumCollectedIds} museums={museums} />
 
       <CollectionGallery
@@ -3934,6 +4049,7 @@ function MagicCollection({
         speakButtonScale={speakButtonScale}
         speakingLanguage={speakingLanguage}
         styles={styles}
+        onBackHome={onReturnHome}
       />
 
       <PassportPanel
@@ -3941,6 +4057,7 @@ function MagicCollection({
         cityMaps={cityMaps}
         museumCollectedIds={museumCollectedIds}
         styles={styles}
+        onBackHome={onReturnHome}
       />
 
       <MuseumBadgeWall
@@ -4052,6 +4169,8 @@ function MagicCollection({
           );
         })}
       </View>
+        </>
+      ) : null}
     </View>
   );
 }

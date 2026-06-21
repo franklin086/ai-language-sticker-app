@@ -11,6 +11,7 @@ import { GuildMissionBoard } from './GuildMissionBoard';
 import { GuildStatusCard } from './GuildStatusCard';
 import { KnowledgeCollectionsPanel } from './KnowledgeCollectionsPanel';
 import { LanguageSwitcher } from './LanguageSwitcher';
+import { LearningBackButton } from './LearningBackButton';
 import { LearningDashboardPanel } from './LearningDashboardPanel';
 import { LearningProfilePanel } from './LearningProfilePanel';
 import { MuseumCollectionsBookPanel } from './MuseumCollectionsBookPanel';
@@ -30,6 +31,9 @@ export function MagicGuildPanel({
   initialEncyclopediaArtifactId = null,
   initialQuizArtifactKey = null,
   initialView = 'home',
+  initialEncyclopediaFallback = false,
+  onContinueDiscover,
+  onReadStory,
   totalArtifactCount,
 }: MagicGuildInput & {
   onClose: () => void;
@@ -38,12 +42,16 @@ export function MagicGuildPanel({
   initialEncyclopediaArtifactId?: string | null;
   initialQuizArtifactKey?: string | null;
   initialView?: MagicGuildView;
+  initialEncyclopediaFallback?: boolean;
+  onContinueDiscover?: () => void;
+  onReadStory?: () => void;
 }) {
   const [guildView, setGuildView] = useState<MagicGuildView>(initialView);
   const [collectionsBookMode, setCollectionsBookMode] = useState<'book' | 'encyclopedia'>(initialCollectionsBookMode);
   const [encyclopediaArtifactId, setEncyclopediaArtifactId] = useState<string | null>(initialEncyclopediaArtifactId);
   const [knowledgeMode, setKnowledgeMode] = useState<'collections' | 'quiz'>(initialKnowledgeMode);
   const [quizArtifactKey, setQuizArtifactKey] = useState<string | null>(initialQuizArtifactKey);
+  const [showEncyclopediaFallback, setShowEncyclopediaFallback] = useState(initialEncyclopediaFallback);
   const { t } = useLanguage();
   const audioCoverage = useAudioCoverage('en');
 
@@ -53,13 +61,15 @@ export function MagicGuildPanel({
     setKnowledgeMode(initialKnowledgeMode);
     setEncyclopediaArtifactId(initialEncyclopediaArtifactId);
     setQuizArtifactKey(initialQuizArtifactKey);
-  }, [initialCollectionsBookMode, initialEncyclopediaArtifactId, initialKnowledgeMode, initialQuizArtifactKey, initialView]);
+    setShowEncyclopediaFallback(initialEncyclopediaFallback);
+  }, [initialCollectionsBookMode, initialEncyclopediaArtifactId, initialEncyclopediaFallback, initialKnowledgeMode, initialQuizArtifactKey, initialView]);
 
   function openGuildView(view: MagicGuildView, nextKnowledgeMode: 'collections' | 'quiz' = 'collections') {
     setGuildView(view);
     setCollectionsBookMode('book');
     setKnowledgeMode(nextKnowledgeMode);
     setEncyclopediaArtifactId(null);
+    setShowEncyclopediaFallback(false);
     if (view !== 'knowledgeCollections' || nextKnowledgeMode !== 'quiz') {
       setQuizArtifactKey(null);
     }
@@ -127,8 +137,12 @@ export function MagicGuildPanel({
             museumCollectedIds={museumCollectedIds}
             initialShowEncyclopedia={collectionsBookMode === 'encyclopedia'}
             preferredEncyclopediaArtifactId={encyclopediaArtifactId}
+            showEncyclopediaFallback={showEncyclopediaFallback}
+            onContinueDiscover={onContinueDiscover ?? onClose}
+            onReadStory={onReadStory}
             onBack={() => {
               setCollectionsBookMode('book');
+              setShowEncyclopediaFallback(false);
               setGuildView('home');
             }}
           />
@@ -185,21 +199,7 @@ export function MagicGuildPanel({
           />
         ) : (
           <>
-            <Pressable
-              style={({ pressed }) => ({
-                alignSelf: 'flex-start',
-                backgroundColor: pressed ? '#DDD6FE' : '#FFFFFF',
-                borderColor: '#C4B5FD',
-                borderRadius: 999,
-                borderWidth: 1,
-                marginBottom: 12,
-                paddingHorizontal: 12,
-                paddingVertical: 8,
-              })}
-              onPress={onClose}
-            >
-              <Text style={{ color: '#6D28D9', fontSize: 12, fontWeight: '900' }}>← {t('return_home')}</Text>
-            </Pressable>
+            <LearningBackButton label={t('return_home')} onPress={onClose} />
             <Text style={{ color: '#6D28D9', fontSize: 23, fontWeight: '900', lineHeight: 30, textAlign: 'center' }}>
               {t('guild_headquarters')}
             </Text>

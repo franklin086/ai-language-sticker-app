@@ -2,6 +2,7 @@ import { Text, View } from 'react-native';
 import { usePassport } from '../hooks/usePassport';
 import type { WorldMapCitySource } from '../utils/worldMapHelpers';
 import { PassportStamp } from './PassportStamp';
+import { LearningBackButton } from './LearningBackButton';
 
 type ComponentStyles = Record<string, any>;
 
@@ -24,11 +25,13 @@ export function PassportPanel({
   cityMapCompletedNodeIds,
   cityMaps,
   museumCollectedIds,
+  onBackHome,
   styles,
 }: {
   cityMapCompletedNodeIds: string[];
   cityMaps: WorldMapCitySource[];
   museumCollectedIds: string[];
+  onBackHome?: () => void;
   styles: ComponentStyles;
 }) {
   const passport = usePassport({
@@ -41,6 +44,7 @@ export function PassportPanel({
 
   return (
     <View style={styles.cityMapPanel}>
+      {onBackHome ? <LearningBackButton label="返回首页" onPress={onBackHome} /> : null}
       <View style={styles.cityMapHero}>
         <Text style={styles.cityMapTitle}>📕 魔法探索护照</Text>
         <Text style={styles.cityMapHint}>点亮城市，收集世界印章</Text>

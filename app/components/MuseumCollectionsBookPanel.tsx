@@ -5,6 +5,7 @@ import { useMuseumCollectionsBook } from '../hooks/useMuseumCollectionsBook';
 import { CollectionBookArtifactCard } from './CollectionBookArtifactCard';
 import { CollectionBookFilterBar } from './CollectionBookFilterBar';
 import { DiscoveryEncyclopediaPanel } from './DiscoveryEncyclopediaPanel';
+import { LearningBackButton } from './LearningBackButton';
 
 export function MuseumCollectionsBookPanel({
   collection,
@@ -12,10 +13,16 @@ export function MuseumCollectionsBookPanel({
   onBack,
   initialShowEncyclopedia = false,
   preferredEncyclopediaArtifactId = null,
+  showEncyclopediaFallback = false,
+  onContinueDiscover,
+  onReadStory,
 }: Parameters<typeof useMuseumCollectionsBook>[0] & {
   onBack: () => void;
   initialShowEncyclopedia?: boolean;
   preferredEncyclopediaArtifactId?: string | null;
+  showEncyclopediaFallback?: boolean;
+  onContinueDiscover?: () => void;
+  onReadStory?: () => void;
 }) {
   const [showEncyclopedia, setShowEncyclopedia] = useState(initialShowEncyclopedia);
   const { t } = useLanguage();
@@ -31,40 +38,32 @@ export function MuseumCollectionsBookPanel({
         collection={collection}
         museumCollectedIds={museumCollectedIds}
         onBack={() => setShowEncyclopedia(false)}
+        onContinueDiscover={onContinueDiscover}
+        onReadStory={onReadStory}
         preferredArtifactId={preferredEncyclopediaArtifactId}
+        showFallback={showEncyclopediaFallback}
       />
     );
   }
 
   return (
     <View>
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-        <Pressable
-          style={({ pressed }) => ({
-            backgroundColor: pressed ? '#DDD6FE' : '#FFFFFF',
-            borderColor: '#C4B5FD',
-            borderRadius: 999,
-            borderWidth: 1,
-            paddingHorizontal: 12,
-            paddingVertical: 8,
-          })}
-          onPress={onBack}
-        >
-          <Text style={{ color: '#6D28D9', fontSize: 12, fontWeight: '900' }}>{t('back_to_guild')}</Text>
-        </Pressable>
+      <LearningBackButton label={t('back_to_guild')} onPress={onBack} />
 
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginLeft: 16 }}>
         <Pressable
           style={({ pressed }) => ({
             backgroundColor: pressed ? '#FEF3C7' : '#FFFFFF',
             borderColor: '#FBBF24',
             borderRadius: 999,
             borderWidth: 1,
-            paddingHorizontal: 12,
-            paddingVertical: 8,
+            minHeight: 44,
+            paddingHorizontal: 16,
+            paddingVertical: 10,
           })}
           onPress={() => setShowEncyclopedia(true)}
         >
-          <Text style={{ color: '#6D28D9', fontSize: 12, fontWeight: '900' }}>📚 查百科</Text>
+          <Text style={{ color: '#6D28D9', fontSize: 14, fontWeight: '900' }}>📚 查百科</Text>
         </Pressable>
       </View>
 

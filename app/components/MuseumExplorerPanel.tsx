@@ -10,6 +10,7 @@ import type { MuseumExplorerArtifact, MuseumExplorerData } from '../utils/museum
 import { ArtifactDetailModal } from './ArtifactDetailModal';
 import { MuseumArtifactGrid } from './MuseumArtifactGrid';
 import { MuseumNpcCard } from './MuseumNpcCard';
+import { LearningBackButton } from './LearningBackButton';
 
 type ComponentStyles = Record<string, any>;
 type SpeakingLanguage = 'zh' | 'en' | null;
@@ -76,21 +77,7 @@ export function MuseumExplorerPanel({
 
   return (
     <View style={{ backgroundColor: '#FFF7ED', borderColor: data.completed ? '#FBBF24' : '#E9D5FF', borderRadius: 24, borderWidth: data.completed ? 2 : 1, padding: 16 }}>
-      <Pressable
-        style={({ pressed }) => ({
-          alignSelf: 'flex-start',
-          backgroundColor: pressed ? '#DDD6FE' : '#FFFFFF',
-          borderColor: '#C4B5FD',
-          borderRadius: 999,
-          borderWidth: 1,
-          marginBottom: 12,
-          paddingHorizontal: 12,
-          paddingVertical: 8,
-        })}
-        onPress={onBack}
-      >
-        <Text style={{ color: '#6D28D9', fontSize: 12, fontWeight: '900', lineHeight: 17, textAlign: 'center' }}>← {t('back')}</Text>
-      </Pressable>
+      <LearningBackButton label={t('back')} onPress={onBack} />
       <Text style={{ color: '#6D28D9', fontSize: 22, fontWeight: '900', lineHeight: 29 }}>🏛 {t('museum')}</Text>
       <Text style={{ color: '#5B21B6', fontSize: 18, fontWeight: '900', lineHeight: 24, marginTop: 8 }}>{data.museumName}</Text>
       <Text style={{ color: '#7C3AED', fontSize: 13, fontWeight: '700', lineHeight: 18, marginTop: 6 }}>

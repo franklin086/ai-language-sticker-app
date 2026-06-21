@@ -35,15 +35,22 @@ export function DiscoveryEncyclopediaPanel({
   collection,
   museumCollectedIds,
   onBack,
+  onContinueDiscover,
+  onReadStory,
   preferredArtifactId = null,
+  showFallback = false,
 }: Parameters<typeof useDiscoveryEncyclopedia>[0] & {
   onBack: () => void;
+  onContinueDiscover?: () => void;
+  onReadStory?: () => void;
   preferredArtifactId?: string | null;
+  showFallback?: boolean;
 }) {
   const encyclopedia = useDiscoveryEncyclopedia({ collection, museumCollectedIds, preferredArtifactId });
   const { getArtifactDescription, getArtifactName } = useContentLanguage();
   const { currentLanguage, t } = useLanguage();
   const selectedEntry = encyclopedia.selectedEntry;
+  const shouldShowFallback = showFallback || Boolean(preferredArtifactId && !selectedEntry);
   const canRevealSelectedEntry = selectedEntry ? canRevealArtifactLearningContent(selectedEntry.discovered) : false;
   const selectedStory = selectedEntry?.artifact.story?.trim() || '更多资料正在完善中';
   const selectedFact = selectedEntry?.fact?.trim() || '更多资料正在完善中';
@@ -76,6 +83,60 @@ export function DiscoveryEncyclopediaPanel({
           如果你刚发现这个藏品，建议先读故事，再学知识。
         </Text>
       </View>
+
+      {shouldShowFallback ? (
+        <View style={{ backgroundColor: '#FFFFFF', borderColor: '#FBBF24', borderRadius: 20, borderWidth: 2, marginTop: 14, padding: 14 }}>
+          <Text style={{ color: '#6D28D9', fontSize: 18, fontWeight: '900', lineHeight: 24, textAlign: 'center' }}>📚 百科资料正在完善中</Text>
+          <Text style={{ color: '#7C3AED', fontSize: 13, fontWeight: '800', lineHeight: 19, marginTop: 8, textAlign: 'center' }}>
+            百科资料正在完善中。你可以先读故事，或继续发现新的藏品。
+          </Text>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 12 }}>
+            <Pressable
+              style={({ pressed }) => ({
+                backgroundColor: pressed ? '#7C3AED' : '#8B5CF6',
+                borderRadius: 16,
+                flex: 1,
+                minHeight: 44,
+                minWidth: 110,
+                padding: 12,
+              })}
+              onPress={onReadStory ?? onBack}
+            >
+              <Text style={{ color: '#FFFFFF', fontSize: 14, fontWeight: '900', textAlign: 'center' }}>📖 读故事</Text>
+            </Pressable>
+            <Pressable
+              style={({ pressed }) => ({
+                backgroundColor: pressed ? '#FDE68A' : '#FFF7D6',
+                borderColor: '#FBBF24',
+                borderRadius: 16,
+                borderWidth: 1,
+                flex: 1,
+                minHeight: 44,
+                minWidth: 110,
+                padding: 12,
+              })}
+              onPress={onContinueDiscover ?? onBack}
+            >
+              <Text style={{ color: '#6D28D9', fontSize: 14, fontWeight: '900', textAlign: 'center' }}>✨ 继续发现</Text>
+            </Pressable>
+            <Pressable
+              style={({ pressed }) => ({
+                backgroundColor: pressed ? '#F3E8FF' : '#FFFFFF',
+                borderColor: '#C4B5FD',
+                borderRadius: 16,
+                borderWidth: 1,
+                flex: 1,
+                minHeight: 44,
+                minWidth: 110,
+                padding: 12,
+              })}
+              onPress={onBack}
+            >
+              <Text style={{ color: '#6D28D9', fontSize: 14, fontWeight: '900', textAlign: 'center' }}>← 返回</Text>
+            </Pressable>
+          </View>
+        </View>
+      ) : null}
 
       <View style={{ backgroundColor: '#FFFFFF', borderColor: '#FBBF24', borderRadius: 20, borderWidth: 2, marginTop: 14, padding: 14 }}>
         <Text style={{ color: '#6D28D9', fontSize: 15, fontWeight: '900', lineHeight: 21 }}>{t('encyclopedia_completion')}</Text>

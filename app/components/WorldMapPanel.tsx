@@ -9,6 +9,7 @@ import { buildWorldMapProgress } from '../utils/worldMapHelpers';
 import { MuseumExplorerPanel } from './MuseumExplorerPanel';
 import { NationalMapPanel } from './NationalMapPanel';
 import { WorldCountryCard } from './WorldCountryCard';
+import { LearningBackButton } from './LearningBackButton';
 
 type ComponentStyles = Record<string, any>;
 
@@ -18,6 +19,7 @@ export function WorldMapPanel({
   collection,
   museumCollectedIds,
   museums,
+  onBackHome,
   onShareArtifact,
   onSpeakArtifactChinese,
   onSpeakArtifactEnglish,
@@ -30,6 +32,7 @@ export function WorldMapPanel({
   collection: MuseumExplorerCollectionItem[];
   museumCollectedIds: string[];
   museums: MuseumExplorerMuseum[];
+  onBackHome?: () => void;
   onShareArtifact: (item: MuseumExplorerCollectionItem) => void;
   onSpeakArtifactChinese: (text: string) => void;
   onSpeakArtifactEnglish: (text: string) => void;
@@ -98,6 +101,7 @@ export function WorldMapPanel({
 
   return (
     <View style={styles.cityMapPanel}>
+      {onBackHome ? <LearningBackButton label="返回首页" onPress={onBackHome} /> : null}
       <View style={styles.cityMapHero}>
         <Text style={styles.cityMapTitle}>🌍 世界魔法地图</Text>
         <Text style={styles.cityMapHint}>点亮城市，解锁世界探索之旅</Text>
