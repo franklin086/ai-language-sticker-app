@@ -11,7 +11,11 @@ export function useLanguage() {
   const [currentLanguage, setCurrentLanguage] = useState<SupportedLanguage>(() => getStoredLanguage());
 
   useEffect(() => {
-    if (typeof window === 'undefined') {
+    if (
+      typeof window === 'undefined' ||
+      typeof window.addEventListener !== 'function' ||
+      typeof window.removeEventListener !== 'function'
+    ) {
       return undefined;
     }
 
@@ -30,7 +34,11 @@ export function useLanguage() {
     saveStoredLanguage(language);
     setCurrentLanguage(language);
 
-    if (typeof window !== 'undefined') {
+    if (
+      typeof window !== 'undefined' &&
+      typeof window.dispatchEvent === 'function' &&
+      typeof Event === 'function'
+    ) {
       window.dispatchEvent(new Event(LANGUAGE_CHANGE_EVENT));
     }
   }, []);

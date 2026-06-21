@@ -93,6 +93,7 @@ export function MagicWordCard({
   confidenceText,
   foundTitle,
   hasQuiz,
+  isKnownArtifact = true,
   magicEmoji,
   museumProgress,
   onChallenge,
@@ -116,6 +117,7 @@ export function MagicWordCard({
   confidenceText: string;
   foundTitle: string;
   hasQuiz: boolean;
+  isKnownArtifact?: boolean;
   magicEmoji: string;
   museumProgress: MuseumProgress | null;
   onChallenge: () => void;
@@ -162,23 +164,39 @@ export function MagicWordCard({
       <Text style={styles.confidenceLine}>
         {confidenceLabel}: {confidenceText}
       </Text>
-      <View style={styles.artifactStoryBox}>
-        <Text style={styles.artifactStoryTitle}>📖 藏品故事</Text>
-        <Text style={styles.artifactStoryText}>{artifactFact}</Text>
-      </View>
-      <View style={{ backgroundColor: '#FFFBEB', borderColor: '#FBBF24', borderRadius: 18, borderWidth: 1, marginTop: 12, padding: 12 }}>
-        <Text style={{ color: '#92400E', fontSize: 13, fontWeight: '900' }}>下一步</Text>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 9 }}>
-          <ActionButton label="📖 读故事" onPress={onReadStory} tone="gold" variant="primary" />
-          <ActionButton label="🧠 学知识" onPress={onLearnKnowledge} tone="purple" />
-          <ActionButton label={hasQuiz ? '🎯 去挑战' : '✨ 继续发现'} onPress={onChallenge} tone="blue" />
-          <ActionButton label="📊 看进度" onPress={onViewProgress} tone="white" />
+      {isKnownArtifact ? (
+        <>
+          <View style={styles.artifactStoryBox}>
+            <Text style={styles.artifactStoryTitle}>📖 藏品故事</Text>
+            <Text style={styles.artifactStoryText}>{artifactFact}</Text>
+          </View>
+          <View style={{ backgroundColor: '#FFFBEB', borderColor: '#FBBF24', borderRadius: 18, borderWidth: 1, marginTop: 12, padding: 12 }}>
+            <Text style={{ color: '#92400E', fontSize: 13, fontWeight: '900' }}>下一步</Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 9 }}>
+              <ActionButton label="📖 读故事" onPress={onReadStory} tone="gold" variant="primary" />
+              <ActionButton label="🧠 学知识" onPress={onLearnKnowledge} tone="purple" />
+              <ActionButton label={hasQuiz ? '🎯 去挑战' : '✨ 继续发现'} onPress={onChallenge} tone="blue" />
+              <ActionButton label="📊 看进度" onPress={onViewProgress} tone="white" />
+            </View>
+          </View>
+          {museumProgress ? <MuseumProgressCard progress={museumProgress} styles={styles} /> : null}
+          <Pressable style={({ pressed }) => [styles.shareButton, pressed && styles.shareButtonPressed]} onPress={onShare}>
+            <Text style={styles.shareButtonText}>{shareButtonLabel}</Text>
+          </Pressable>
+        </>
+      ) : (
+        <View style={{ backgroundColor: '#FFFBEB', borderColor: '#FBBF24', borderRadius: 18, borderWidth: 1, marginTop: 12, padding: 12 }}>
+          <Text style={{ color: '#7C2D12', fontSize: 14, fontWeight: '900', lineHeight: 20 }}>
+            识别到了：{displayZh} / {displayEn}
+          </Text>
+          <Text style={{ color: '#92400E', fontSize: 13, fontWeight: '700', lineHeight: 20, marginTop: 6 }}>
+            这个物品还没有加入魔法博物馆，可以继续发现其他藏品。
+          </Text>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 }}>
+            <ActionButton label="✨ 继续发现" onPress={onChallenge} tone="gold" variant="primary" />
+          </View>
         </View>
-      </View>
-      {museumProgress ? <MuseumProgressCard progress={museumProgress} styles={styles} /> : null}
-      <Pressable style={({ pressed }) => [styles.shareButton, pressed && styles.shareButtonPressed]} onPress={onShare}>
-        <Text style={styles.shareButtonText}>{shareButtonLabel}</Text>
-      </Pressable>
+      )}
       <View style={styles.speechActions}>
         <SpeechButton
           active={speakingLanguage === 'zh'}

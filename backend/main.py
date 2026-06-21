@@ -39,6 +39,10 @@ class RecognitionResult(BaseModel):
     follow_up_question: str = ""
 
 
+def log_backend_event(message: str) -> None:
+    print(f"[recognize] {message}", flush=True)
+
+
 def log_safe_error(context: str, exc: Exception) -> None:
     message = str(exc)
     api_key = os.getenv("GEMINI_API_KEY")
@@ -62,6 +66,8 @@ def get_image_media_type(file: UploadFile) -> str:
 
 @app.post("/api/recognize", response_model=RecognitionResult)
 async def recognize_image(file: UploadFile = File(...)) -> RecognitionResult:
+    log_backend_event("recognize request received")
+
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
         raise HTTPException(status_code=500, detail="GEMINI_API_KEY is not configured.")
@@ -71,9 +77,15 @@ async def recognize_image(file: UploadFile = File(...)) -> RecognitionResult:
         raise HTTPException(status_code=400, detail="Uploaded image is empty.")
 
     media_type = get_image_media_type(file)
+    log_backend_event(
+        f"image received filename={file.filename or 'unknown'} "
+        f"content_type={media_type} size_bytes={len(image_bytes)}"
+    )
+
     client = genai.Client(api_key=api_key)
 
     try:
+        log_backend_event("gemini request started")
         response = client.models.generate_content(
             model=os.getenv("GEMINI_VISION_MODEL", "gemini-1.5-flash"),
             contents=[
@@ -97,13 +109,17 @@ async def recognize_image(file: UploadFile = File(...)) -> RecognitionResult:
                 response_schema=RecognitionResult,
             ),
         )
+        log_backend_event("gemini request completed")
     except Exception as exc:
+        log_backend_event("gemini error")
         log_safe_error("Gemini image recognition failed", exc)
         raise HTTPException(status_code=502, detail="Gemini image recognition failed.") from exc
 
     try:
         result = json.loads(response.text or "{}")
-        return RecognitionResult(**result)
+        recognized = RecognitionResult(**result)
+        log_backend_event("response returned")
+        return recognized
     except Exception as exc:
         log_safe_error("Gemini response parsing failed", exc)
         raise HTTPException(status_code=502, detail="Gemini returned an unexpected response.") from exc

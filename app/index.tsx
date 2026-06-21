@@ -58,6 +58,7 @@ import type {
   DailyDiscoveryStreakState,
 } from './utils/dailyDiscoveryStreakHelpers';
 import { getWorldAchievementIds, type WorldAchievementId } from './utils/worldAchievementHelpers';
+import Constants from 'expo-constants';
 import * as ImagePicker from 'expo-image-picker';
 import * as Speech from 'expo-speech';
 import {
@@ -88,13 +89,25 @@ type RecognitionResult = {
   follow_up_question?: string;
 };
 
+type NormalizedConfidence = {
+  label: string;
+  score: number;
+};
+
 type CollectionItem = RecognitionResult & {
   discoveredAt: string;
   emoji: string;
 };
 
 type StickerCategoryKey = 'common' | 'rare' | 'epic' | 'legendary';
-type RecognitionErrorType = 'unclear' | 'temporary';
+type RecognitionErrorType =
+  | 'api_timeout'
+  | 'backend_unreachable'
+  | 'backend_error'
+  | 'gemini_error'
+  | 'invalid_response'
+  | 'low_confidence'
+  | 'image_quality_too_low';
 
 type StickerCategory = {
   key: StickerCategoryKey;
@@ -188,8 +201,10 @@ type CuratorProfile = {
   title: string;
 };
 
-const API_URL = 'http://localhost:8000/api/recognize';
-const FOLLOW_UP_API_URL = 'http://localhost:8000/api/recognize/follow-up';
+const WEB_API_BASE_URL = 'http://localhost:8000';
+const API_PORT = '8000';
+const RECOGNITION_TIMEOUT_MS = 60000;
+const IMAGE_UPLOAD_QUALITY = 0.7;
 const DEBUG_MODE = false;
 const STICKER_TOTAL = museumArtifacts.length;
 const XP_PER_LEVEL = 100;
@@ -487,16 +502,183 @@ function getDisplayEn(result: RecognitionResult) {
   return result.specific_en?.trim() || result.object_en || 'magic discovery';
 }
 
-function isTemporaryServiceError(status: number | null, rawText: string) {
+function isRecognitionServiceUnreachable(rawText: string) {
   const normalizedText = rawText.toLowerCase();
   return (
-    status === 502 ||
-    status === 503 ||
-    normalizedText.includes('unavailable') ||
-    normalizedText.includes('high demand') ||
+    normalizedText.includes('network request failed') ||
     normalizedText.includes('failed to fetch') ||
-    normalizedText.includes('typeerror: failed to fetch')
+    normalizedText.includes('typeerror: failed to fetch') ||
+    normalizedText.includes('load failed') ||
+    normalizedText.includes('connection refused') ||
+    normalizedText.includes('could not connect')
   );
+}
+
+function isRecognitionRequestTimeout(rawText: string) {
+  const normalizedText = rawText.toLowerCase();
+  return (
+    normalizedText.includes('timeout') ||
+    normalizedText.includes('timed out') ||
+    normalizedText.includes('aborterror') ||
+    normalizedText.includes('aborted')
+  );
+}
+
+function getExpoHostUri() {
+  const constants = Constants as unknown as {
+    expoConfig?: { hostUri?: string };
+    expoGoConfig?: { debuggerHost?: string };
+    manifest?: { debuggerHost?: string; hostUri?: string };
+    manifest2?: { extra?: { expoClient?: { hostUri?: string } } };
+  };
+
+  return (
+    constants.expoConfig?.hostUri ||
+    constants.manifest2?.extra?.expoClient?.hostUri ||
+    constants.expoGoConfig?.debuggerHost ||
+    constants.manifest?.debuggerHost ||
+    constants.manifest?.hostUri ||
+    ''
+  );
+}
+
+function getHostNameFromHostUri(hostUri: string) {
+  const cleanHostUri = hostUri.replace(/^[a-z][a-z0-9+.-]*:\/\//i, '').split('/')[0];
+  const hostName = cleanHostUri.split(':')[0];
+  return hostName || '';
+}
+
+function getApiBaseUrl() {
+  if (Platform.OS === 'web') {
+    return WEB_API_BASE_URL;
+  }
+
+  const hostName = getHostNameFromHostUri(getExpoHostUri());
+  if (hostName) {
+    return `http://${hostName}:${API_PORT}`;
+  }
+
+  console.log('Recognition API URL fallback: Expo hostUri is unavailable, using localhost. Real devices may not reach this URL.');
+  return WEB_API_BASE_URL;
+}
+
+function getRecognitionApiUrl(path: string) {
+  return `${getApiBaseUrl()}${path}`;
+}
+
+function getRecognitionFailureType({
+  parseFailed,
+  rawText,
+  responseOk,
+  status,
+}: {
+  parseFailed: boolean;
+  rawText: string;
+  responseOk: boolean;
+  status: number | null;
+}): RecognitionErrorType {
+  const normalizedText = rawText.toLowerCase();
+
+  if (isRecognitionRequestTimeout(rawText)) {
+    return 'api_timeout';
+  }
+
+  if (isRecognitionServiceUnreachable(rawText)) {
+    return 'backend_unreachable';
+  }
+
+  if (parseFailed) {
+    return 'invalid_response';
+  }
+
+  if (!responseOk) {
+    if (status === 400 || normalizedText.includes('empty') || normalizedText.includes('image file')) {
+      return 'image_quality_too_low';
+    }
+
+    if (status === 502 || status === 503 || normalizedText.includes('gemini')) {
+      return 'gemini_error';
+    }
+
+    return 'backend_error';
+  }
+
+  if (normalizedText.includes('low')) {
+    return 'low_confidence';
+  }
+
+  return 'image_quality_too_low';
+}
+
+function normalizeConfidence(confidence: unknown): NormalizedConfidence {
+  if (typeof confidence === 'number' && Number.isFinite(confidence)) {
+    const clampedScore = Math.max(0, Math.min(1, confidence));
+    if (clampedScore >= 0.8) {
+      return { label: 'high', score: clampedScore };
+    }
+
+    if (clampedScore >= 0.5) {
+      return { label: 'medium', score: clampedScore };
+    }
+
+    return { label: 'low', score: clampedScore };
+  }
+
+  if (typeof confidence === 'string') {
+    const normalizedValue = confidence.trim().toLowerCase();
+    if (normalizedValue === 'high') {
+      return { label: 'high', score: 0.9 };
+    }
+
+    if (normalizedValue === 'medium') {
+      return { label: 'medium', score: 0.7 };
+    }
+
+    if (normalizedValue === 'low') {
+      return { label: 'low', score: 0.4 };
+    }
+
+    const numericValue = Number(normalizedValue);
+    if (Number.isFinite(numericValue)) {
+      return normalizeConfidence(numericValue);
+    }
+  }
+
+  return { label: 'high', score: 0.9 };
+}
+
+function getRecognitionFallbackReason(errorType: RecognitionErrorType) {
+  return errorType;
+}
+
+type ImageDebugInfo = {
+  fileSize?: number | null;
+  height?: number | null;
+  width?: number | null;
+};
+
+function getResponseBodyPreview(rawText: string) {
+  return rawText.length > 500 ? rawText.slice(0, 500) + '...' : rawText;
+}
+
+async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs: number) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    return await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error('api_timeout: request exceeded ' + timeoutMs + 'ms');
+    }
+
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }
 
 function readStoredStreak() {
@@ -1452,7 +1634,7 @@ export default function HomeScreen() {
   const [isRecognizing, setIsRecognizing] = useState(false);
   const [recognitionResult, setRecognitionResult] = useState<RecognitionResult | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>('');
-  const [errorType, setErrorType] = useState<RecognitionErrorType>('unclear');
+  const [errorType, setErrorType] = useState<RecognitionErrorType>('image_quality_too_low');
   const [lastImageUri, setLastImageUri] = useState<string | null>(null);
   const [debugResponse, setDebugResponse] = useState({
     objectEn: '',
@@ -1530,7 +1712,8 @@ export default function HomeScreen() {
   const [showMagicGuild, setShowMagicGuild] = useState(false);
   const [hoveredButton, setHoveredButton] = useState<'start' | 'camera' | 'album' | null>(null);
   const [speakingLanguage, setSpeakingLanguage] = useState<'zh' | 'en' | null>(null);
-  const { followUpError, isFollowingUp, runFollowUpRecognition } = useFollowUpRecognition(FOLLOW_UP_API_URL);
+  const followUpApiUrl = getRecognitionApiUrl('/api/recognize/follow-up');
+  const { followUpError, isFollowingUp, runFollowUpRecognition } = useFollowUpRecognition(followUpApiUrl);
   const { closeDiscoveryCelebration, discoveryCelebration, triggerDiscoveryCelebration } = useDiscoveryCelebration();
 
   const floatValue = useRef(new Animated.Value(0));
@@ -2118,12 +2301,12 @@ export default function HomeScreen() {
     });
   };
 
-  const recognizeImage = async (uri: string) => {
+  const recognizeImage = async (uri: string, imageInfo: ImageDebugInfo = {}) => {
     setLastImageUri(uri);
     setIsRecognizing(true);
     setRecognitionResult(null);
     setErrorMessage('');
-    setErrorType('unclear');
+    setErrorType('image_quality_too_low');
 
     setDebugResponse({
       objectEn: '',
@@ -2143,6 +2326,7 @@ export default function HomeScreen() {
       if (Platform.OS === 'web') {
         const imageResponse = await fetch(uri);
         const blob = await imageResponse.blob();
+        imageInfo.fileSize = blob.size;
         formData.append('file', blob, 'photo.jpg');
       } else {
         formData.append('file', {
@@ -2159,43 +2343,83 @@ export default function HomeScreen() {
         status: 'fetching',
       });
 
-      const response = await fetch(API_URL, {
-        method: 'POST',
-        body: formData,
+      const recognitionApiUrl = getRecognitionApiUrl('/api/recognize');
+      console.log('Recognition API URL', recognitionApiUrl);
+      console.log('Request started');
+      console.log('Image uri', uri);
+      console.log('Image size if available', {
+        fileSize: imageInfo.fileSize ?? 'unknown',
+        height: imageInfo.height ?? 'unknown',
+        width: imageInfo.width ?? 'unknown',
       });
+      console.log('Request timeout ms', RECOGNITION_TIMEOUT_MS);
 
-      console.log('status', response.status);
+      const response = await fetchWithTimeout(
+        recognitionApiUrl,
+        {
+          method: 'POST',
+          body: formData,
+        },
+        RECOGNITION_TIMEOUT_MS,
+      );
+
+      console.log('Response status', response.status);
       const rawText = await response.text();
-      console.log('rawText', rawText);
+      console.log('Response body preview', getResponseBodyPreview(rawText));
       let parsed: Partial<RecognitionResult> = {};
+      let parseFailed = false;
       try {
         parsed = JSON.parse(rawText) as RecognitionResult;
         console.log('parsed JSON', parsed);
       } catch (parseError) {
+        parseFailed = true;
         console.log('recognize json parse failed', parseError);
       }
 
       console.log('object_zh', parsed.object_zh ?? '');
       console.log('object_en', parsed.object_en ?? '');
-      const temporaryServiceError = isTemporaryServiceError(response.status, rawText);
+      const rawConfidence = (parsed as { confidence?: unknown }).confidence;
+      const normalizedConfidence = normalizeConfidence(rawConfidence);
+      const hasRecognizedObject = Boolean(parsed.object_en || parsed.object_zh);
+      console.log('Raw confidence', rawConfidence ?? '');
+      console.log('Normalized confidence', normalizedConfidence);
 
       setDebugResponse({
         objectEn: parsed.object_en ?? '',
         objectZh: parsed.object_zh ?? '',
-        rawText,
+        rawText: getResponseBodyPreview(rawText),
         status: String(response.status),
       });
 
-      if (!parsed.object_en && !parsed.object_zh) {
+      if (!response.ok || parseFailed || !hasRecognizedObject) {
+        const failureType = getRecognitionFailureType({
+          parseFailed,
+          rawText,
+          responseOk: response.ok,
+          status: response.status,
+        });
+        console.log('Matched museum artifact', 'no');
+        console.log('Recognition accepted', 'no');
+        console.log('Recognition fallback reason', getRecognitionFallbackReason(failureType));
         setRecognitionResult(null);
-        setErrorType(temporaryServiceError ? 'temporary' : 'unclear');
-        setErrorMessage(temporaryServiceError ? COPY.temporaryErrorTitle : COPY.error);
+        setErrorType(failureType);
+        setErrorMessage(getRecognitionErrorCopy(failureType).title);
+        return;
+      }
+
+      if (normalizedConfidence.score < 0.5) {
+        console.log('Matched museum artifact', 'no');
+        console.log('Recognition accepted', 'no');
+        console.log('Recognition fallback reason', getRecognitionFallbackReason('low_confidence'));
+        setRecognitionResult(null);
+        setErrorType('low_confidence');
+        setErrorMessage(getRecognitionErrorCopy('low_confidence').title);
         return;
       }
 
       const recognizedData: RecognitionResult = {
         brand: parsed.brand ?? '',
-        confidence: parsed.confidence || 'high',
+        confidence: normalizedConfidence.label,
         follow_up_question: parsed.follow_up_question ?? '',
         needs_follow_up: Boolean(parsed.needs_follow_up),
         object_en: parsed.object_en ?? '',
@@ -2204,9 +2428,20 @@ export default function HomeScreen() {
         specific_zh: parsed.specific_zh ?? parsed.object_zh ?? '',
         subtype: parsed.subtype ?? '',
       };
+      const matchedMuseumArtifact = findMuseumArtifact(recognizedData);
+      console.log('Matched museum artifact', matchedMuseumArtifact ? 'yes' : 'no');
+      console.log('Recognition accepted', 'yes');
+      console.log('Recognition fallback reason', 'none');
 
       setRecognitionResult(recognizedData);
       setErrorMessage(null);
+
+      if (!matchedMuseumArtifact) {
+        setCollectionMessage('这个物品还没有加入魔法博物馆，可以继续发现其他藏品。');
+        setCollectionFeedback('');
+        setNewestDiscoveryAt('');
+        return;
+      }
       updateDailyDiscoveryStreak();
       updateStreakForToday();
       const achievementStreakDays = lastStreakDate === getDateKey(new Date())
@@ -2296,8 +2531,15 @@ export default function HomeScreen() {
         rawText: rawError,
         status: 'error',
       });
-      setErrorType(isTemporaryServiceError(null, rawError) ? 'temporary' : 'unclear');
-      setErrorMessage(isTemporaryServiceError(null, rawError) ? COPY.temporaryErrorTitle : COPY.error);
+      const failureType = getRecognitionFailureType({
+        parseFailed: false,
+        rawText: rawError,
+        responseOk: false,
+        status: null,
+      });
+      console.log('Recognition fallback reason', getRecognitionFallbackReason(failureType));
+      setErrorType(failureType);
+      setErrorMessage(getRecognitionErrorCopy(failureType).title);
     } finally {
       setIsRecognizing(false);
     }
@@ -2314,7 +2556,7 @@ export default function HomeScreen() {
   const takePhoto = async () => {
     setRecognitionResult(null);
     setErrorMessage('');
-    setErrorType('unclear');
+    setErrorType('image_quality_too_low');
     setDebugResponse({ objectEn: '', objectZh: '', rawText: '', status: '' });
 
     try {
@@ -2329,20 +2571,25 @@ export default function HomeScreen() {
 
       const result = await ImagePicker.launchCameraAsync({
         allowsEditing: false,
-        quality: 0.8,
+        quality: IMAGE_UPLOAD_QUALITY,
       });
 
       if (result.canceled) {
         return;
       }
 
-      const uri = result.assets[0].uri;
+      const asset = result.assets[0];
+      const uri = asset.uri;
       setPhotoUri(uri);
       setLastImageUri(uri);
-      await recognizeImage(uri);
+      await recognizeImage(uri, {
+        fileSize: asset.fileSize,
+        height: asset.height,
+        width: asset.width,
+      });
     } catch (error) {
       console.log('camera failed', error);
-      setErrorType('unclear');
+      setErrorType('image_quality_too_low');
       setErrorMessage(COPY.error);
     }
   };
@@ -2350,27 +2597,32 @@ export default function HomeScreen() {
   const chooseFromAlbum = async () => {
     setRecognitionResult(null);
     setErrorMessage('');
-    setErrorType('unclear');
+    setErrorType('image_quality_too_low');
     setDebugResponse({ objectEn: '', objectZh: '', rawText: '', status: '' });
 
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
         allowsEditing: false,
         mediaTypes: ['images'],
-        quality: 0.8,
+        quality: IMAGE_UPLOAD_QUALITY,
       });
 
       if (result.canceled) {
         return;
       }
 
-      const uri = result.assets[0].uri;
+      const asset = result.assets[0];
+      const uri = asset.uri;
       setPhotoUri(uri);
       setLastImageUri(uri);
-      await recognizeImage(uri);
+      await recognizeImage(uri, {
+        fileSize: asset.fileSize,
+        height: asset.height,
+        width: asset.width,
+      });
     } catch (error) {
       console.log('photo selection failed', error);
-      setErrorType('unclear');
+      setErrorType('image_quality_too_low');
       setErrorMessage(COPY.error);
     }
   };
@@ -2644,6 +2896,7 @@ export default function HomeScreen() {
   }, [addCompanionXp, addXpAmount, collection, openMagicChest, updateLimitedEventRewards]);
 
   const currentDetailTarget = currentDetailItem ? getDetailTargetForItem(currentDetailItem) : null;
+  const recognitionMatchedArtifact = recognitionResult ? Boolean(findMuseumArtifact(recognitionResult)) : false;
 
   return (
     <SafeAreaView style={styles.screen}>
@@ -2804,7 +3057,8 @@ export default function HomeScreen() {
                   confidenceLabel={COPY.confidence}
                   confidenceText={formatConfidence(recognitionResult.confidence)}
                   foundTitle={COPY.found}
-                  hasQuiz={Boolean(getUnlockedQuizArtifactKeyForResult(recognitionResult))}
+                  hasQuiz={recognitionMatchedArtifact && Boolean(getUnlockedQuizArtifactKeyForResult(recognitionResult))}
+                  isKnownArtifact={recognitionMatchedArtifact}
                   magicEmoji={getMagicEmoji(recognitionResult)}
                   museumProgress={getMuseumProgressForResult(recognitionResult, collection)}
                   onChallenge={openResultChallenge}
@@ -3308,6 +3562,69 @@ function saveShareCardAsPngV2(data: ShareCardData) {
 
 void saveShareCardAsPng;
 
+function getRecognitionErrorCopy(errorType: RecognitionErrorType) {
+  if (errorType === 'api_timeout') {
+    return {
+      encourage: 'Try a clearer photo or a smaller image, then run recognition again.',
+      hint: 'Recognition took too long. Please try a clearer photo.',
+      retry: 'Try again',
+      title: 'Recognition timed out',
+    };
+  }
+
+  if (errorType === 'backend_unreachable') {
+    return {
+      encourage: 'Check that phone and computer are on the same Wi-Fi, and start backend on 0.0.0.0:8000.',
+      hint: 'The recognition service cannot be reached. Please confirm the backend is running.',
+      retry: 'Try again',
+      title: 'Recognition service unreachable',
+    };
+  }
+
+  if (errorType === 'backend_error') {
+    return {
+      encourage: 'The backend returned an error before AI recognition completed.',
+      hint: 'The recognition backend failed. Please check the backend PowerShell logs.',
+      retry: 'Try again',
+      title: 'Recognition backend failed',
+    };
+  }
+
+  if (errorType === 'gemini_error') {
+    return {
+      encourage: 'The backend received the request, but AI recognition did not finish successfully.',
+      hint: 'AI recognition failed for now. Please try again later.',
+      retry: 'Try again',
+      title: 'AI recognition failed',
+    };
+  }
+
+  if (errorType === 'invalid_response') {
+    return {
+      encourage: 'The backend returned content, but it did not include the expected recognition fields.',
+      hint: 'The recognition response format was unexpected.',
+      retry: 'Try again',
+      title: 'Unexpected recognition response',
+    };
+  }
+
+  if (errorType === 'low_confidence') {
+    return {
+      encourage: COPY.errorEncourage,
+      hint: 'The AI was not confident enough about this photo.',
+      retry: 'Try again',
+      title: COPY.errorTitle,
+    };
+  }
+
+  return {
+    encourage: COPY.errorEncourage,
+    hint: 'The photo may be too blurry, too dark, or missing a clear main object.',
+    retry: COPY.temporaryErrorRetry,
+    title: COPY.errorTitle,
+  };
+}
+
 function FailureCard({
   emojiTranslateY,
   errorType,
@@ -3325,21 +3642,22 @@ function FailureCard({
   showRetry: boolean;
   translateX: Animated.AnimatedInterpolation<string | number>;
 }) {
-  const isTemporary = errorType === 'temporary';
+  const errorCopy = getRecognitionErrorCopy(errorType);
+  const canRetry = errorType !== 'image_quality_too_low';
 
   return (
     <Animated.View style={[styles.failureCard, { opacity, transform: [{ translateX }, { scale }] }]}>
       <Animated.Text style={[styles.failureEmoji, { transform: [{ translateY: emojiTranslateY }] }]}>
-        🪄
+        ??
       </Animated.Text>
-      <Text style={styles.failureTitle}>{isTemporary ? COPY.temporaryErrorTitle : COPY.errorTitle}</Text>
-      <Text style={styles.failureHint}>{isTemporary ? COPY.temporaryErrorHint : COPY.errorHint}</Text>
+      <Text style={styles.failureTitle}>{errorCopy.title}</Text>
+      <Text style={styles.failureHint}>{errorCopy.hint}</Text>
       <View style={styles.failureEncouragePill}>
-        <Text style={styles.failureEncourageText}>{COPY.errorEncourage}</Text>
+        <Text style={styles.failureEncourageText}>{errorCopy.encourage}</Text>
       </View>
-      {isTemporary && showRetry ? (
+      {canRetry && showRetry ? (
         <Pressable style={({ pressed }) => [styles.failureRetryButton, pressed && styles.buttonPressed]} onPress={onRetry}>
-          <Text style={styles.failureRetryText}>{COPY.temporaryErrorRetry}</Text>
+          <Text style={styles.failureRetryText}>{errorCopy.retry}</Text>
         </Pressable>
       ) : null}
     </Animated.View>
