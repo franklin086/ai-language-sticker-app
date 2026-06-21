@@ -2429,15 +2429,16 @@ export default function HomeScreen() {
         subtype: parsed.subtype ?? '',
       };
       const matchedMuseumArtifact = findMuseumArtifact(recognizedData);
+      const recognitionFallbackReason = matchedMuseumArtifact ? 'none' : 'unmatched_museum_artifact';
       console.log('Matched museum artifact', matchedMuseumArtifact ? 'yes' : 'no');
-      console.log('Recognition accepted', 'yes');
-      console.log('Recognition fallback reason', 'none');
+      console.log('Recognition accepted', 'true');
+      console.log('Recognition fallback reason', recognitionFallbackReason);
 
       setRecognitionResult(recognizedData);
       setErrorMessage(null);
 
       if (!matchedMuseumArtifact) {
-        setCollectionMessage('这个物品还没有加入魔法博物馆，可以继续发现其他藏品。');
+        setCollectionMessage('\u8FD9\u4E2A\u7269\u54C1\u8FD8\u6CA1\u6709\u52A0\u5165\u9B54\u6CD5\u535A\u7269\u9986\uFF0C\u53EF\u4EE5\u7EE7\u7EED\u53D1\u73B0\u5176\u4ED6\u85CF\u54C1\u3002');
         setCollectionFeedback('');
         setNewestDiscoveryAt('');
         return;
